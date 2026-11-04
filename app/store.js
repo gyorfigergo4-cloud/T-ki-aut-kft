@@ -2,9 +2,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { validDay } = require('./archive');
 const lineItems = require('./items');
+const noteStatuses = require('./note-status');
 function validate(notes) {
   if (!Array.isArray(notes) || notes.some(n => !n || typeof n.id !== 'string' || typeof n.title !== 'string' || typeof n.body !== 'string' || typeof n.updated !== 'string')) throw new Error('Sérült jegyzetadatok');
   for (const note of notes) {
+    noteStatuses.validate(note.workflowStatus);
     if (note.items !== undefined) lineItems.validate(note.items);
     if (note.day !== undefined && !validDay(note.day)) throw new Error('Érvénytelen bejegyzésdátum');
     for (const field of ['vin', 'part', 'oil', 'fullPrice', 'discountPrice', 'created']) {

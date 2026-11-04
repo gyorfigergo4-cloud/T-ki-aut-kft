@@ -11,7 +11,7 @@ const amountPattern = '(?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,\\d{1,2})?';
 const pairRE = new RegExp('(?<![\\w.,])('+amountPattern+')\\s*(?:Ft)?\\s*[-–]\\s*('+amountPattern+')\\s*Ft(?!\\w)','gi');
 const priceRE = new RegExp('(?<![\\w.,])('+amountPattern+')\\s*Ft(?!\\w)','gi');
 const dataRE = /^(?:olaj\b|olajsz[űü]r|leveg[őö]sz[űü]r|légsz[űü]r|pollensz[űü]r|sz[űü]r[őö]|gyári\b|rendel|összesen|telibe|teli ár|kedvezmény|saját\b|hajtókar|dugat|csapágy|vezér|tömítés|henger|főtengely|szívósor|vákuum|kipuf|szimering|fagyálló|nincsen\b|nincs\b)/i;
-const supplierRE = /\b(?:Ft|AP|IC|UNIX|LÁNG|SZAKÁL|BÁRDI|AUTONET|UNITRACK|IVANICS)\b/i;
+const supplierRE = /\b(?:Ft|AP|IC|UNIX|LÁNG|SZAKÁL|BÁRDI|AUTONET|UNITRA(?:C)?K|IVANICS)\b/i;
 function vins(text){return [...new Set([...text.matchAll(/(?<![A-Z0-9])[A-HJ-NPR-Z0-9]{17}(?![A-Z0-9])/gi)].map(m=>m[0].toUpperCase()).filter(v=>/[A-Z]/.test(v)&&/\d/.test(v)))];}
 const cleanLine = line => line.trim().replace(/^\uFEFF/,'');
 function lineType(line){

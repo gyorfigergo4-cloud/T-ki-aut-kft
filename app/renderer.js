@@ -2,6 +2,7 @@ const $ = id => document.getElementById(id);
 const { months, localDay, validDay, normalize } = window.NotesArchive;
 const fields = ['title', 'vin', 'oil', 'body'];
 const Items = window.LineItems;
+const NoteStatuses = window.NoteStatuses;
 const invalidInputs = new Set();
 const today = localDay(new Date());
 let notes = [], years = [], days = [], loaded = false, selected = null, selectedDay = today;
@@ -26,13 +27,29 @@ function queueSave(target, value, writer) {
 const persistNotes = () => queueSave('notes', notes, data => window.notesAPI.save(data));
 const persistArchive = () => queueSave('archive', archiveData(), data => window.notesAPI.saveArchive(data));
 function clearSearch() { $('search').value = ''; $('clear').hidden = true; }
+function renderWorkflowStatus() {
+  const note = current();
+  for (const input of $('note-status-options').querySelectorAll('input')) {
+    input.disabled = !note; input.checked = !!note && input.value === NoteStatuses.get(note).id;
+  }
+}
+for (const status of NoteStatuses.all) {
+  const label = document.createElement('label'); label.className = 'note-status-option'; label.dataset.workflowStatus = status.id;
+  const input = document.createElement('input'); input.type = 'radio'; input.name = 'note-status'; input.value = status.id;
+  const text = document.createElement('span'); text.textContent = status.label; label.append(input, text); $('note-status-options').append(label);
+  input.onchange = () => {
+    const note = current();
+    if (!note || !allowNavigation()) { renderWorkflowStatus(); return; }
+    note.workflowStatus = status.id; note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
+  };
+}
 function setDayContext(day) {
   selectedDay = day; selectedMonth = day.slice(0, 7); activeYear = Number(day.slice(0, 4));
   openedYears.add(activeYear); openedMonths.add(selectedMonth);
 }
 function visibleNotes() {
   const query = fold($('search').value.trim());
-  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
+  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + NoteStatuses.get(note).label + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
     .sort((a, b) => b.day.localeCompare(a.day) || a.created.localeCompare(b.created));
 }
 function openDay(day) {
@@ -103,9 +120,11 @@ function renderList() {
   $('list').replaceChildren();
   for (const note of visible) {
     const button = document.createElement('button'); button.className = 'note' + (note.id === selected ? ' active' : ''); button.dataset.note = note.id;
+    const workflowStatus = NoteStatuses.get(note); button.dataset.workflowStatus = workflowStatus.id;
     const title = document.createElement('strong'); title.textContent = note.title || 'Új név';
     const preview = document.createElement('small'); preview.textContent = query ? note.day : note.items.map(item => item.partNumber).filter(Boolean).join(' · ') || note.oil || note.vin || 'Adatok kitöltése…';
-    button.append(title, preview); button.onclick = () => { if (!allowNavigation()) return; selected = note.id; setDayContext(note.day); render(); }; $('list').append(button);
+    const caption = document.createElement('span'); caption.className = 'note-status-caption'; caption.textContent = '● ' + workflowStatus.label;
+    button.append(title, preview, caption); button.onclick = () => { if (!allowNavigation()) return; selected = note.id; setDayContext(note.day); render(); }; $('list').append(button);
   }
   if (!visible.length) {
     const empty = document.createElement('p'); empty.className = 'list-empty';
@@ -122,6 +141,7 @@ function metadata() {
 function render() {
   renderFolders(); renderList();
   const note = current();
+  renderWorkflowStatus();
   $('breadcrumb').textContent = [activeYear, selectedMonth ? months[Number(selectedMonth.slice(5)) - 1] : '', selectedDay ? selectedDay.slice(8) + '.' : ''].filter(Boolean).join('  /  ');
   $('editor').hidden = !note; $('empty').hidden = !!note; $('delete').disabled = !note;
   $('empty').querySelector('h2').textContent = $('search').value.trim() ? 'Keress az összes korábbi adatban.' : selectedDay ? 'Ennek a napnak még nincs bejegyzése.' : 'Minden bejegyzés a saját napján.';
@@ -158,34 +178,45 @@ function renderItems(note) {
   $('legacy-parts').hidden = !legacy; $('legacy-parts').open = false; $('legacy-parts-text').textContent = legacy;
   note.items.forEach((item, index) => {
     const row = document.createElement('tr'); row.dataset.itemId = item.id;
-    const output = document.createElement('output'); output.dataset.field = 'discountedPrice'; output.setAttribute('aria-label', 'Kedvezményes ár – ' + (index + 1) + '. sor'); output.textContent = Items.formatMoney(item.discountedPrice);
+    const priceInputs = {};
+    let priceDriver = item.priceMode === 'manual' || (item.priceMode === 'legacy' && item.discountedPrice !== '') ? 'manual' : 'auto';
     const orderControl = window.ItemOrderUI.create(item, (index + 1) + '. sor', checked => {
       try {
         Object.assign(item, Items.withOrder(item, checked)); Items.syncLegacy(note); note.updated = new Date().toISOString();
         persistNotes(); renderList(); metadata();
       } catch (error) { $('item-error').textContent = error.message; }
     });
-    const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
+    const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice', 'Kedvezményes ár', 'number'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
     for (const [field, label, type] of columns) {
       const cell = document.createElement('td');
-      if (field === 'discountedPrice') { cell.className = 'calculated-price'; cell.append(output); row.append(cell); continue; }
       const input = document.createElement('input'); input.type = type; input.value = item[field]; input.dataset.field = field;
       input.setAttribute('aria-label', label + ' – ' + (index + 1) + '. sor');
-      if (field === 'fullPrice') { input.min = '0'; input.max = '999999999999.99'; input.step = '0.01'; input.placeholder = 'Ár nélkül'; }
+      if (field === 'fullPrice' || field === 'discountedPrice') { input.min = '0'; input.max = '999999999999.99'; input.step = '0.01'; input.placeholder = 'Ár nélkül'; }
       if (field === 'discountPercent') { input.min = '0'; input.max = '100'; input.step = 'any'; input.placeholder = '0'; }
       if (field === 'quantity') { input.min = '1'; input.max = '999999'; input.step = '1'; input.required = true; }
       if (field === 'partNumber') { input.placeholder = 'Cikkszám'; input.maxLength = 1000; input.spellcheck = false; }
       if (field === 'supplier') { input.setAttribute('list', 'suppliers'); input.placeholder = 'Pl. IC'; input.maxLength = 200; }
+      if (['fullPrice', 'discountPercent', 'discountedPrice'].includes(field)) priceInputs[field] = input;
+      if (field === 'discountedPrice') { cell.className = 'calculated-price'; input.className = 'discounted-price-input'; }
       input.addEventListener('input', () => {
         input.setCustomValidity('');
         try {
           if (!input.validity.valid) throw new Error(field === 'quantity' ? 'A darabszám legalább 1, egész szám legyen.' : field === 'discountPercent' ? 'A kedvezmény 0 és 100 közötti százalék legyen.' : 'Az ár nem lehet negatív, és legfeljebb két tizedesjegyű lehet.');
-          const next = Items.edit(item, { [field]: input.value });
-          if (field === 'fullPrice' || field === 'discountPercent') { next.discountedPrice = Items.discounted(next.fullPrice, next.discountPercent); next.priceMode = 'auto'; }
+          let patch = { [field]: input.value };
+          if (['fullPrice', 'discountPercent', 'discountedPrice'].includes(field)) {
+            if (field === 'discountedPrice') priceDriver = 'manual'; else if (field === 'discountPercent') priceDriver = 'auto';
+            for (const control of Object.values(priceInputs)) { control.setCustomValidity(''); control.removeAttribute('aria-invalid'); invalidInputs.delete(control); }
+            const source = priceDriver === 'manual' ? 'discountedPrice' : 'discountPercent';
+            for (const control of [priceInputs.fullPrice, priceInputs[source]]) if (!control.validity.valid) throw new Error('Ellenőrizd az árakat és a kedvezményt.');
+            patch = { fullPrice: priceInputs.fullPrice.value, [source]: priceInputs[source].value };
+          }
+          const next = Items.edit(item, patch);
           Items.validate([next]); Object.assign(item, next);
           invalidInputs.delete(input); input.removeAttribute('aria-invalid');
+          const derived = ['fullPrice', 'discountPercent', 'discountedPrice'].includes(field) ? (item.priceMode === 'auto' ? 'discountedPrice' : 'discountPercent') : null;
+          if (derived) { const control = priceInputs[derived]; control.value = item[derived]; control.setCustomValidity(''); control.removeAttribute('aria-invalid'); invalidInputs.delete(control); }
+          if (field === 'supplier') input.value = item.supplier;
           $('item-error').textContent = invalidInputs.size ? 'Javítsd a megjelölt mezőt a továbblépéshez.' : '';
-          output.textContent = Items.formatMoney(item.discountedPrice);
           orderControl.refresh();
           Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
         } catch (error) {
@@ -244,7 +275,7 @@ $('year-form').onsubmit = event => {
 $('new').onclick = () => {
   if (!loaded || !selectedDay || !allowNavigation()) return;
   clearSearch(); const now = new Date().toISOString();
-  const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
+  const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
   notes.push(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }

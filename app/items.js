@@ -30,6 +30,13 @@
     if (!full || reduced > full) return '';
     return decimal(((full - reduced) * HUNDRED_PERCENT + full / 2n) / full, 6);
   }
+  function manualPercent(fullPrice, reducedPrice) {
+    if (fullPrice === '' || reducedPrice === '') return '';
+    const full = cents(fullPrice), reduced = cents(reducedPrice);
+    if (reduced > full) throw new Error('A kedvezményes ár nem lehet magasabb a teli árnál.');
+    return full === 0n ? '0' : discountFromPrices(fullPrice, reducedPrice);
+  }
+  function normalizeSupplier(value) { return /^unitra(?:c)?k$/i.test(value.trim()) ? 'Unitrak' : value; }
   function blank(id) {
     return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '' };
   }
@@ -39,7 +46,7 @@
   function order(item) {
     return { ordered: item.ordered === undefined ? legacyOrdered(item.legacyLine) : item.ordered, orderedAt: item.orderedAt || '' };
   }
-  function normalizeItem(item) { return { ...item, ...order(item) }; }
+  function normalizeItem(item) { return { ...item, ...order(item), supplier: normalizeSupplier(item.supplier) }; }
   function withOrder(item, ordered, at = new Date().toISOString()) {
     if (typeof ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
     if (ordered && !item.partNumber.trim() && !item.description?.trim()) throw new Error('Rendelés jelölése előtt add meg a cikkszámot vagy a megnevezést.');
@@ -49,6 +56,16 @@
   const identity = value => (value || '').replace(/\s+/g, '').toLocaleUpperCase('hu');
   function edit(item, patch) {
     const next = { ...item, ...patch };
+    if (Object.hasOwn(patch, 'supplier')) next.supplier = normalizeSupplier(next.supplier);
+    if (Object.hasOwn(patch, 'discountedPrice')) {
+      next.priceMode = 'manual'; next.discountPercent = manualPercent(next.fullPrice, next.discountedPrice);
+    } else if (Object.hasOwn(patch, 'discountPercent')) {
+      next.priceMode = 'auto'; next.discountedPrice = discounted(next.fullPrice, next.discountPercent);
+    } else if (Object.hasOwn(patch, 'fullPrice')) {
+      if (item.priceMode === 'manual' || (item.priceMode === 'legacy' && item.discountedPrice !== '')) {
+        next.priceMode = 'manual'; next.discountPercent = manualPercent(next.fullPrice, next.discountedPrice);
+      } else { next.priceMode = 'auto'; next.discountedPrice = discounted(next.fullPrice, next.discountPercent); }
+    }
     if (identity(next.partNumber) !== identity(item.partNumber) || (!identity(next.partNumber) && identity(next.description) !== identity(item.description))) {
       next.ordered = false; next.orderedAt = '';
     }
@@ -61,7 +78,7 @@
   const amount = '(?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,\\d{1,2})?';
   const pairPattern = new RegExp('(?<![\\w.,])(' + amount + ')\\s*(?:Ft(?:\\s*/\\s*db)?)?\\s*[-–]\\s*(' + amount + ')\\s*Ft(?:\\s*/\\s*db)?(?!\\w)', 'gi');
   const pricePattern = new RegExp('(?<![\\w.,])(' + amount + ')\\s*Ft(?!\\w)', 'gi');
-  const suppliers = /(?:^|\s)(AP|IC|UNIX|Láng|Szakál|Bárdi|Autonet|Unitrack|Ivanics|Polc|Gyári)(?=\s|$)/i;
+  const suppliers = /(?:^|\s)(AP|IC|UNIX|Láng|Szakál|Bárdi|Autonet|Unitrack|Unitrak|Ivanics|Polc|Gyári)(?=\s|$)/i;
   const legacyAmount = value => value.replaceAll('.', '').replace(',', '.');
   function parseLegacyLine(line, index) {
     const item = { ...blank('legacy-' + (index + 1)), legacyLine: line, priceMode: 'legacy' };
@@ -69,7 +86,7 @@
     const pairs = [...line.matchAll(pairPattern)], prices = [...line.matchAll(pricePattern)];
     let prefix = line;
     const supplier = suppliers.exec(line);
-    if (supplier) item.supplier = supplier[1];
+    if (supplier) item.supplier = normalizeSupplier(supplier[1]);
     try {
     if (pairs.length === 1 && prices.length <= 2) {
       item.fullPrice = legacyAmount(pairs[0][1]); item.discountedPrice = legacyAmount(pairs[0][2]);
@@ -105,7 +122,7 @@
     if (!Array.isArray(items) || items.length > 10000) throw new Error('Érvénytelen cikkszámtáblázat');
     const ids = new Set();
     for (const item of items) {
-      if (!item || ['id', 'partNumber', 'fullPrice', 'discountPercent', 'discountedPrice', 'quantity', 'supplier', 'priceMode'].some(key => typeof item[key] !== 'string') || !item.id || ids.has(item.id) || !['auto', 'legacy'].includes(item.priceMode)) throw new Error('Érvénytelen cikkszámsor');
+      if (!item || ['id', 'partNumber', 'fullPrice', 'discountPercent', 'discountedPrice', 'quantity', 'supplier', 'priceMode'].some(key => typeof item[key] !== 'string') || !item.id || ids.has(item.id) || !['auto', 'legacy', 'manual'].includes(item.priceMode)) throw new Error('Érvénytelen cikkszámsor');
       ids.add(item.id);
       if (item.description !== undefined && typeof item.description !== 'string') throw new Error('Érvénytelen tételmegnevezés');
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
@@ -115,6 +132,10 @@
       if (item.fullPrice !== '') cents(item.fullPrice);
       if (item.discountedPrice !== '') cents(item.discountedPrice);
       if (item.priceMode === 'auto' && item.discountedPrice !== discounted(item.fullPrice, item.discountPercent)) throw new Error('Eltérő számított kedvezményes ár');
+      if (item.priceMode === 'manual') {
+        const expected = manualPercent(item.fullPrice, item.discountedPrice);
+        if (expected === '' ? item.discountPercent !== '' : percent(item.discountPercent) !== percent(expected)) throw new Error('Eltérő számított kedvezményszázalék');
+      }
     }
     return items;
   }
@@ -141,7 +162,7 @@
     note.fullPrice = result.priced && !result.missing ? result.fullPrice : '';
     note.discountPrice = result.priced && !result.missing ? result.discountedPrice : '';
   }
-  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, validate, totals, formatMoney, syncLegacy, order, withOrder, edit, orderCounts };
+  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, formatMoney, syncLegacy, order, withOrder, edit, orderCounts };
   if (typeof module !== 'undefined') module.exports = api;
   else root.LineItems = api;
 })(globalThis);

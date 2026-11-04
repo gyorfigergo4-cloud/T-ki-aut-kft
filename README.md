@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Színes bejegyzések és kézi kedvezményes ár az 1.4-es verzióban
+
+A **Bejegyzés adatai** mellett négy, egymást kizáró állapot választható: **Megrendelve** (zöld), **Ajánlat** (kék), **Félbehagyott** (piros), **Felírva** (citromsárga). A felső névkártya teljes háttere, kerete és felirata követi az állapotot; az aktuális kártya kijelölése külön is látszik. A választás névenként mentődik és újranyitáskor megmarad. Az új és korábban nem jelölt bejegyzések alapállapota Felírva. A bejegyzés állapota kézzel választható, a tételenkénti rendelésjelöléstől függetlenül. A kereső az állapot nevére is keres.
+
+A **kedvezményes egységár** a jegyzetekben és munkalapokon is írható. A teli ár és a kézzel megadott kedvezményes ár alapján a százalék automatikusan számolódik. Ebben az esetben a teli ár módosítása megtartja a kézi kedvezményes összeget, és a százalékot frissíti. Százalék megadásakor visszatér a százalék alapján számoló módhoz. A kézi összeget mentéskor és újranyitáskor nem számolja újra kerekített százalékból. A százalék legfeljebb hat tizedesre kerekített; az egységár két tizedes pontosságú. Hiányzó árnál a százalék üres, 0 Ft / 0 Ft esetén 0%, teljes kedvezménynél 100%; a kézi kedvezményes ár nem lehet magasabb a teli árnál. A korábbi eredeti árpárok megmaradnak.
+
+A beszállító egységes neve **Unitrak**. A régi „Unitrack” külön mezőértékek, az automatikus TXT-felismerés és az Excel-import is ezt a nevet használják; az eredeti forrásszöveget nem írjuk át. Az ügyfélnek készülő PDF és nyomtatás továbbra sem tartalmaz cikkszámot és belső jelöléseket. A meglévő jegyzetek, munkalapok és a Töki Autós ikon megmaradnak.
+
 ## Rendelésjelölés az 1.3-as verzióban
 
 A napi jegyzetek és a munkalapok minden tételsorában külön **Rendelés** mező található. A Megrendelve pipa zöld jelzést ad, és elmenti a kézi jelölés időpontját. A pipa visszavonható; új jelöléskor új időpontot kap. Az ár vagy darabszám módosítása nem változtatja meg a jelölést, más cikkszámra váltás törli azt, hogy új terméken ne maradjon téves visszaigazolás. Üres cikkszám és megnevezés mellett nem jelölhető rendelés. Az összesítés mutatja, hány tétel van megjelölve.
@@ -69,7 +77,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.3-as, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.4-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 

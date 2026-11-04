@@ -113,7 +113,7 @@ function build(session,config){
    const fullPrice=get(row,'fullPrice')?number(get(row,'fullPrice')):'',reduced=get(row,'discountedPrice')?number(get(row,'discountedPrice')):'',pct=get(row,'discountPercent')?number(get(row,'discountPercent'),true):'';
    if(!partNumber&&!description&&!fullPrice&&!reduced)continue;
    if(!fullPrice&&!reduced)warnings.push(index+'. sor: nincs megadott ár.');
-   const item={...Items.blank('excel-'+sha(session.fileHash+'\0'+sheet.name+'\0'+index).slice(0,24)),partNumber,description,fullPrice,discountPercent:pct||'0',supplier:text('supplier')};
+   const item={...Items.blank('excel-'+sha(session.fileHash+'\0'+sheet.name+'\0'+index).slice(0,24)),partNumber,description,fullPrice,discountPercent:pct||'0',supplier:Items.normalizeSupplier(text('supplier'))};
    const q=get(row,'quantity')?scalar(get(row,'quantity')):'';item.quantity=q===''?'1':String(q);Items.quantity(item.quantity);
    if(reduced!==''&&pct===''){
     item.priceMode='legacy';item.discountedPrice=reduced;item.discountPercent=fullPrice?Items.discountFromPrices(fullPrice,reduced):'';

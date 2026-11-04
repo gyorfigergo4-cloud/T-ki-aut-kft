@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.3
+TÖKI AUTÓ KFT. – JEGYZETEK 1.4
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -50,3 +50,14 @@ A sor zöld jelölést és időpontot kap; az app automatikusan menti.
 A jelölés visszavonható. Más cikkszámra váltás törli a korábbi jelölést.
 A régi Rendelve szövegeknél Korábbi jelölés látszik, időpont nélkül.
 A belső rendelésjelölés az ügyfél nyomtatásán és PDF-jében nem szerepel.
+
+SZÍNES BEJEGYZÉSEK
+A Bejegyzés adatai mellett válassz állapotot:
+Megrendelve – zöld, Ajánlat – kék, Félbehagyott – piros, Felírva – citromsárga.
+A felső névkártya színe változik, a választás automatikusan mentődik.
+
+ÍRHATÓ KEDVEZMÉNYES ÁR
+A kedvezményes ár mezőbe közvetlenül is írhatsz összeget.
+Ha a teli ár is megvan, az app kiszámolja a kedvezmény százalékát.
+Százalék megadásakor a kedvezményes ár számolódik újra.
+A beszállító új neve: Unitrak.

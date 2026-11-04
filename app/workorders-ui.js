@@ -30,20 +30,21 @@
   $('wo-excel-sources').hidden=!sources.length;$('wo-excel-sources').open=false;$('wo-excel-text').textContent=sources.join('\n\n');
   doc.items.forEach((item,index)=>{
    const row=document.createElement('tr');row.dataset.itemId=item.id;
-   const output=document.createElement('output');output.textContent=Items.formatMoney(item.discountedPrice);output.setAttribute('aria-label','Kedvezményes ár – '+(index+1)+'. munkalapsor');
+   const priceInputs={};let priceDriver=item.priceMode==='manual'||(item.priceMode==='legacy'&&item.discountedPrice!=='')?'manual':'auto';
    const orderControl=window.ItemOrderUI.create(item,(index+1)+'. munkalapsor',checked=>{try{Object.assign(item,Items.withOrder(item,checked));doc.updated=new Date().toISOString();persist();totals();list();}catch(error){$('wo-error').textContent=error.message;}});
-   for(const [field,label,type]of [['partNumber','Cikkszám','text'],['description','Megnevezés','text'],['fullPrice','Teli ár','number'],['discountPercent','Kedvezmény %','number'],['discountedPrice'],['quantity','Db','number']]){
+   for(const [field,label,type]of [['partNumber','Cikkszám','text'],['description','Megnevezés','text'],['fullPrice','Teli ár','number'],['discountPercent','Kedvezmény %','number'],['discountedPrice','Kedvezményes ár','number'],['quantity','Db','number']]){
     const cell=document.createElement('td');
-    if(field==='discountedPrice'){cell.className='calculated-price';cell.append(output);row.append(cell);continue;}
     const input=document.createElement('input');input.type=type;input.value=item[field]||'';input.dataset.field=field;input.setAttribute('aria-label',label+' – '+(index+1)+'. munkalapsor');
-    if(field==='fullPrice'){input.min='0';input.max='999999999999.99';input.step='0.01';}
+    if(field==='fullPrice'||field==='discountedPrice'){input.min='0';input.max='999999999999.99';input.step='0.01';}
     if(field==='discountPercent'){input.min='0';input.max='100';input.step='any';}
     if(field==='quantity'){input.min='1';input.max='999999';input.step='1';input.required=true;}
     if(field==='partNumber'){input.placeholder='Belső cikkszám';input.spellcheck=false;input.maxLength=1000;}
     if(field==='description'){input.placeholder='Pl. olajszűrő';input.maxLength=1000;}
+    if(['fullPrice','discountPercent','discountedPrice'].includes(field))priceInputs[field]=input;
+    if(field==='discountedPrice'){cell.className='calculated-price';input.className='discounted-price-input';}
     input.oninput=()=>{
      input.setCustomValidity('');
-     try{if(!input.validity.valid)throw new Error('Ellenőrizd a mezőt: az ár nem negatív, a kedvezmény 0–100%, a darabszám pozitív egész legyen.');const next=Items.edit(item,{[field]:input.value});if(['fullPrice','discountPercent'].includes(field)){next.discountedPrice=Items.discounted(next.fullPrice,next.discountPercent);next.priceMode='auto';}Items.validate([next]);Object.assign(item,next);doc.updated=new Date().toISOString();invalid.delete(input);input.removeAttribute('aria-invalid');$('wo-error').textContent=invalid.size?'Javítsd a megjelölt mezőt.':'';output.textContent=Items.formatMoney(item.discountedPrice);orderControl.refresh();persist();totals();list();}
+     try{if(!input.validity.valid)throw new Error('Ellenőrizd a mezőt: az ár nem negatív, a kedvezmény 0–100%, a darabszám pozitív egész legyen.');let patch={[field]:input.value};if(['fullPrice','discountPercent','discountedPrice'].includes(field)){if(field==='discountedPrice')priceDriver='manual';else if(field==='discountPercent')priceDriver='auto';for(const control of Object.values(priceInputs)){control.setCustomValidity('');control.removeAttribute('aria-invalid');invalid.delete(control);}const source=priceDriver==='manual'?'discountedPrice':'discountPercent';for(const control of [priceInputs.fullPrice,priceInputs[source]])if(!control.validity.valid)throw new Error('Ellenőrizd az árakat és a kedvezményt.');patch={fullPrice:priceInputs.fullPrice.value,[source]:priceInputs[source].value};}const next=Items.edit(item,patch);Items.validate([next]);Object.assign(item,next);doc.updated=new Date().toISOString();invalid.delete(input);input.removeAttribute('aria-invalid');const derived=['fullPrice','discountPercent','discountedPrice'].includes(field)?(item.priceMode==='auto'?'discountedPrice':'discountPercent'):null;if(derived){const control=priceInputs[derived];control.value=item[derived];control.setCustomValidity('');control.removeAttribute('aria-invalid');invalid.delete(control);}$('wo-error').textContent=invalid.size?'Javítsd a megjelölt mezőt.':'';orderControl.refresh();persist();totals();list();}
      catch(error){input.setCustomValidity(error.message);input.setAttribute('aria-invalid','true');invalid.add(input);$('wo-error').textContent=error.message;}
     };
     cell.append(input);row.append(cell);

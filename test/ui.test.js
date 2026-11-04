@@ -14,7 +14,7 @@ async function openUI(saved) {
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
     export: async () => true
   };
-  for (const script of ['items.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'note-status.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   await tick();
   const $ = id => window.document.getElementById(id);
   const input = (id, value) => { $(id).value = value; $(id).dispatchEvent(new window.Event('input')); };
@@ -119,7 +119,7 @@ test('hat oszlopos cikkszámtáblázat: számolás, db, beszállító, mentés �
  ui.dom.window.close();ui=await openUI(saved);
  assert.equal(ui.$('items-body').children.length,2);
  assert.equal(ui.$('items-body').children[1].querySelector('[data-field=supplier]').value,'Saját beszállító');
- assert.match(ui.$('items-body').children[0].querySelector('output').textContent.replace(/\s/g,''),/8000Ft/);
+ assert.equal(ui.$('items-body').children[0].querySelector('[data-field=discountedPrice]').value,'8000');
  ui.input('search','Saját beszállító');assert.equal(ui.cards().length,1);
  ui.$('items-body').children[1].querySelector('.remove-item').click();await tick();assert.equal(saved.notes[0].items.length,1);
  assert.equal(saved.notes[0].discountPrice,'24000');
@@ -183,4 +183,25 @@ test('a rendelésjelölés látható, időponttal mentődik, újranyitáskor meg
  ui.$('items-body').querySelector('[data-field=ordered]').click();await tick();assert.equal(saved.notes[0].items[0].ordered,false);assert.equal(saved.notes[0].items[0].orderedAt,'');assert.equal(ui.$('items-body').querySelector('time').hidden,true);
  ui.$('items-body').querySelector('[data-field=ordered]').click();await tick();const part=ui.$('items-body').querySelector('[data-field=partNumber]');part.value='B456';part.dispatchEvent(new ui.dom.window.Event('input'));await tick();assert.equal(ui.$('items-body').querySelector('[data-field=ordered]').checked,false);assert.equal(saved.notes[0].items[0].orderedAt,'');
  ui.dom.window.close();
+});
+test('névkártya állapotának mentése és kétirányú ármezők újranyitás után is',async()=>{
+ const saved={notes:[{id:'state-one',title:'Minta ügyfél',body:'',day:'2026-11-04',updated:'2026-11-04T12:00:00Z',items:[{id:'a',partNumber:'A123',fullPrice:'10000',discountPercent:'20',discountedPrice:'8000',quantity:'2',supplier:'Unitrack',priceMode:'auto'}]},{id:'state-two',title:'Másik ügyfél',body:'',day:'2026-11-04',updated:'2026-11-04T13:00:00Z',workflowStatus:'unfinished',items:[]}],archive:{years:[2024,2025,2026],days:['2026-11-04']}};
+ let ui=await openUI(saved);
+ const control=id=>ui.$('note-status-options').querySelector('[value="'+id+'"]'),card=id=>ui.$('list').querySelector('[data-note="'+id+'"]');
+ assert.equal(control('written').checked,true);assert.equal(card('state-one').dataset.workflowStatus,'written');assert.equal(card('state-two').dataset.workflowStatus,'unfinished');
+ for(const status of ['ordered','quote','unfinished','written','quote']){control(status).click();await tick();assert.equal(card('state-one').dataset.workflowStatus,status);assert.equal(saved.notes[0].workflowStatus,status);assert.equal(card('state-two').dataset.workflowStatus,'unfinished');}
+ const field=name=>ui.$('items-body').querySelector('[data-field="'+name+'"]'),edit=(name,value)=>{const input=field(name);input.value=value;input.dispatchEvent(new ui.dom.window.Event('input'));};
+ assert.equal(field('supplier').value,'Unitrak');assert.equal(field('discountedPrice').readOnly,false);
+ edit('discountedPrice','7500');await tick();assert.equal(field('discountPercent').value,'25');assert.equal(saved.notes[0].items[0].discountedPrice,'7500');assert.equal(saved.notes[0].discountPrice,'15000');
+ edit('fullPrice','12000');await tick();assert.equal(field('discountedPrice').value,'7500');assert.equal(field('discountPercent').value,'37.5');
+ edit('discountPercent','10');await tick();assert.equal(field('discountedPrice').value,'10800');
+ edit('discountedPrice','9000');await tick();assert.equal(field('discountPercent').value,'25');
+ ui.dom.window.close();ui=await openUI(saved);assert.equal(control('quote').checked,true);assert.equal(card('state-one').dataset.workflowStatus,'quote');assert.equal(field('discountedPrice').value,'9000');assert.equal(field('discountPercent').value,'25');
+ edit('discountedPrice','13000');await tick();assert.match(ui.$('item-error').textContent,/magasabb/);assert.equal(saved.notes[0].items[0].discountedPrice,'9000');
+ edit('discountedPrice','9000');await tick();
+ edit('fullPrice','8000');await tick();assert.equal(saved.notes[0].items[0].fullPrice,'12000');
+ edit('discountedPrice','6000');await tick();assert.equal(saved.notes[0].items[0].fullPrice,'8000');assert.equal(field('discountPercent').value,'25');assert.equal(field('fullPrice').validity.valid,true);
+ edit('discountedPrice','9000');await tick();assert.equal(saved.notes[0].items[0].discountedPrice,'6000');
+ edit('fullPrice','10000');await tick();assert.equal(saved.notes[0].items[0].discountedPrice,'9000');assert.equal(field('discountPercent').value,'10');assert.equal(field('discountedPrice').validity.valid,true);
+ ui.input('search','ajanlat');assert.equal(ui.cards().length,1);assert.equal(ui.$('title').value,'Minta ügyfél');ui.dom.window.close();
 });
