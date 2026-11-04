@@ -32,7 +32,7 @@ function setDayContext(day) {
 }
 function visibleNotes() {
   const query = fold($('search').value.trim());
-  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
+  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
     .sort((a, b) => b.day.localeCompare(a.day) || a.created.localeCompare(b.created));
 }
 function openDay(day) {
@@ -148,6 +148,7 @@ function renderTotals(note) {
   $('total-savings').textContent = result.priced ? Items.formatMoney(result.savings) : '—';
   $('total-discounted').textContent = result.priced ? Items.formatMoney(result.discountedPrice) : '—';
   $('price-summary').textContent = result.missing ? result.missing + ' sornál még hiányzik az ár. Az összesítés csak az ismert árú tételeket tartalmazza.' : 'Az összesítés a darabszámokat is figyelembe veszi.';
+  const orders = Items.orderCounts(note.items); $('order-summary').textContent = 'Megrendelve: ' + orders.ordered + ' / ' + orders.total + ' tétel';
 }
 function renderItems(note) {
   $('items-body').replaceChildren();
@@ -158,6 +159,12 @@ function renderItems(note) {
   note.items.forEach((item, index) => {
     const row = document.createElement('tr'); row.dataset.itemId = item.id;
     const output = document.createElement('output'); output.dataset.field = 'discountedPrice'; output.setAttribute('aria-label', 'Kedvezményes ár – ' + (index + 1) + '. sor'); output.textContent = Items.formatMoney(item.discountedPrice);
+    const orderControl = window.ItemOrderUI.create(item, (index + 1) + '. sor', checked => {
+      try {
+        Object.assign(item, Items.withOrder(item, checked)); Items.syncLegacy(note); note.updated = new Date().toISOString();
+        persistNotes(); renderList(); metadata();
+      } catch (error) { $('item-error').textContent = error.message; }
+    });
     const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
     for (const [field, label, type] of columns) {
       const cell = document.createElement('td');
@@ -173,12 +180,13 @@ function renderItems(note) {
         input.setCustomValidity('');
         try {
           if (!input.validity.valid) throw new Error(field === 'quantity' ? 'A darabszám legalább 1, egész szám legyen.' : field === 'discountPercent' ? 'A kedvezmény 0 és 100 közötti százalék legyen.' : 'Az ár nem lehet negatív, és legfeljebb két tizedesjegyű lehet.');
-          const next = { ...item, [field]: input.value };
+          const next = Items.edit(item, { [field]: input.value });
           if (field === 'fullPrice' || field === 'discountPercent') { next.discountedPrice = Items.discounted(next.fullPrice, next.discountPercent); next.priceMode = 'auto'; }
           Items.validate([next]); Object.assign(item, next);
           invalidInputs.delete(input); input.removeAttribute('aria-invalid');
           $('item-error').textContent = invalidInputs.size ? 'Javítsd a megjelölt mezőt a továbblépéshez.' : '';
           output.textContent = Items.formatMoney(item.discountedPrice);
+          orderControl.refresh();
           Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
         } catch (error) {
           input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('item-error').textContent = error.message;
@@ -186,6 +194,7 @@ function renderItems(note) {
       });
       cell.append(input); row.append(cell);
     }
+    row.append(orderControl.cell);
     const actions = document.createElement('td'), remove = document.createElement('button');
     remove.className = 'remove-item'; remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', (index + 1) + '. cikkszámsor törlése');
     remove.onclick = () => {

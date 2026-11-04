@@ -31,7 +31,32 @@
     return decimal(((full - reduced) * HUNDRED_PERCENT + full / 2n) / full, 6);
   }
   function blank(id) {
-    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto' };
+    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '' };
+  }
+  function legacyOrdered(line) {
+    return typeof line === 'string' && /\b(?:megrendelve|rendelve)\s*[.!]?\s*$/iu.test(line) && !/\b(?:nem|nincs|nincsen)\b.*\b(?:megrendelve|rendelve)\b/iu.test(line);
+  }
+  function order(item) {
+    return { ordered: item.ordered === undefined ? legacyOrdered(item.legacyLine) : item.ordered, orderedAt: item.orderedAt || '' };
+  }
+  function normalizeItem(item) { return { ...item, ...order(item) }; }
+  function withOrder(item, ordered, at = new Date().toISOString()) {
+    if (typeof ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
+    if (ordered && !item.partNumber.trim() && !item.description?.trim()) throw new Error('Rendelés jelölése előtt add meg a cikkszámot vagy a megnevezést.');
+    if (ordered && !at) throw new Error('Érvénytelen rendelési időpont');
+    const next = { ...item, ordered, orderedAt: ordered ? at : '' }; validate([next]); return next;
+  }
+  const identity = value => (value || '').replace(/\s+/g, '').toLocaleUpperCase('hu');
+  function edit(item, patch) {
+    const next = { ...item, ...patch };
+    if (identity(next.partNumber) !== identity(item.partNumber) || (!identity(next.partNumber) && identity(next.description) !== identity(item.description))) {
+      next.ordered = false; next.orderedAt = '';
+    }
+    return next;
+  }
+  function orderCounts(items) {
+    const active = items.filter(i => i.partNumber || i.description || i.supplier || i.fullPrice !== '' || i.discountedPrice !== '');
+    return { ordered: active.filter(i => order(i).ordered).length, total: active.length };
   }
   const amount = '(?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,\\d{1,2})?';
   const pairPattern = new RegExp('(?<![\\w.,])(' + amount + ')\\s*(?:Ft(?:\\s*/\\s*db)?)?\\s*[-–]\\s*(' + amount + ')\\s*Ft(?:\\s*/\\s*db)?(?!\\w)', 'gi');
@@ -40,6 +65,7 @@
   const legacyAmount = value => value.replaceAll('.', '').replace(',', '.');
   function parseLegacyLine(line, index) {
     const item = { ...blank('legacy-' + (index + 1)), legacyLine: line, priceMode: 'legacy' };
+    item.ordered = legacyOrdered(line);
     const pairs = [...line.matchAll(pairPattern)], prices = [...line.matchAll(pricePattern)];
     let prefix = line;
     const supplier = suppliers.exec(line);
@@ -67,7 +93,7 @@
     return item;
   }
   function normalizeNote(note) {
-    if (note.items !== undefined) { validate(note.items); return { ...note, items: note.items.map(item => ({ ...item })) }; }
+    if (note.items !== undefined) { validate(note.items); return { ...note, items: note.items.map(normalizeItem) }; }
     const part = note.part ?? '';
     const items = part.split(/\r?\n/).filter(line => line.trim()).map(parseLegacyLine);
     const result = { ...note, items };
@@ -83,6 +109,8 @@
       ids.add(item.id);
       if (item.description !== undefined && typeof item.description !== 'string') throw new Error('Érvénytelen tételmegnevezés');
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
+      if (item.ordered !== undefined && typeof item.ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
+      if (item.orderedAt !== undefined && (typeof item.orderedAt !== 'string' || (item.orderedAt !== '' && (!Number.isFinite(Date.parse(item.orderedAt)) || new Date(item.orderedAt).toISOString() !== item.orderedAt || item.ordered !== true)))) throw new Error('Érvénytelen rendelési időpont');
       quantity(item.quantity); percent(item.discountPercent);
       if (item.fullPrice !== '') cents(item.fullPrice);
       if (item.discountedPrice !== '') cents(item.discountedPrice);
@@ -108,12 +136,12 @@
     return (negative ? '−' : '') + whole + (fraction ? ',' + fraction.toString().padStart(2, '0') : '') + ' Ft';
   }
   function syncLegacy(note) {
-    note.part = note.items.filter(item => item.partNumber || item.fullPrice || item.supplier).map(item => [item.partNumber, item.supplier, item.fullPrice ? item.fullPrice + 'Ft' + (item.discountedPrice ? '-' + item.discountedPrice + 'Ft' : '') : '', item.quantity !== '1' ? 'x' + item.quantity : ''].filter(Boolean).join(' ')).join('\n');
+    note.part = note.items.filter(item => item.partNumber || item.fullPrice || item.supplier).map(item => [item.partNumber, item.supplier, item.fullPrice ? item.fullPrice + 'Ft' + (item.discountedPrice ? '-' + item.discountedPrice + 'Ft' : '') : '', item.quantity !== '1' ? 'x' + item.quantity : '', order(item).ordered ? 'Rendelve' : ''].filter(Boolean).join(' ')).join('\n');
     const result = totals(note.items);
     note.fullPrice = result.priced && !result.missing ? result.fullPrice : '';
     note.discountPrice = result.priced && !result.missing ? result.discountedPrice : '';
   }
-  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, validate, totals, formatMoney, syncLegacy };
+  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, validate, totals, formatMoney, syncLegacy, order, withOrder, edit, orderCounts };
   if (typeof module !== 'undefined') module.exports = api;
   else root.LineItems = api;
 })(globalThis);

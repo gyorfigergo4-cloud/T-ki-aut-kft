@@ -18,11 +18,11 @@
  $('tab-notes').onclick=()=>showTab('notes');$('tab-workorders').onclick=()=>showTab('workorders');
  function list(){
   $('wo-list').replaceChildren();const query=fold($('wo-search').value.trim());
-  const visible=docs.filter(d=>fold([d.number,d.customer,d.vin,d.plate,d.vehicle,...d.items.map(i=>i.partNumber+' '+i.description)].join(' ')).includes(query)).sort((a,b)=>b.updated.localeCompare(a.updated));
+  const visible=docs.filter(d=>fold([d.number,d.customer,d.vin,d.plate,d.vehicle,...d.items.map(i=>[i.partNumber,i.description||'',Items.order(i).ordered?'megrendelve rendelve':'',Items.order(i).orderedAt].join(' '))].join(' ')).includes(query)).sort((a,b)=>b.updated.localeCompare(a.updated));
   for(const doc of visible){const button=document.createElement('button');button.className='wo-card'+(doc.id===selected?' active':'');button.dataset.docId=doc.id;const name=document.createElement('strong');name.textContent=doc.customer||'Új ügyfél';const number=document.createElement('small');number.textContent=doc.number+' · '+doc.day;button.append(name,number);button.onclick=()=>{if(!canLeave())return;selected=doc.id;render();};$('wo-list').append(button);}
   if(!visible.length){const text=document.createElement('p');text.className='sidebar-empty';text.textContent=docs.length?'Nincs találat.':'Még nincs munkalap.';$('wo-list').append(text);}
  }
- function totals(){const doc=current();if(!doc)return;const value=Items.totals(doc.items);$('wo-price-summary').textContent=value.missing?value.missing+' tételnél még hiányzik az ár; az összesítés csak részösszeg. Nyomtatás előtt töltsd ki az árakat.':'Az összesítés a darabszámokat is figyelembe veszi.';$('wo-total').previousElementSibling.textContent=value.missing?'Kedvezményes részösszeg':'Összesen';for(const [id,key]of [['wo-total-full','fullPrice'],['wo-total-savings','savings'],['wo-total','discountedPrice']])$(id).textContent=value.priced?Items.formatMoney(value[key]):'—';}
+ function totals(){const doc=current();if(!doc)return;const value=Items.totals(doc.items);$('wo-price-summary').textContent=value.missing?value.missing+' tételnél még hiányzik az ár; az összesítés csak részösszeg. Nyomtatás előtt töltsd ki az árakat.':'Az összesítés a darabszámokat is figyelembe veszi.';$('wo-total').previousElementSibling.textContent=value.missing?'Kedvezményes részösszeg':'Összesen';for(const [id,key]of [['wo-total-full','fullPrice'],['wo-total-savings','savings'],['wo-total','discountedPrice']])$(id).textContent=value.priced?Items.formatMoney(value[key]):'—';const orders=Items.orderCounts(doc.items);$('wo-order-summary').textContent='Megrendelve: '+orders.ordered+' / '+orders.total+' tétel';}
  function heading(){const doc=current();if(doc)$('wo-title').textContent=(doc.kind==='quote'?'Árajánlat':'Munkalap')+' · '+doc.number;}
  function renderItems(){
   const doc=current();$('wo-items').replaceChildren();
@@ -31,6 +31,7 @@
   doc.items.forEach((item,index)=>{
    const row=document.createElement('tr');row.dataset.itemId=item.id;
    const output=document.createElement('output');output.textContent=Items.formatMoney(item.discountedPrice);output.setAttribute('aria-label','Kedvezményes ár – '+(index+1)+'. munkalapsor');
+   const orderControl=window.ItemOrderUI.create(item,(index+1)+'. munkalapsor',checked=>{try{Object.assign(item,Items.withOrder(item,checked));doc.updated=new Date().toISOString();persist();totals();list();}catch(error){$('wo-error').textContent=error.message;}});
    for(const [field,label,type]of [['partNumber','Cikkszám','text'],['description','Megnevezés','text'],['fullPrice','Teli ár','number'],['discountPercent','Kedvezmény %','number'],['discountedPrice'],['quantity','Db','number']]){
     const cell=document.createElement('td');
     if(field==='discountedPrice'){cell.className='calculated-price';cell.append(output);row.append(cell);continue;}
@@ -42,12 +43,12 @@
     if(field==='description'){input.placeholder='Pl. olajszűrő';input.maxLength=1000;}
     input.oninput=()=>{
      input.setCustomValidity('');
-     try{if(!input.validity.valid)throw new Error('Ellenőrizd a mezőt: az ár nem negatív, a kedvezmény 0–100%, a darabszám pozitív egész legyen.');const next={...item,[field]:input.value};if(['fullPrice','discountPercent'].includes(field)){next.discountedPrice=Items.discounted(next.fullPrice,next.discountPercent);next.priceMode='auto';}Items.validate([next]);Object.assign(item,next);doc.updated=new Date().toISOString();invalid.delete(input);input.removeAttribute('aria-invalid');$('wo-error').textContent=invalid.size?'Javítsd a megjelölt mezőt.':'';output.textContent=Items.formatMoney(item.discountedPrice);persist();totals();list();}
+     try{if(!input.validity.valid)throw new Error('Ellenőrizd a mezőt: az ár nem negatív, a kedvezmény 0–100%, a darabszám pozitív egész legyen.');const next=Items.edit(item,{[field]:input.value});if(['fullPrice','discountPercent'].includes(field)){next.discountedPrice=Items.discounted(next.fullPrice,next.discountPercent);next.priceMode='auto';}Items.validate([next]);Object.assign(item,next);doc.updated=new Date().toISOString();invalid.delete(input);input.removeAttribute('aria-invalid');$('wo-error').textContent=invalid.size?'Javítsd a megjelölt mezőt.':'';output.textContent=Items.formatMoney(item.discountedPrice);orderControl.refresh();persist();totals();list();}
      catch(error){input.setCustomValidity(error.message);input.setAttribute('aria-invalid','true');invalid.add(input);$('wo-error').textContent=error.message;}
     };
     cell.append(input);row.append(cell);
    }
-   const cell=document.createElement('td'),remove=document.createElement('button');remove.type='button';remove.className='remove-item';remove.textContent='×';remove.setAttribute('aria-label',(index+1)+'. munkalapsor törlése');remove.onclick=()=>{for(const input of row.querySelectorAll('input'))invalid.delete(input);if(!canLeave())return;doc.items=doc.items.filter(i=>i.id!==item.id);doc.updated=new Date().toISOString();persist();renderItems();totals();};cell.append(remove);row.append(cell);$('wo-items').append(row);
+   row.append(orderControl.cell);const cell=document.createElement('td'),remove=document.createElement('button');remove.type='button';remove.className='remove-item';remove.textContent='×';remove.setAttribute('aria-label',(index+1)+'. munkalapsor törlése');remove.onclick=()=>{for(const input of row.querySelectorAll('input'))invalid.delete(input);if(!canLeave())return;doc.items=doc.items.filter(i=>i.id!==item.id);doc.updated=new Date().toISOString();persist();renderItems();totals();};cell.append(remove);row.append(cell);$('wo-items').append(row);
   });
  }
  const fields=['kind','number','day','customer','phone','vin','vehicle','plate','validUntil','publicNote','internalNote'];

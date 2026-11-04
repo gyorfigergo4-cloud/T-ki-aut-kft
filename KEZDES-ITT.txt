@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.2.2
+TÖKI AUTÓ KFT. – JEGYZETEK 1.3
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -43,3 +43,10 @@ Az új program saját fekete-zöld, autós ikont használ.
 A TokiAuto-Inditas.cmd az általa létrehozott asztali parancsikont is frissíti.
 A kis TokiAuto-Asztali-Ikon.zip csomag a korábban telepített app
 asztali ikonját külön is frissíti a TokiAuto-Ikon-Frissites.cmd indításával.
+
+MEGRENDELVE JELÖLÉS
+A tételek Rendelés oszlopában pipáld ki, amit már megrendeltél.
+A sor zöld jelölést és időpontot kap; az app automatikusan menti.
+A jelölés visszavonható. Más cikkszámra váltás törli a korábbi jelölést.
+A régi Rendelve szövegeknél Korábbi jelölés látszik, időpont nélkül.
+A belső rendelésjelölés az ügyfél nyomtatásán és PDF-jében nem szerepel.

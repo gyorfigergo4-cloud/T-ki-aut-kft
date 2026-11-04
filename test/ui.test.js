@@ -14,7 +14,7 @@ async function openUI(saved) {
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
     export: async () => true
   };
-  for (const script of ['items.js', 'archive.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   await tick();
   const $ = id => window.document.getElementById(id);
   const input = (id, value) => { $(id).value = value; $(id).dispatchEvent(new window.Event('input')); };
@@ -171,4 +171,16 @@ test('a nap szerint egyértelmű TXT-mappa külön megerősítés nélkül betö
  ui.$('import-folder').click();await tick();await tick();assert.equal(imported,1);assert.match(ui.$('folder-message').textContent,/már be van töltve/);ui.$('folder-close').click();
  w.notesAPI.importFolder=async()=>({ok:true,token:'new',files:1,issues:[{path:'Jegyzetek/2026/Február/Teszt.txt',min:'2026-02-01',max:'2026-02-28',month:'2026. február'}]});
  ui.$('import-folder').click();await tick();await tick();ui.$('folder-close').click();assert.equal(released,1);assert.equal(imported,1);w.close();
+});
+test('a rendelésjelölés látható, időponttal mentődik, újranyitáskor megmarad és visszavonható',async()=>{
+ const saved={notes:[{id:'order-ui',title:'Minta ügyfél',body:'',day:'2026-11-04',updated:'2026-11-04T12:00:00Z',items:[{id:'a',partNumber:'A123',fullPrice:'10000',discountPercent:'20',discountedPrice:'8000',quantity:'2',supplier:'IC',priceMode:'auto'}]}],archive:{years:[2024,2025,2026],days:['2026-11-04']}};
+ let ui=await openUI(saved);const checkbox=ui.$('items-body').querySelector('[data-field=ordered]');
+ assert.equal(checkbox.checked,false);checkbox.click();await tick();
+ assert.equal(saved.notes[0].items[0].ordered,true);assert.ok(Number.isFinite(Date.parse(saved.notes[0].items[0].orderedAt)));const stamp=saved.notes[0].items[0].orderedAt;
+ assert.equal(ui.$('items-body').querySelector('time').getAttribute('datetime'),stamp);assert.match(ui.$('order-summary').textContent,/1 \/ 1/);assert.equal(saved.notes[0].discountPrice,'16000');
+ ui.dom.window.close();ui=await openUI(saved);assert.equal(ui.$('items-body').querySelector('[data-field=ordered]').checked,true);assert.equal(ui.$('items-body').querySelector('time').getAttribute('datetime'),stamp);
+ const quantity=ui.$('items-body').querySelector('[data-field=quantity]');quantity.value='3';quantity.dispatchEvent(new ui.dom.window.Event('input'));await tick();assert.equal(saved.notes[0].items[0].orderedAt,stamp);assert.equal(saved.notes[0].discountPrice,'24000');
+ ui.$('items-body').querySelector('[data-field=ordered]').click();await tick();assert.equal(saved.notes[0].items[0].ordered,false);assert.equal(saved.notes[0].items[0].orderedAt,'');assert.equal(ui.$('items-body').querySelector('time').hidden,true);
+ ui.$('items-body').querySelector('[data-field=ordered]').click();await tick();const part=ui.$('items-body').querySelector('[data-field=partNumber]');part.value='B456';part.dispatchEvent(new ui.dom.window.Event('input'));await tick();assert.equal(ui.$('items-body').querySelector('[data-field=ordered]').checked,false);assert.equal(saved.notes[0].items[0].orderedAt,'');
+ ui.dom.window.close();
 });

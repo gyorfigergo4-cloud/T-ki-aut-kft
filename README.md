@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Rendelésjelölés az 1.3-as verzióban
+
+A napi jegyzetek és a munkalapok minden tételsorában külön **Rendelés** mező található. A Megrendelve pipa zöld jelzést ad, és elmenti a kézi jelölés időpontját. A pipa visszavonható; új jelöléskor új időpontot kap. Az ár vagy darabszám módosítása nem változtatja meg a jelölést, más cikkszámra váltás törli azt, hogy új terméken ne maradjon téves visszaigazolás. Üres cikkszám és megnevezés mellett nem jelölhető rendelés. Az összesítés mutatja, hány tétel van megjelölve.
+
+A régi cikkszámsor végén álló egyértelmű „Rendelve” vagy „Megrendelve” jelzés automatikusan megjelenik. Ezekhez időpontot nem talál ki: „Korábbi jelölés” látszik. A „nincs rendelve”, „nem megrendelve” és jövőbeli vagy kérdéses szöveget nem tekinti visszaigazolásnak. A korábbi adatokhoz az új mezők opcionálisak; eredeti szövegük megmarad. A JSON-mentés a jelölést és az időpontot is tartalmazza. A jegyzetből készített munkalap átveszi a tétel pillanatnyi jelölését.
+
+A rendelés állapota belső adat, a külön nyomtatási és PDF-dokumentum nem kapja meg. A pipa az üzletben már elvégzett rendelés kézi nyilvántartására szolgál. A korábbi Töki Autós ikon és minden meglévő funkció megmarad.
+
 ## Saját Windows-ikon az 1.2.2-es verzióban
 
 Az alkalmazás fekete-zöld Töki Autó ikont kapott, autós jelképpel. A Windows EXE erőforrásaiba több felbontású ICO kerül, az ablak ugyanennek a PNG-változatát használja. Az indító az általa kezelt asztali parancsikon ikonforrását is beállítja.
@@ -61,7 +69,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.2.2-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.3-as, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 
