@@ -32,7 +32,7 @@ function setDayContext(day) {
 }
 function visibleNotes() {
   const query = fold($('search').value.trim());
-  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
+  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
     .sort((a, b) => b.day.localeCompare(a.day) || a.created.localeCompare(b.created));
 }
 function openDay(day) {
@@ -257,6 +257,7 @@ $('delete').onclick = () => $('confirm').showModal(); $('cancel').onclick = () =
 $('remove').onclick = () => { invalidInputs.clear(); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
 $('export').onclick = async () => {
   if (!loaded) return;
+  if (window.WorkOrdersUI) { try { await window.WorkOrdersUI.flush(); } catch { return; } }
   try { if (await window.notesAPI.export(notes, archiveData())) $('status').textContent = '✓ Biztonsági mentés elkészült'; }
   catch { $('status').textContent = 'Nem sikerült a biztonsági mentés.'; }
 };
@@ -264,11 +265,12 @@ window.addEventListener('beforeunload', event => {
   if (invalidInputs.size) { event.preventDefault(); event.returnValue = false; allowNavigation(); }
   else if (pending || saveErrors.size) { event.preventDefault(); event.returnValue = false; queue.then(() => { if (!pending && !saveErrors.size) window.close(); }); }
 });
-function loadData() {
+function loadData(preferredNoteId) {
 return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data, archive]) => {
   ({ notes, years, days } = normalize(data, archive)); loaded = true;
-  const initialDay = days.includes(today) ? today : [...days].sort().at(-1) ?? today;
-  setDayContext(initialDay); selected = notes.find(note => note.day === initialDay)?.id ?? null;
+  const preferred = notes.find(note => note.id === preferredNoteId);
+  const initialDay = preferred?.day || (days.includes(today) ? today : [...days].sort().at(-1) ?? today);
+  setDayContext(initialDay); selected = preferred?.id || notes.find(note => note.day === initialDay)?.id || null;
   $('status').textContent = '✓ Minden változás mentve'; render();
 }).catch(() => {
   $('status').textContent = 'A mentett adatok nem olvashatók. Az eredeti fájlok megmaradtak.';
@@ -288,3 +290,14 @@ $('import-folder').onclick = async () => {
   finally { $('import-folder').disabled = false; }
 };
 loadData();
+window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowNavigation });
+window.NotesRefresh = loadData;
+window.NotesFlush = async () => {
+ if (!loaded) throw new Error('A jegyzetek még nem töltődtek be.');
+ await queue;
+ if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült. Beolvasás előtt ellenőrizd a lemez szabad helyét.');
+};
+window.NoteForWorkOrder = () => { if (!allowNavigation()) return null; return current(); };
+window.addEventListener('excel-imported', async event => {
+ if (event.detail.target === 'notes') { await loadData(event.detail.noteId); $('status').textContent = event.detail.message; }
+});

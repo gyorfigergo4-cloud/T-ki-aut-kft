@@ -2,6 +2,26 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Újdonság az 1.2-es verzióban
+
+### Excel-beolvasás
+
+A bal alsó **Excel beolvasása** gomb helyi `.xlsx` fájlt nyit meg. Excel telepítése nem kell. A régi `.xls` fájlt előbb `.xlsx` formátumban kell menteni. Kiválasztható az Excel-munkalap, a fejléc sora és az oszlopok párosítása. Előnézet mutatja a tételeket, ügyfeleket, napokat és hibákat; hibás sorokkal nem történik import. Dátum nélküli sorokhoz külön nap és név állítható be. Az üres név/dátum előző sorból való kitöltése opcionális.
+
+A cél lehet a napi jegyzetek vagy a megnyitott munkalap. A napi jegyzetek név/alvázszám/nap szerint külön csoportokat kapnak. Egy munkalaphoz egy ügyfél és egy jármű tételei adhatók. A százalékként formázott Excel-cellát helyesen értelmezi (0,2 = 20%); a darabszám, beszállító, megnevezés és eredeti cellatartalom is megmarad. A képletek nem futnak: mentett eredményük olvasható, hiányzó eredménynél hibát jelez. Az eredeti fájl nem módosul. Azonos fájl azonos sorainak ismételt importja nem duplázza a tételeket. Excel-mintafájl is menthető az importablakból.
+
+Legfeljebb 20 MB-os fájl, 50 000 sor és 256 oszlop támogatott. A ZIP-tartalom mérete és kicsomagolt adatfolyama külön ellenőrzött, korlátos. Az adatok helyben maradnak; az import nem használ külső szolgáltatást.
+
+### Munkalapok / árajánlatok
+
+Külön fülön szerkeszthetők és kereshetők, automatikus mentéssel a `%APPDATA%\jegyzetfuzet\workorders.json` fájlba. Sorszámot kapnak, típusuk árajánlat vagy munkalap lehet. Mezők: ügyfélnév, telefon, alvázszám, rendszám, jármű, dátum és opcionális érvényesség. A napi jegyzetből a **Munkalap készítése** gombbal is indítható új dokumentum. Az árak és a darabszám ugyanúgy számolódnak, mint a cikkszámtáblázatban.
+
+**A cikkszám nem kerül a nyomtatási dokumentumba.** A nyomtatás külön, engedélyezett mezőkből összeállított dokumentumot használ; a cikkszám, beszállító, eredeti forrássor és belső megjegyzés át sem kerül annak adatai közé. Az ügyfélnek a külön **Megnevezés** mező látszik, üres megnevezésnél „Alkatrész”. A megadott cikkszámokat a szabad szöveges mezőkből is eltávolítja. A nyomtatás előnézettel, natív nyomtatási ablakkal és PDF-mentéssel kérhető. A Ctrl+P erre a biztonságos útvonalra irányít, a fő szerkesztő közvetlen nyomtatását külön CSS-védelem is megakadályozza.
+
+Ügyfélnév és árazott tétel szükséges a nyomtatáshoz. Az összes tétel árát ki kell tölteni. A nyomtatás A4-es, több oldalra is tördelődik. A PDF-et ténylegesen elkészítettük és kinyert szövegében ellenőriztük a cikkszámok és belső megjegyzések hiányát, az alvázszám és összegek megmaradását. A fizikai Windows-nyomtató párbeszédét a Linux-környezetben nem tudjuk közvetlenül tesztelni.
+
+A munkalapok az általános JSON-biztonsági mentésbe is bekerülnek. Frissítéskor a korábbi jegyzetek és adatok ugyanott maradnak. Egy időben egy apppéldány fut; újbóli indítás a meglévő ablakot hozza előtérbe.
+
 ## Újdonság az 1.1-es verzióban
 
 A cikkszámok külön sorokban, hat oszlopban kezelhetők: cikkszám, teli egységár (Ft/db), kedvezmény (%), automatikusan számított kedvezményes egységár (Ft/db), darabszám és beszállító. Új sor vehető fel, a sorok egyenként törölhetők. A beszállító szabadon írható, a gyakori nevekhez felajánlás tartozik.
@@ -29,7 +49,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. Az autóbolti felület még egyeztetés alatt van; a meglévő ZIP a korábbi általános jegyzetelő buildje, az új felület véglegesítése után újra kell csomagolni.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.2-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 
@@ -49,13 +69,13 @@ python3 scripts/verify-import.py /path/to/notes.zip app/private-data/initial-imp
 python3 -m unittest discover -s test -p 'test_import_*.py'
 ```
 
-A Windows-felhasználónak ehhez nem kell Python: a csomag a már feldolgozott adatokat tölti be.
+A Windows-felhasználónak ehhez nem kell Python: az app helyi beolvasója az eredeti TXT-mappát dolgozza fel.
 
 ## Windows letöltés és indítás
 
 1. Töltsd le a tároló ZIP-archívumát, és csomagold ki az egész mappát.
 2. Kattints duplán a `TokiAuto-Inditas.cmd` fájlra. A program ellenőrzött csomagja a `downloads` részekből helyben összeáll, a saját felhasználód AppData könyvtárába kerül, és elindul. A részeket hagyd a helyükön. Internet csak a ZIP letöltéséhez kell.
-3. Az appban kattints a **Jegyzetmappa betöltése** gombra, és válaszd a saját **Napi jegyzetek** mappádat (amelyben a 2024, 2025, 2026 almappák vannak).
+3. Első használatkor az appban kattints a **Jegyzetmappa** gombra, és válaszd a saját **Napi jegyzetek** mappádat (amelyben a 2024, 2025, 2026 almappák vannak). Frissítéskor a meglévő jegyzeteid automatikusan megmaradnak.
 4. A későbbiekhez asztali parancsikon is készül, ha a Windows engedélyezi.
 
 Windows 10/11 x64 Intel/AMD géphez készült. Rendszergazdai telepítés nem szükséges; a program nincs digitálisan aláírva. A Windows alatti indítást ebben a Linux-környezetben nem tudtuk közvetlenül kipróbálni. A csomag, az összes jegyzet helyi feldolgozása és a felület tesztjei ellenőrizve vannak.
@@ -73,6 +93,6 @@ npm start
 npm run package:win
 ```
 
-A Windows-csomag a `dist/Jegyzetfuzet-win32-x64` könyvtárba kerül. Proxyt igénylő környezetben az Electron letöltéséhez `ELECTRON_GET_USE_PROXY=1`, valamint a `GLOBAL_AGENT_HTTP_PROXY` és `GLOBAL_AGENT_HTTPS_PROXY` beállítása szükséges a meglévő proxycímekre. A TLS- és checksum-ellenőrzést hagyd bekapcsolva.
+A Windows-csomag a `dist/TokiAuto-win32-x64` könyvtárba kerül. Proxyt igénylő környezetben az Electron letöltéséhez `ELECTRON_GET_USE_PROXY=1`, valamint a `GLOBAL_AGENT_HTTP_PROXY` és `GLOBAL_AGENT_HTTPS_PROXY` beállítása szükséges a meglévő proxycímekre. A TLS- és checksum-ellenőrzést hagyd bekapcsolva.
 
 Ellenőrzés: adattárolási, archívum- és DOM funkcionális tesztek Linuxon; böngészőben a mappák, több név, új év és nap, keresés és újratöltés ellenőrizve mintaadatokkal. A Windows bináris futtatása külön Windows gépen ellenőrizendő.

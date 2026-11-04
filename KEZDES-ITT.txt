@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.1
+TÖKI AUTÓ KFT. – JEGYZETEK 1.2
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -22,3 +22,11 @@ CIKKSZÁMOK
 Minden tétel külön sor: cikkszám, teli ár, kedvezmény %,
 kedvezményes ár, db és beszállító. Az árak egy darabra vonatkoznak.
 A kedvezményes ár és az összesítés automatikusan számolódik.
+
+EXCEL ÉS MUNKALAPOK
+Excel beolvasása: .xlsx fájl, munkalap és oszlopok kiválasztása, előnézet.
+A régi .xls fájlt előbb mentsd .xlsx-ként.
+A Munkalapok fülön új árajánlat vagy munkalap készíthető, alvázszámmal.
+A Megnevezés mező kerül a nyomtatásra, a cikkszám nem.
+A belső megjegyzést sem nyomtatja. Van Előnézet, Nyomtatás és PDF mentés.
+Frissítés előtt zárd be a régi appot; a korábbi adataid megmaradnak.

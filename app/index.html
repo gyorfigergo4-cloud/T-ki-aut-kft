@@ -8,14 +8,18 @@
 <body>
   <aside>
     <header class="brand"><img class="brand-logo" src="assets/toki-logo.png" alt="Töki Autó Alkatrész" width="238" height="103"><h1 class="sr-only">Töki Autó Kft. · Belső jegyzetek</h1><small class="brand-caption">BELSŐ JEGYZETEK</small></header>
+    <div class="app-tabs" role="tablist" aria-label="Részlegek"><button id="tab-notes" role="tab" aria-selected="true" aria-controls="notes-view">Jegyzetek</button><button id="tab-workorders" role="tab" aria-selected="false" aria-controls="workorders-view">Munkalapok</button></div>
+    <section id="notes-navigation" class="sidebar-navigation">
     <label class="sr-only" for="search">Keresés minden évben és adatmezőben</label>
     <div class="search-box"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="search" type="search" placeholder="Keresés minden évben…"></div>
     <button id="clear" hidden>Keresés törlése</button>
     <div class="section"><span>ÉVEK ÉS HÓNAPOK</span><button id="add-year" title="Új év hozzáadása" aria-label="Új év hozzáadása">＋ Év</button></div>
     <nav id="folders" aria-label="Év, hónap és nap szerinti mappák"></nav>
-    <footer><div class="local-status"><span class="status-dot"></span>Automatikus mentés ezen a gépen</div><button id="import-folder">Jegyzetmappa betöltése</button><button id="export"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>Biztonsági mentés</button><div class="brand-footer">TÖKI AUTÓ KFT. <span>BELSŐ HASZNÁLATRA</span></div></footer>
+    </section>
+    <section id="workorders-navigation" class="sidebar-navigation" hidden><input id="wo-search" type="search" placeholder="Ügyfél, alvázszám, sorszám…" aria-label="Munkalapok keresése"><button id="wo-new" class="primary">＋ Új munkalap / ajánlat</button><div class="section">MENTETT MUNKALAPOK</div><nav id="wo-list" aria-label="Mentett munkalapok"></nav></section>
+    <footer><div class="local-status"><span class="status-dot"></span>Automatikus mentés ezen a gépen</div><div class="import-buttons"><button id="import-folder" title="Jegyzetmappa betöltése">Jegyzetmappa</button><button id="import-excel" title="Excel-fájl beolvasása (.xlsx)">Excel beolvasása</button></div><button id="export"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>Biztonsági mentés</button><div class="brand-footer">TÖKI AUTÓ KFT. <span>BELSŐ HASZNÁLATRA</span></div></footer>
   </aside>
-  <main>
+  <main id="notes-view" role="tabpanel" aria-labelledby="tab-notes">
     <div class="topbar"><div class="location"><span class="workspace-label">BELSŐ NYILVÁNTARTÁS</span><div id="breadcrumb" class="eyebrow"></div></div><div class="topbar-actions"><span id="status" role="status">Betöltés…</span><button id="add-day">＋ Nap hozzáadása</button></div></div>
     <section class="day-overview" aria-label="A naphoz tartozó nevek">
       <div class="day-heading"><div><h2 id="day-heading">Napi bejegyzések</h2><p id="day-description"></p></div><button id="new" class="primary" disabled>＋ Új név a naphoz</button></div>
@@ -23,7 +27,7 @@
     </section>
     <section id="empty"><div class="empty-icon">▤</div><h2>Ennek a napnak még nincs bejegyzése.</h2><p>Az „Új név a naphoz” gombbal veheted fel az első adatlapot.</p></section>
     <section id="editor" hidden>
-      <div class="editor-top"><div><div class="eyebrow">ÜGYFÉL / ALKATRÉSZ</div><h2>Bejegyzés adatai</h2></div><button id="delete" class="danger" disabled>Bejegyzés törlése</button></div>
+      <div class="editor-top"><div><div class="eyebrow">ÜGYFÉL / ALKATRÉSZ</div><h2>Bejegyzés adatai</h2></div><div class="editor-actions"><button id="note-to-wo">Munkalap készítése</button><button id="delete" class="danger" disabled>Bejegyzés törlése</button></div></div>
       <div id="date"></div>
       <details id="import-source" hidden><summary>Átvett jegyzet · eredeti szöveg megtekintése</summary><p id="import-path"></p><pre id="import-original"></pre></details>
       <div class="fields">
@@ -44,8 +48,36 @@
       <label class="body-label" for="body">Megjegyzés</label><textarea id="body" placeholder="Egyeztetés, állapot, fontos tudnivalók…"></textarea><div id="words"></div>
     </section>
   </main>
+  <main id="workorders-view" role="tabpanel" aria-labelledby="tab-workorders" hidden>
+    <div class="topbar"><div class="location"><span class="workspace-label">MUNKALAPOK ÉS ÁRAJÁNLATOK</span><div class="eyebrow">TÖKI AUTÓ KFT.</div></div><span id="wo-status" role="status">Betöltés…</span></div>
+    <section id="wo-empty"><div class="empty-icon">▤</div><h2>Külön munkalap, áttekinthető ajánlat.</h2><p>Hozz létre új munkalapot, vagy nyiss meg egy korábbit.</p><p>A cikkszám belső adat, a nyomtatásban nem szerepel.</p></section>
+    <section id="wo-editor" hidden>
+      <div class="wo-heading"><div><div class="eyebrow">ÜGYFÉLNEK ADHATÓ DOKUMENTUM</div><h2 id="wo-title">Új árajánlat</h2></div><div class="wo-actions"><button id="wo-preview">Előnézet</button><button id="wo-pdf">PDF mentése</button><button id="wo-print" class="primary">Nyomtatás</button><button id="wo-delete" class="danger">Törlés</button></div></div>
+      <div class="print-privacy">✓ A cikkszám és a belső megjegyzés nem kerül a nyomtatásra.</div>
+      <div class="work-fields">
+        <label>Típus<select id="wo-kind"><option value="quote">Árajánlat</option><option value="workorder">Munkalap</option></select></label>
+        <label>Sorszám<input id="wo-number" maxlength="80" required></label><label>Kiállítás dátuma<input id="wo-day" type="date" required></label>
+        <label class="span2">Ügyfél neve<input id="wo-customer" placeholder="Név / cégnév" maxlength="200"></label><label>Telefon<input id="wo-phone" maxlength="100"></label>
+        <label class="span2">Alvázszám<input id="wo-vin" placeholder="Alvázszám" maxlength="1000" spellcheck="false"></label><label>Rendszám<input id="wo-plate" maxlength="80"></label>
+        <label class="span2">Jármű<input id="wo-vehicle" placeholder="Márka, típus" maxlength="300"></label><label>Ajánlat érvényes eddig<input id="wo-validUntil" type="date"></label>
+      </div>
+      <section class="items-section"><div class="items-heading"><div><h3>Munkalap tételei</h3><p>A megnevezés szerepel a nyomtatásban. Az árak Ft/db egységárak.</p></div><button id="wo-add-item">＋ Tétel hozzáadása</button></div>
+      <div class="items-scroll"><table id="wo-table"><colgroup><col class="wo-col-code"><col class="wo-col-description"><col class="wo-col-price"><col class="wo-col-percent"><col class="wo-col-reduced"><col class="wo-col-quantity"><col class="wo-col-action"></colgroup><thead><tr><th>Cikkszám<small>Csak belső használatra</small></th><th>Megnevezés<small>A nyomtatásban ez látszik</small></th><th>Teli ár<small>Ft/db</small></th><th>Kedvezmény<small>%</small></th><th>Kedvezményes ár<small>Ft/db</small></th><th>Db</th><th><span class="sr-only">Törlés</span></th></tr></thead><tbody id="wo-items"></tbody></table></div>
+      <p id="wo-error" class="error" role="alert"></p><div class="items-totals"><div><span>Teli összesen</span><strong id="wo-total-full">—</strong></div><div><span>Kedvezmény összesen</span><strong id="wo-total-savings">—</strong></div><div class="payable"><span>Összesen</span><strong id="wo-total">—</strong></div></div><p id="wo-price-summary"></p></section>
+      <label class="body-label" for="wo-publicNote">Megjegyzés az ügyfélnek – megjelenik a nyomtatáson</label><textarea id="wo-publicNote" class="work-note" rows="3" placeholder="Egyeztetés, vállalási feltételek…"></textarea>
+      <details id="wo-excel-sources" class="internal-details" hidden><summary>Excelből átvett eredeti sorok – belső adatok</summary><pre id="wo-excel-text"></pre></details>
+      <details class="internal-details"><summary>Belső megjegyzés – nem nyomtatjuk</summary><textarea id="wo-internalNote" class="work-note" rows="4" placeholder="Belső információk, beszerzés, saját megjegyzések…"></textarea></details>
+    </section>
+  </main>
+  <dialog id="wo-confirm"><h2>Törlöd ezt a munkalapot?</h2><p>A többi munkalap és a napi jegyzeteid megmaradnak.</p><div class="dialog-actions"><button id="wo-cancel-delete">Mégse</button><button id="wo-confirm-delete" class="danger">Törlés</button></div></dialog>
+  <dialog id="excel-dialog"><div class="excel-heading"><div><div class="eyebrow">HELYI EXCEL-BEOLVASÁS</div><h2>Excel-tételek beolvasása</h2></div><button id="excel-close" aria-label="Excel ablak bezárása">×</button></div><p id="excel-file"></p>
+    <div class="excel-settings"><label>Excel-munkalap<select id="excel-sheet"></select></label><label>Fejléc sora<input id="excel-header" type="number" min="1" step="1"></label><label>Beolvasás helye<select id="excel-target"><option value="notes">Napi jegyzetek</option><option value="workorder">A megnyitott munkalap tételei</option></select></label></div>
+    <h3>Oszlopok párosítása</h3><div id="excel-mapping"></div>
+    <div class="excel-settings"><label>Dátum nélküli sorok napja<input id="excel-day" type="date"></label><label>Név, ha nincs külön oszlop<input id="excel-name" maxlength="200"></label><label class="checkbox-label"><input id="excel-fill" type="checkbox"> Üres név/dátum az előző sorból</label></div>
+    <p id="excel-summary" role="status"></p><div id="excel-errors" role="alert"></div><div id="excel-warnings"></div><div class="excel-preview"><table><thead><tr><th>Név / nap</th><th>Cikkszám</th><th>Megnevezés</th><th>Teli ár</th><th>Kedv. %</th><th>Kedv. ár</th><th>Db</th><th>Beszállító</th></tr></thead><tbody id="excel-preview"></tbody></table></div><div class="dialog-actions"><button id="excel-template">Excel-minta mentése</button><button id="excel-commit" class="primary" disabled>Beolvasás</button></div>
+  </dialog>
   <dialog id="year-dialog"><form id="year-form"><h2>Új év hozzáadása</h2><p>Az év alatt mind a 12 hónap megjelenik.</p><label>Év<input id="year-value" type="number" min="1900" max="9999" step="1" required placeholder="Pl. 2027"></label><p id="year-error" class="error" role="alert"></p><div class="dialog-actions"><button id="year-cancel" type="button">Mégse</button><button class="primary" type="submit">Év hozzáadása</button></div></form></dialog>
   <dialog id="day-dialog"><form id="day-form"><h2>Nap hozzáadása</h2><p>Válassz dátumot. Egy meglévő napot is megnyithatsz.</p><label>Dátum<input id="day-value" type="date" min="1900-01-01" max="9999-12-31" required></label><div class="dialog-actions"><button id="day-cancel" type="button">Mégse</button><button class="primary" type="submit">Nap megnyitása</button></div></form></dialog>
   <dialog id="confirm"><h2>Törlöd ezt a bejegyzést?</h2><p>Csak a kiválasztott név adatlapja törlődik. A nap és a többi bejegyzés megmarad.</p><div class="dialog-actions"><button id="cancel">Mégse</button><button id="remove" class="danger">Törlés</button></div></dialog>
-  <script src="items.js"></script><script src="archive.js"></script><script src="renderer.js"></script>
+  <script src="items.js"></script><script src="archive.js"></script><script src="renderer.js"></script><script src="workorders-model.js"></script><script src="workorders-ui.js"></script><script src="excel-ui.js"></script>
 </body></html>

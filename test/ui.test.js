@@ -126,3 +126,15 @@ test('hat oszlopos cikkszámtáblázat: számolás, db, beszállító, mentés �
  ui.$('items-body').children[0].querySelector('.remove-item').click();await tick();assert.equal(saved.notes[0].items.length,0);
  ui.dom.window.close();ui=await openUI(saved);assert.equal(ui.$('items-body').children.length,0);ui.dom.window.close();
 });
+test('az Excel-import előtti mentésvárás bevárja a függő írást és jelzi a lemezhibát', async () => {
+ const saved={notes:[{id:'flush',title:'Régi név',body:'',day:'2026-11-04',updated:'2026-11-04T12:00:00Z'}],archive:{years:[2024,2025,2026],days:['2026-11-04']}};
+ const ui=await openUI(saved);let release;
+ ui.dom.window.notesAPI.save=notes=>new Promise(resolve=>{release=()=>{saved.notes=copy(notes);resolve();};});
+ ui.input('title','Frissen módosított név');await tick();
+ let completed=false;const pending=ui.dom.window.NotesFlush().then(()=>{completed=true;});
+ await tick();assert.equal(completed,false);assert.equal(saved.notes[0].title,'Régi név');
+ release();await pending;assert.equal(saved.notes[0].title,'Frissen módosított név');
+ ui.dom.window.notesAPI.save=async()=>{throw new Error('disk full');};
+ ui.input('title','Még nem menthető');await assert.rejects(ui.dom.window.NotesFlush(),/mentése nem sikerült/);
+ assert.equal(saved.notes[0].title,'Frissen módosított név');ui.dom.window.close();
+});

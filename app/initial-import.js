@@ -9,7 +9,7 @@ function writeJson(file, value) {
   fs.renameSync(file + '.tmp', file);
 }
 function validateBundle(bundle) {
-  if (!bundle || bundle.format !== 'autobolt-initial-import' || bundle.version !== 1 || !/^txt-zip-[a-f0-9]{64}$/.test(bundle.bundleId)) throw new Error('Érvénytelen kezdeti import');
+  if (!bundle || bundle.format !== 'autobolt-initial-import' || bundle.version !== 1 || !/^(?:txt-zip|xlsx)-[a-f0-9]{64}$/.test(bundle.bundleId)) throw new Error('Érvénytelen kezdeti import');
   store.validate(bundle.notes); validateArchive(bundle.archive);
   if (new Set(bundle.notes.map(note => note.id)).size !== bundle.notes.length) throw new Error('Ismétlődő importazonosító');
   return bundle;

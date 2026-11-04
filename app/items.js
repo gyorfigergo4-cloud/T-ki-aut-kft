@@ -81,6 +81,7 @@
     for (const item of items) {
       if (!item || ['id', 'partNumber', 'fullPrice', 'discountPercent', 'discountedPrice', 'quantity', 'supplier', 'priceMode'].some(key => typeof item[key] !== 'string') || !item.id || ids.has(item.id) || !['auto', 'legacy'].includes(item.priceMode)) throw new Error('Érvénytelen cikkszámsor');
       ids.add(item.id);
+      if (item.description !== undefined && typeof item.description !== 'string') throw new Error('Érvénytelen tételmegnevezés');
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
       quantity(item.quantity); percent(item.discountPercent);
       if (item.fullPrice !== '') cents(item.fullPrice);
@@ -92,7 +93,7 @@
   function totals(items) {
     let full = 0n, reduced = 0n, missing = 0, active = 0;
     for (const item of items) {
-      if (!item.partNumber && !item.supplier && item.fullPrice === '' && item.discountedPrice === '') continue;
+      if (!item.partNumber && !item.description && !item.supplier && item.fullPrice === '' && item.discountedPrice === '') continue;
       active++;
       if (item.fullPrice === '' || item.discountedPrice === '') { missing++; continue; }
       const count = quantity(item.quantity);
