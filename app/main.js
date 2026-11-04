@@ -130,7 +130,7 @@ app.whenReady().then(() => {
     await fs.writeFile(result.filePath, JSON.stringify({ format: 'autobolt-backup', version: 2, archive, notes, workorders: workordersStore.read(workordersFile) }, null, 2), 'utf8');
     return true;
   });
-  win = new BrowserWindow({ width: 1240, height: 850, minWidth: 900, minHeight: 600, title: 'Töki Autó Kft. · Belső jegyzetek', backgroundColor: '#F5F7F2', icon: path.join(__dirname, 'assets', 'toki-logo.png'), webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  win = new BrowserWindow({ width: 1240, height: 850, minWidth: 900, minHeight: 600, title: 'Töki Autó Kft. · Belső jegyzetek', backgroundColor: '#F5F7F2', icon: path.join(__dirname, 'assets', 'toki-icon.png'), webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
   win.setMenuBarVisibility(false);
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type === 'keyDown' && !input.isAutoRepeat && (input.control || input.meta) && input.key.toLowerCase() === 'p') { event.preventDefault(); win.webContents.send('request-workorder-print'); }

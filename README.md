@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Saját Windows-ikon az 1.2.2-es verzióban
+
+Az alkalmazás fekete-zöld Töki Autó ikont kapott, autós jelképpel. A Windows EXE erőforrásaiba több felbontású ICO kerül, az ablak ugyanennek a PNG-változatát használja. Az indító az általa kezelt asztali parancsikon ikonforrását is beállítja.
+
+A `downloads/TokiAuto-Asztali-Ikon.zip` kis helyi ikonfrissítő a már telepített app `TokiAuto - Jegyzetek` asztali parancsikonjához másolja az ICO-t a saját LocalAppData könyvtárba. Kicsomagolás után a benne lévő `TokiAuto-Ikon-Frissites.cmd` indítandó. Csak az ismert TokiAuto telepítési helyre mutató parancsikont módosítja; más célra mutató ikonhoz nem nyúl. Helyi fájlokkal dolgozik, nem igényel rendszergazdai jogosultságot és nem módosítja a jegyzeteket. A PowerShell végrehajtási házirendjét nem írja át. A parancsikon COM-hívását Windows alatt kell ellenőrizni; a Linux-környezetben az ICO-t, a beépített EXE-erőforrásokat és a csomag tartalmát vizsgáljuk.
+
 ## Javítás az 1.2.1-es verzióban
 
 A TXT-jegyzetmappa betöltése külön ablakban mutatja a folyamatot, a hibát és az eredményt. Ha egy névvel elmentett TXT-fájlnál a mentési dátum nem egyezik az év- és hónapmappával, a felhasználó kiválaszthatja a helyes napot. Csak az adott hónap valós napjai fogadhatók el; a program nem talál ki dátumot, és a teljes dátumellenőrzés előtt nem ír át adatot. A dátumválasztás idejére a beolvasott fájlok helyi pillanatképét tartja meg, az eredeti fájlokat nem módosítja. A kiválasztott dátum eredete az adatlap forrásadataiban megmarad.
@@ -42,7 +48,7 @@ Az első táblázatos mentés előtt a korábbi teljes adatfájlról `notes.json
 
 ## Megjelenés
 
-A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzöld színvilágát követi: sötét oldalsáv, zöld kiemelések és világos adatlapok. A fejléc helyi `app/assets/toki-logo.png` képe a felhasználó logója alapján képgenerálóval előkészített, tisztított változat, nem az eredeti feltöltött képfájl. A `toki-mark.svg` az alkalmazás kis ikonja. A megjelenés nem használ külső betűkészletet vagy hálózatról betöltött képet.
+A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzöld színvilágát követi: sötét oldalsáv, zöld kiemelések és világos adatlapok. A fejléc helyi `app/assets/toki-logo.png` képe a felhasználó logója alapján képgenerálóval előkészített, tisztított változat, nem az eredeti feltöltött képfájl. Az alkalmazás és az asztali parancsikon kis ikonja az ugyanezen márkastílus alapján képgenerálóval készített `toki-icon.png` / `toki-icon.ico`. A korábbi `toki-mark.svg` megmarad a források között. A megjelenés nem használ külső betűkészletet vagy hálózatról betöltött képet.
 
 ## Évek, hónapok, napok és nevek
 
@@ -55,7 +61,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.2.1-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.2.2-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 

@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.2.1
+TÖKI AUTÓ KFT. – JEGYZETEK 1.2.2
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -37,3 +37,9 @@ Ha egy fájlnál nem állapítható meg a nap, válaszd ki a helyes dátumát.
 Csak a fájl hónapmappáján belüli nap választható.
 Utána kattints a Jegyzetek betöltése gombra.
 A siker és a hiba külön ablakban is látszik, a betöltött bejegyzés megnyílik.
+
+TÖKI AUTÓS ASZTALI IKON
+Az új program saját fekete-zöld, autós ikont használ.
+A TokiAuto-Inditas.cmd az általa létrehozott asztali parancsikont is frissíti.
+A kis TokiAuto-Asztali-Ikon.zip csomag a korábban telepített app
+asztali ikonját külön is frissíti a TokiAuto-Ikon-Frissites.cmd indításával.

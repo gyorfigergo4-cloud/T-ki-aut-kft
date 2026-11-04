@@ -5,3 +5,5 @@ dist/
 /app/private-data/
 /imports/
 __pycache__/
+
+!/downloads/TokiAuto-Asztali-Ikon.zip
