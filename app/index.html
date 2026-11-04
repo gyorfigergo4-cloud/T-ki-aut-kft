@@ -29,17 +29,23 @@
       <div class="fields">
         <label>Név<input id="title" placeholder="Pl. Kovács Péter" maxlength="200"></label>
         <label>Alvázszám<input id="vin" placeholder="Pl. WVWZZZ1KZ6W123456" maxlength="1000" spellcheck="false"></label>
-        <label class="full">Cikkszámok<textarea id="part" placeholder="Több cikkszámot is írhatsz, soronként egyet." maxlength="10000" spellcheck="false"></textarea></label>
         <label class="full">Olaj <span class="optional">(ha szükséges)</span><input id="oil" placeholder="Pl. Castrol EDGE 5W-30 LL, 4,5 liter" maxlength="1000"></label>
-        <label>Teli ár (Ft)<input id="fullPrice" type="number" min="0" step="0.01" placeholder="0"></label>
-        <label>Kedvezményes ár (Ft)<input id="discountPrice" type="number" min="0" step="0.01" placeholder="0"></label>
       </div>
-      <div id="price-summary" role="status"></div>
+      <section class="items-section" aria-label="Cikkszámok és árak">
+        <div class="items-heading"><div><h3>Cikkszámok és árak</h3><p>Az árak egy darabra vonatkoznak. A kedvezményes ár automatikusan számolódik.</p></div><button id="add-item">＋ Cikkszám hozzáadása</button></div>
+        <div class="items-scroll"><table id="items-table"><colgroup><col class="col-part"><col class="col-price"><col class="col-percent"><col class="col-discounted"><col class="col-quantity"><col class="col-supplier"><col class="col-action"></colgroup><thead><tr><th scope="col">Cikkszám</th><th scope="col">Teli ár <small>Ft/db</small></th><th scope="col">Kedvezmény <small>%</small></th><th scope="col">Kedvezményes ár <small>Ft/db</small></th><th scope="col">Db</th><th scope="col">Beszállító</th><th scope="col"><span class="sr-only">Törlés</span></th></tr></thead><tbody id="items-body"></tbody></table></div>
+        <datalist id="suppliers"><option value="AP"><option value="IC"><option value="UNIX"><option value="Láng"><option value="Szakál"><option value="Bárdi"><option value="Autonet"><option value="Unitrack"><option value="Ivanics"><option value="Gyári"><option value="Polc"></datalist>
+        <p id="items-empty" hidden>Még nincs cikkszám. A fenti gombbal hozzáadhatsz egy sort.</p>
+        <p id="item-error" class="error" role="alert"></p>
+        <div class="items-totals" aria-live="polite"><div><span>Teli összesen</span><strong id="total-full">—</strong></div><div><span>Kedvezmény összesen</span><strong id="total-savings">—</strong></div><div class="payable"><span>Kedvezményes összesen</span><strong id="total-discounted">—</strong></div></div>
+        <p id="price-summary"></p>
+        <details id="legacy-parts" hidden><summary>Korábbi cikkszámmező és árak megtekintése</summary><pre id="legacy-parts-text"></pre></details>
+      </section>
       <label class="body-label" for="body">Megjegyzés</label><textarea id="body" placeholder="Egyeztetés, állapot, fontos tudnivalók…"></textarea><div id="words"></div>
     </section>
   </main>
   <dialog id="year-dialog"><form id="year-form"><h2>Új év hozzáadása</h2><p>Az év alatt mind a 12 hónap megjelenik.</p><label>Év<input id="year-value" type="number" min="1900" max="9999" step="1" required placeholder="Pl. 2027"></label><p id="year-error" class="error" role="alert"></p><div class="dialog-actions"><button id="year-cancel" type="button">Mégse</button><button class="primary" type="submit">Év hozzáadása</button></div></form></dialog>
   <dialog id="day-dialog"><form id="day-form"><h2>Nap hozzáadása</h2><p>Válassz dátumot. Egy meglévő napot is megnyithatsz.</p><label>Dátum<input id="day-value" type="date" min="1900-01-01" max="9999-12-31" required></label><div class="dialog-actions"><button id="day-cancel" type="button">Mégse</button><button class="primary" type="submit">Nap megnyitása</button></div></form></dialog>
   <dialog id="confirm"><h2>Törlöd ezt a bejegyzést?</h2><p>Csak a kiválasztott név adatlapja törlődik. A nap és a többi bejegyzés megmarad.</p><div class="dialog-actions"><button id="cancel">Mégse</button><button id="remove" class="danger">Törlés</button></div></dialog>
-  <script src="archive.js"></script><script src="renderer.js"></script>
+  <script src="items.js"></script><script src="archive.js"></script><script src="renderer.js"></script>
 </body></html>

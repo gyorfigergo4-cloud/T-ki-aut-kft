@@ -1,6 +1,8 @@
 const $ = id => document.getElementById(id);
 const { months, localDay, validDay, normalize } = window.NotesArchive;
-const fields = ['title', 'vin', 'part', 'oil', 'fullPrice', 'discountPrice', 'body'];
+const fields = ['title', 'vin', 'oil', 'body'];
+const Items = window.LineItems;
+const invalidInputs = new Set();
 const today = localDay(new Date());
 let notes = [], years = [], days = [], loaded = false, selected = null, selectedDay = today;
 let activeYear = Number(today.slice(0, 4)), selectedMonth = today.slice(0, 7);
@@ -30,10 +32,11 @@ function setDayContext(day) {
 }
 function visibleNotes() {
   const query = fold($('search').value.trim());
-  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + note.day).includes(query) : note.day === selectedDay)
+  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
     .sort((a, b) => b.day.localeCompare(a.day) || a.created.localeCompare(b.created));
 }
 function openDay(day) {
+  if (!allowNavigation()) return;
   clearSearch(); setDayContext(day);
   selected = notes.find(note => note.day === day)?.id ?? null;
   render();
@@ -56,6 +59,7 @@ function renderFolders() {
     const yearButton = folderButton(yearKey, 'year', notes.filter(note => note.day.startsWith(yearKey + '-')).length, open);
     yearButton.dataset.year = yearKey;
     yearButton.onclick = () => {
+      if (!allowNavigation()) return;
       open ? openedYears.delete(year) : openedYears.add(year);
       activeYear = year; selectedMonth = null; selectedDay = null; selected = null; clearSearch(); render();
     };
@@ -68,6 +72,7 @@ function renderFolders() {
       monthButton.dataset.month = key;
       if (key === selectedMonth) monthButton.classList.add('current');
       monthButton.onclick = () => {
+        if (!allowNavigation()) return;
         expanded ? openedMonths.delete(key) : openedMonths.add(key);
         activeYear = year; selectedMonth = key; selectedDay = null; selected = null; clearSearch(); render();
       };
@@ -99,8 +104,8 @@ function renderList() {
   for (const note of visible) {
     const button = document.createElement('button'); button.className = 'note' + (note.id === selected ? ' active' : ''); button.dataset.note = note.id;
     const title = document.createElement('strong'); title.textContent = note.title || 'Új név';
-    const preview = document.createElement('small'); preview.textContent = query ? note.day : note.part.replace(/\s*\n\s*/g, ' · ') || note.oil || note.vin || 'Adatok kitöltése…';
-    button.append(title, preview); button.onclick = () => { selected = note.id; setDayContext(note.day); render(); }; $('list').append(button);
+    const preview = document.createElement('small'); preview.textContent = query ? note.day : note.items.map(item => item.partNumber).filter(Boolean).join(' · ') || note.oil || note.vin || 'Adatok kitöltése…';
+    button.append(title, preview); button.onclick = () => { if (!allowNavigation()) return; selected = note.id; setDayContext(note.day); render(); }; $('list').append(button);
   }
   if (!visible.length) {
     const empty = document.createElement('p'); empty.className = 'list-empty';
@@ -111,12 +116,7 @@ function renderList() {
 function metadata() {
   const note = current(); if (!note) return;
   $('date').textContent = 'Rögzítve: ' + new Date(note.created).toLocaleString('hu-HU') + ' · Módosítva: ' + new Date(note.updated).toLocaleString('hu-HU');
-  const full = Number(note.fullPrice), discount = Number(note.discountPrice);
-  $('price-summary').textContent = note.fullPrice !== '' && note.discountPrice !== '' && full > 0 ? (discount <= full ? 'Kedvezmény: ' + money(full - discount) + ' (' + new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 1 }).format((full - discount) / full * 100) + '%)' : 'A kedvezményes ár magasabb a teli árnál.') : 'Az árak forintban értendők.';
-  const noImportedTotal = note.source && note.fullPrice === '' && note.discountPrice === '';
-  $('fullPrice').placeholder = noImportedTotal ? 'Nincs összesítve' : '0';
-  $('discountPrice').placeholder = noImportedTotal ? 'Nincs összesítve' : '0';
-  if (noImportedTotal) $('price-summary').textContent = 'Az összesített ár nincs megadva. Az eredeti tételek árai a cikkszámoknál és a megjegyzésben maradtak meg.';
+  renderTotals(note);
   $('words').textContent = note.body.length + ' karakter';
 }
 function render() {
@@ -132,10 +132,77 @@ function render() {
     $('import-path').textContent = note.source.path || '';
     $('import-original').textContent = note.source.originalText || '';
   }
-  if (note) { for (const field of fields) $(field).value = note[field]; metadata(); }
+  if (note) { for (const field of fields) $(field).value = note[field]; renderItems(note); metadata(); }
 }
+function allowNavigation() {
+  for (const input of invalidInputs) if (!input.isConnected) invalidInputs.delete(input);
+  const input = invalidInputs.values().next().value;
+  if (!input) return true;
+  input.focus(); input.reportValidity(); return false;
+}
+function renderTotals(note) {
+  const result = Items.totals(note.items);
+  $('total-full').previousElementSibling.textContent = result.missing ? 'Teli részösszeg' : 'Teli összesen';
+  $('total-discounted').previousElementSibling.textContent = result.missing ? 'Kedvezményes részösszeg' : 'Kedvezményes összesen';
+  $('total-full').textContent = result.priced ? Items.formatMoney(result.fullPrice) : '—';
+  $('total-savings').textContent = result.priced ? Items.formatMoney(result.savings) : '—';
+  $('total-discounted').textContent = result.priced ? Items.formatMoney(result.discountedPrice) : '—';
+  $('price-summary').textContent = result.missing ? result.missing + ' sornál még hiányzik az ár. Az összesítés csak az ismert árú tételeket tartalmazza.' : 'Az összesítés a darabszámokat is figyelembe veszi.';
+}
+function renderItems(note) {
+  $('items-body').replaceChildren();
+  invalidInputs.clear(); $('item-error').textContent = '';
+  $('items-empty').hidden = note.items.length > 0;
+  const legacy = [note.legacyParts || '', note.legacyTotals?.fullPrice ? 'Korábbi teli összeg: ' + note.legacyTotals.fullPrice + ' Ft' : '', note.legacyTotals?.discountedPrice ? 'Korábbi kedvezményes összeg: ' + note.legacyTotals.discountedPrice + ' Ft' : ''].filter(Boolean).join('\n');
+  $('legacy-parts').hidden = !legacy; $('legacy-parts').open = false; $('legacy-parts-text').textContent = legacy;
+  note.items.forEach((item, index) => {
+    const row = document.createElement('tr'); row.dataset.itemId = item.id;
+    const output = document.createElement('output'); output.dataset.field = 'discountedPrice'; output.setAttribute('aria-label', 'Kedvezményes ár – ' + (index + 1) + '. sor'); output.textContent = Items.formatMoney(item.discountedPrice);
+    const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
+    for (const [field, label, type] of columns) {
+      const cell = document.createElement('td');
+      if (field === 'discountedPrice') { cell.className = 'calculated-price'; cell.append(output); row.append(cell); continue; }
+      const input = document.createElement('input'); input.type = type; input.value = item[field]; input.dataset.field = field;
+      input.setAttribute('aria-label', label + ' – ' + (index + 1) + '. sor');
+      if (field === 'fullPrice') { input.min = '0'; input.max = '999999999999.99'; input.step = '0.01'; input.placeholder = 'Ár nélkül'; }
+      if (field === 'discountPercent') { input.min = '0'; input.max = '100'; input.step = 'any'; input.placeholder = '0'; }
+      if (field === 'quantity') { input.min = '1'; input.max = '999999'; input.step = '1'; input.required = true; }
+      if (field === 'partNumber') { input.placeholder = 'Cikkszám'; input.maxLength = 1000; input.spellcheck = false; }
+      if (field === 'supplier') { input.setAttribute('list', 'suppliers'); input.placeholder = 'Pl. IC'; input.maxLength = 200; }
+      input.addEventListener('input', () => {
+        input.setCustomValidity('');
+        try {
+          if (!input.validity.valid) throw new Error(field === 'quantity' ? 'A darabszám legalább 1, egész szám legyen.' : field === 'discountPercent' ? 'A kedvezmény 0 és 100 közötti százalék legyen.' : 'Az ár nem lehet negatív, és legfeljebb két tizedesjegyű lehet.');
+          const next = { ...item, [field]: input.value };
+          if (field === 'fullPrice' || field === 'discountPercent') { next.discountedPrice = Items.discounted(next.fullPrice, next.discountPercent); next.priceMode = 'auto'; }
+          Items.validate([next]); Object.assign(item, next);
+          invalidInputs.delete(input); input.removeAttribute('aria-invalid');
+          $('item-error').textContent = invalidInputs.size ? 'Javítsd a megjelölt mezőt a továbblépéshez.' : '';
+          output.textContent = Items.formatMoney(item.discountedPrice);
+          Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
+        } catch (error) {
+          input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('item-error').textContent = error.message;
+        }
+      });
+      cell.append(input); row.append(cell);
+    }
+    const actions = document.createElement('td'), remove = document.createElement('button');
+    remove.className = 'remove-item'; remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', (index + 1) + '. cikkszámsor törlése');
+    remove.onclick = () => {
+      for (const input of row.querySelectorAll('input')) invalidInputs.delete(input);
+      if (!allowNavigation()) return;
+      note.items = note.items.filter(entry => entry.id !== item.id); Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); renderItems(note); renderList(); metadata();
+    };
+    actions.append(remove); row.append(actions); $('items-body').append(row);
+  });
+}
+$('add-item').onclick = () => {
+  const note = current(); if (!note || !allowNavigation()) return;
+  note.items.push(Items.blank(crypto.randomUUID())); note.updated = new Date().toISOString(); persistNotes(); renderItems(note); metadata();
+  $('items-body').lastElementChild.querySelector('input').focus();
+};
 function showDayDialog(month = selectedMonth) {
-  if (!loaded) return;
+  if (!loaded || !allowNavigation()) return;
   $('day-value').value = month ? (today.startsWith(month + '-') ? today : month + '-01') : (activeYear === Number(today.slice(0, 4)) ? today : activeYear + '-01-01');
   $('day-dialog').showModal(); $('day-value').focus();
 }
@@ -152,7 +219,7 @@ $('day-form').onsubmit = event => {
   $('day-dialog').close(); openDay(day);
 };
 $('add-year').onclick = () => {
-  if (!loaded) return;
+  if (!loaded || !allowNavigation()) return;
   $('year-error').textContent = ''; $('year-value').value = String(Math.max(...years) + 1); $('year-dialog').showModal(); $('year-value').focus();
 };
 $('year-cancel').onclick = () => $('year-dialog').close();
@@ -166,9 +233,9 @@ $('year-form').onsubmit = event => {
   persistArchive(); $('year-dialog').close(); render();
 };
 $('new').onclick = () => {
-  if (!loaded || !selectedDay) return;
+  if (!loaded || !selectedDay || !allowNavigation()) return;
   clearSearch(); const now = new Date().toISOString();
-  const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', day: selectedDay, created: now, updated: now };
+  const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
   notes.push(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }
@@ -180,20 +247,22 @@ for (const field of fields) $(field).addEventListener('input', () => {
   note[field] = $(field).value; note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
 });
 $('search').oninput = () => {
+  if (!allowNavigation()) return;
   const visible = visibleNotes();
   if (!visible.some(note => note.id === selected)) selected = visible[0]?.id ?? null;
   if (current()) setDayContext(current().day); render();
 };
-$('clear').onclick = () => { clearSearch(); selected = notes.find(note => note.day === selectedDay)?.id ?? null; render(); };
+$('clear').onclick = () => { if (!allowNavigation()) return; clearSearch(); selected = notes.find(note => note.day === selectedDay)?.id ?? null; render(); };
 $('delete').onclick = () => $('confirm').showModal(); $('cancel').onclick = () => $('confirm').close();
-$('remove').onclick = () => { notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
+$('remove').onclick = () => { invalidInputs.clear(); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
 $('export').onclick = async () => {
   if (!loaded) return;
   try { if (await window.notesAPI.export(notes, archiveData())) $('status').textContent = '✓ Biztonsági mentés elkészült'; }
   catch { $('status').textContent = 'Nem sikerült a biztonsági mentés.'; }
 };
 window.addEventListener('beforeunload', event => {
-  if (pending || saveErrors.size) { event.preventDefault(); event.returnValue = false; queue.then(() => { if (!pending && !saveErrors.size) window.close(); }); }
+  if (invalidInputs.size) { event.preventDefault(); event.returnValue = false; allowNavigation(); }
+  else if (pending || saveErrors.size) { event.preventDefault(); event.returnValue = false; queue.then(() => { if (!pending && !saveErrors.size) window.close(); }); }
 });
 function loadData() {
 return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data, archive]) => {
@@ -207,7 +276,7 @@ return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then
 });
 }
 $('import-folder').onclick = async () => {
-  if (!loaded) return;
+  if (!loaded || !allowNavigation()) return;
   $('import-folder').disabled = true;
   try {
     const result = await window.notesAPI.importFolder();

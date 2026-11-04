@@ -14,7 +14,7 @@ async function openUI(saved) {
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
     export: async () => true
   };
-  for (const script of ['archive.js', 'renderer.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'archive.js', 'renderer.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   await tick();
   const $ = id => window.document.getElementById(id);
   const input = (id, value) => { $(id).value = value; $(id).dispatchEvent(new window.Event('input')); };
@@ -33,15 +33,18 @@ test('év/hónap/nap mappák, napi több név, visszakeresés és újranyitás',
   newDay('2026-11-04'); await tick();
   assert.equal(cards().length, 0); assert.equal($('editor').hidden, true);
   $('new').click();
-  for (const [id, value] of Object.entries({ title: 'Kovács Péter', vin: 'WVWZZZ1KZ6W123456', part: '0986479123\nMANN HU 719/7 x', oil: 'Castrol EDGE 5W-30, 4,5 liter', fullPrice: '25000', discountPrice: '20000', body: 'Olajcsere' })) input(id, value);
+  for (const [id, value] of Object.entries({ title: 'Kovács Péter', vin: 'WVWZZZ1KZ6W123456', oil: 'Castrol EDGE 5W-30, 4,5 liter', body: 'Olajcsere' })) input(id, value);
+  const editItem=(index,field,value)=>{const el=$('items-body').children[index].querySelector('[data-field="'+field+'"]');el.value=value;el.dispatchEvent(new ui.dom.window.Event('input'));};
+  editItem(0,'partNumber','0986479123');editItem(0,'fullPrice','25000');editItem(0,'discountPercent','20');editItem(0,'supplier','IC');
+  $('add-item').click();editItem(1,'partNumber','MANN HU 719/7 x');
   await tick();
   const firstId = saved.notes.find(note => note.title === 'Kovács Péter').id;
   assert.equal(saved.notes.find(note => note.id === firstId).day, '2026-11-04');
-  assert.match($('price-summary').textContent, /20%/);
-  $('new').click(); input('title', 'Nagy László'); input('part', 'BOSCH ABC-456'); await tick();
+  assert.equal(saved.notes.find(n=>n.id===firstId).items[0].discountedPrice,'20000');
+  $('new').click(); input('title', 'Nagy László'); editItem(0,'partNumber','BOSCH ABC-456'); await tick();
   assert.equal(cards().length, 2); assert.equal(saved.notes.length, 3);
   $('list').querySelector('[data-note="' + firstId + '"]').click();
-  assert.equal($('title').value, 'Kovács Péter'); assert.equal($('part').value, '0986479123\nMANN HU 719/7 x');
+  assert.equal($('title').value, 'Kovács Péter'); assert.equal($('items-body').children[0].querySelector('[data-field=partNumber]').value, '0986479123');assert.equal($('items-body').children.length,2);
   assert.equal($('oil').value, 'Castrol EDGE 5W-30, 4,5 liter');
   newDay('2026-11-05'); $('new').click(); input('title', 'Másnapi ügyfél'); await tick();
   assert.equal(cards().length, 1); assert.equal(saved.notes.length, 4);
@@ -92,8 +95,34 @@ test('importált eredeti szöveg biztonságos megjelenítése és megőrzése sz
   assert.equal(ui.$('import-original').querySelector('script'), null);
   assert.equal(ui.dom.window.injected, undefined);
   assert.ok(ui.$('vin').maxLength >= saved.notes[0].vin.length);
-  assert.equal(ui.$('fullPrice').placeholder, 'Nincs összesítve');
+  assert.equal(ui.$('items-body').children.length,0);
   ui.input('body', 'Később módosított megjegyzés'); await tick();
   assert.equal(saved.notes[0].source.originalText, original);
   ui.dom.window.close();
+});
+test('hat oszlopos cikkszámtáblázat: számolás, db, beszállító, mentés és újranyitás', async () => {
+ const saved={notes:[],archive:{years:[2024,2025,2026],days:[]}};
+ let ui=await openUI(saved);
+ ui.newDay('2026-11-04');ui.$('new').click();ui.input('title','Teszt ügyfél');
+ const edit=(index,field,value)=>{const input=ui.$('items-body').children[index].querySelector('[data-field="'+field+'"]');input.value=value;input.dispatchEvent(new ui.dom.window.Event('input'));};
+ edit(0,'partNumber','A123');edit(0,'fullPrice','10000');edit(0,'discountPercent','20');edit(0,'quantity','3');edit(0,'supplier','IC');
+ ui.$('add-item').click();edit(1,'partNumber','B456');edit(1,'fullPrice','5000');edit(1,'discountPercent','10');edit(1,'quantity','2');edit(1,'supplier','Saját beszállító');
+ await tick();
+ assert.equal(saved.notes[0].items[0].discountedPrice,'8000');assert.equal(saved.notes[0].items[1].discountedPrice,'4500');
+ assert.match(ui.$('total-discounted').textContent.replace(/\s/g,''),/33000Ft/);
+ assert.equal(saved.notes[0].fullPrice,'40000');assert.equal(saved.notes[0].discountPrice,'33000');
+ edit(0,'discountPercent','101');assert.equal(saved.notes[0].items[0].discountPercent,'20');assert.match(ui.$('item-error').textContent,/0 és 100/);
+ ui.$('new').click();assert.equal(saved.notes.length,1,'Hibás mezővel ne vesszen el a szerkesztett sor');
+ edit(0,'discountPercent','100');await tick();assert.equal(saved.notes[0].items[0].discountedPrice,'0');
+ edit(0,'quantity','0');assert.equal(saved.notes[0].items[0].quantity,'3');assert.match(ui.$('item-error').textContent,/legalább 1/);
+ edit(0,'quantity','3');edit(0,'discountPercent','20');await tick();
+ ui.dom.window.close();ui=await openUI(saved);
+ assert.equal(ui.$('items-body').children.length,2);
+ assert.equal(ui.$('items-body').children[1].querySelector('[data-field=supplier]').value,'Saját beszállító');
+ assert.match(ui.$('items-body').children[0].querySelector('output').textContent.replace(/\s/g,''),/8000Ft/);
+ ui.input('search','Saját beszállító');assert.equal(ui.cards().length,1);
+ ui.$('items-body').children[1].querySelector('.remove-item').click();await tick();assert.equal(saved.notes[0].items.length,1);
+ assert.equal(saved.notes[0].discountPrice,'24000');
+ ui.$('items-body').children[0].querySelector('.remove-item').click();await tick();assert.equal(saved.notes[0].items.length,0);
+ ui.dom.window.close();ui=await openUI(saved);assert.equal(ui.$('items-body').children.length,0);ui.dom.window.close();
 });

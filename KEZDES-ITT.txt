@@ -1,10 +1,13 @@
-TÖKI AUTÓ KFT. – JEGYZETEK
+TÖKI AUTÓ KFT. – JEGYZETEK 1.1
+
+FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
+A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
 
 1. A letöltött ZIP-et teljes egészében csomagold ki.
 2. Nyisd meg a kicsomagolt mappát.
 3. Kattints duplán a TokiAuto-Inditas.cmd fájlra.
    Az első előkészítés eltarthat egy kicsit. Utána az app elindul.
-4. Az app bal alsó részén: Jegyzetmappa betöltése.
+4. Csak az első használatkor: az app bal alsó részén Jegyzetmappa betöltése.
    Válaszd ki a saját gépeden lévő Napi jegyzetek mappát,
    amelyben az évszámok és hónapok vannak.
 
@@ -14,3 +17,8 @@ Később az asztali TokiAuto - Jegyzetek parancsikonnal is indíthatod.
 A downloads mappa részeit nem kell külön megnyitnod.
 
 Windows 10/11, 64 bites géphez. A program nincs digitálisan aláírva.
+
+CIKKSZÁMOK
+Minden tétel külön sor: cikkszám, teli ár, kedvezmény %,
+kedvezményes ár, db és beszállító. Az árak egy darabra vonatkoznak.
+A kedvezményes ár és az összesítés automatikusan számolódik.

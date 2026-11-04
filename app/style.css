@@ -145,3 +145,37 @@ dialog .error { color: #b23731; font-size: 12px; min-height: 18px; }
 #import-source summary { cursor: pointer; padding: 4px 0; }
 #import-path { color: #77836d; overflow-wrap: anywhere; line-height: 1.6; }
 #import-original { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto; padding: 12px; background: #edf2e6; border-radius: 5px; color: #37442a; font: 11px/1.7 Consolas, monospace; }
+.items-section { margin: 25px 0 24px; }
+.items-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.items-heading h3 { font-size: 16px; margin: 0 0 7px; }
+.items-heading p { font-size: 11px; color: #76836c; margin: 0; line-height: 1.6; }
+#add-item { font-size: 11px; color: #436c11; background: #edf5df; border-color: #bacd9e; flex-shrink: 0; }
+.items-scroll { overflow-x: auto; border: 1px solid #d7dfce; border-radius: 8px; background: white; }
+#items-table { width: 100%; min-width: 830px; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.col-part { width: 25%; }.col-price { width: 14%; }.col-percent { width: 13%; }.col-discounted { width: 17%; }.col-quantity { width: 8%; }.col-supplier { width: 18%; }.col-action { width: 5%; }
+#items-table th { font-size: 10px; font-weight: 650; text-align: left; background: #eaf0e1; color: #495c37; padding: 13px 9px; border-bottom: 1px solid #d9e2cd; white-space: nowrap; }
+#items-table th small { display: block; margin-top: 5px; color: #7a896d; font-weight: 400; font-size: 9px; }
+#items-table td { padding: 10px 7px; border-bottom: 1px solid #edf0e7; }
+#items-table tr:last-child td { border-bottom: 0; }
+#items-table input { min-width: 0; width: 100%; padding: 9px 7px; border: 1px solid #d9e0d0; border-radius: 5px; background: #fff; font-size: 12px; color: #273322; }
+#items-table input[type=number] { text-align: right; font-variant-numeric: tabular-nums; }
+#items-table input[data-field=partNumber] { font-family: Consolas, monospace; }
+#items-table input:focus { border-color: #80b324; outline: 2px solid #96d50020; outline-offset: 0; }
+#items-table input[aria-invalid=true] { border-color: #c74c43; background: #fff3f1; }
+.calculated-price { color: #4d7412; font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.remove-item { border: 0; background: transparent; color: #9b6059; font-size: 19px; padding: 6px; }
+.remove-item:hover { background: #fff0ee; color: #ad3e36; }
+#item-error { font-size: 12px; color: #a83830; margin: 8px 0; min-height: 0; }
+#item-error:empty { display: none; }
+#items-empty { font-size: 12px; color: #7b8b6a; }
+.items-totals { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 1px; border: 1px solid #dce4d1; border-radius: 8px; overflow: hidden; margin-top: 15px; background: #dce4d1; }
+.items-totals > div { display: flex; flex-direction: column; gap: 9px; padding: 14px 17px; background: #f0f4e9; }
+.items-totals span { font-size: 10px; color: #6a7c58; }
+.items-totals strong { font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.items-totals .payable { background: #e5f1ce; color: #42660f; }
+.items-section #price-summary { margin: 10px 0; background: transparent; padding: 3px 0; border: 0; color: #77866b; font-size: 10px; }
+#legacy-parts { font-size: 10px; color: #7a896f; margin-top: 12px; }
+#legacy-parts summary { cursor: pointer; }
+#legacy-parts-text { white-space: pre-wrap; overflow-wrap: anywhere; background: #edf2e6; padding: 12px; border-radius: 5px; font: 11px/1.7 Consolas, monospace; max-height: 220px; overflow: auto; }
+@media (max-width: 1050px) { .items-heading { align-items: flex-start; }.items-heading p { max-width: 280px; }.items-totals strong { font-size: 16px; } }
+#items-table th { position: relative; }

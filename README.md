@@ -2,6 +2,18 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Újdonság az 1.1-es verzióban
+
+A cikkszámok külön sorokban, hat oszlopban kezelhetők: cikkszám, teli egységár (Ft/db), kedvezmény (%), automatikusan számított kedvezményes egységár (Ft/db), darabszám és beszállító. Új sor vehető fel, a sorok egyenként törölhetők. A beszállító szabadon írható, a gyakori nevekhez felajánlás tartozik.
+
+Példa: 10 000 Ft és 20% kedvezmény = 8000 Ft/db. Három darab kedvezményes összege 24 000 Ft. A számítás két tizedesre kerekít, a sorok egységárát szorozza a darabszámmal. A darabszám pozitív egész szám, a kedvezmény 0–100% lehet. Hiányzó árú soroknál csak a teljesen ismert tételek részösszegét mutatja, és ezt külön jelzi.
+
+A régi cikkszámsorok automatikusan átkerülnek a táblázatba. A felismerhető beszállító, árpár és darabszám külön mezőbe kerül. A korábbi kedvezményes ár változatlan marad, amíg a teli árat vagy a százalékot nem módosítják; a százalék ilyenkor a régi árpárból számított közelítés. Nem egyértelmű részleteknél az eredeti sor marad olvasható. A „Korábbi cikkszámmező és árak” rész és az importált eredeti szöveg is megmarad.
+
+Az első táblázatos mentés előtt a korábbi teljes adatfájlról `notes.json.before-items-v1.json` másolat készül a saját adatkönyvtárban. A frissítés ugyanazt a `%APPDATA%\jegyzetfuzet` könyvtárat használja, újraimportálás nem kell. Az indító a korábban általa létrehozott asztali parancsikont az új verzióra igazítja; más célra mutató, azonos nevű parancsikont megőriz.
+
+**Frissítés:** zárd be a régi appot, csomagold ki az új letöltést, majd indítsd a benne lévő `TokiAuto-Inditas.cmd` fájlt.
+
 ## Megjelenés
 
 A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzöld színvilágát követi: sötét oldalsáv, zöld kiemelések és világos adatlapok. A fejléc helyi `app/assets/toki-logo.png` képe a felhasználó logója alapján képgenerálóval előkészített, tisztított változat, nem az eredeti feltöltött képfájl. A `toki-mark.svg` az alkalmazás kis ikonja. A megjelenés nem használ külső betűkészletet vagy hálózatról betöltött képet.
