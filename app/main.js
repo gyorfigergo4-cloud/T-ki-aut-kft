@@ -4,6 +4,7 @@ const fs = require('node:fs/promises');
 const store = require('./store');
 const archiveStore = require('./archive-store');
 const initialImport = require('./initial-import');
+const folderImport = require('./folder-import');
 const { validate: validateArchive } = require('./archive');
 let win;
 app.whenReady().then(() => {
@@ -20,6 +21,12 @@ app.whenReady().then(() => {
   ipcMain.handle('save-archive', (_, archive) => archiveStore.write(archiveFile, archive));
   ipcMain.handle('load', () => { prepareInitialData(); return store.read(file); });
   ipcMain.handle('save', (_, notes) => store.write(file, notes));
+  ipcMain.handle('import-folder', async () => {
+    const result = await dialog.showOpenDialog(win, { title: 'Válaszd ki a Napi jegyzetek mappát', properties: ['openDirectory'] });
+    if (result.canceled || !result.filePaths[0]) return { canceled: true };
+    try { return { ok: true, ...folderImport.importFolder(result.filePaths[0], app.getPath('userData')) }; }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
   ipcMain.handle('export', async (_, notes, archive) => {
     store.validate(notes);
     validateArchive(archive);

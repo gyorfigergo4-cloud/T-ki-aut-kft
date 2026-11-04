@@ -27,7 +27,7 @@ A név szerinti szétbontás a szövegbeli fejléceket és elválasztó sorokat 
 
 A privát `app/private-data/initial-import.json` a készülő app kezdeti adatkészlete. Az alkalmazás első betöltéskor hozzáfűzi a már meglévő adatokhoz, külön `import-backups` mappába menti az import előtti állapotot, és az `imports.json` naplóban jelzi a befejezést. Újraindítás nem duplázza a bejegyzéseket, nem írja felül a felhasználó módosításait, és nem hoz vissza törölt importált jegyzetet. A felhasználói könyvtárban az importált jegyzetek továbbra is a szokásos `notes.json` és `archive.json` fájlokban vannak.
 
-A privát adatkészlet és az `imports` jelentései Gitből kizártak. A Windows-csomag tartalmazza a kezdeti adatkészletet; ez a felhasználó saját adatokat tartalmazó csomagja. Az eredeti ZIP változatlanul megmaradt a feltöltések között. A helyi `imports/verification.json` igazolja mind az 571 fájl bájtpontos visszaállíthatóságát és az összes forrássor hiánytalan lefedését; a `validated-app-data` az alkalmazás tényleges tárolójával ellenőrzött import.
+A privát adatkészlet és az `imports` jelentései Gitből kizártak. A nyilvánosan letölthető Windows-csomag nem tartalmaz sem nyers, sem titkosított ügyféladatot. A felhasználó a saját gépén a „Jegyzetmappa betöltése” gombbal választhatja ki az eredeti TXT-mappát. A helyi beolvasó az összes 571 fájlon ellenőrizve ugyanazokat a neveket, napokat, szövegeket és adatmezőket állítja elő, mint az előkészített import. Az eredeti ZIP változatlanul megmaradt a feltöltések között. A helyi `imports/verification.json` igazolja mind az 571 fájl bájtpontos visszaállíthatóságát és az összes forrássor hiánytalan lefedését; a `validated-app-data` az alkalmazás tényleges tárolójával ellenőrzött import.
 
 Reprodukálás Python 3-mal, a forrás ZIP és a szükséges dátumok megadásával:
 
@@ -39,13 +39,16 @@ python3 -m unittest discover -s test -p 'test_import_*.py'
 
 A Windows-felhasználónak ehhez nem kell Python: a csomag a már feldolgozott adatokat tölti be.
 
-## Windows használat
+## Windows letöltés és indítás
 
-Csomagold ki a `Jegyzetfuzet-Windows-x64.zip` teljes tartalmát egy mappába, majd indítsd el a `Jegyzetfuzet.exe` fájlt. Nem kell telepíteni. A többi fájl maradjon mellette. Windows 10/11, 64 bites Intel/AMD géphez készült; ARM gépre nem natív csomag.
+1. Töltsd le a tároló ZIP-archívumát, és csomagold ki az egész mappát.
+2. Kattints duplán a `TokiAuto-Inditas.cmd` fájlra. A program ellenőrzött csomagja a `downloads` részekből helyben összeáll, a saját felhasználód AppData könyvtárába kerül, és elindul. A részeket hagyd a helyükön. Internet csak a ZIP letöltéséhez kell.
+3. Az appban kattints a **Jegyzetmappa betöltése** gombra, és válaszd a saját **Napi jegyzetek** mappádat (amelyben a 2024, 2025, 2026 almappák vannak).
+4. A későbbiekhez asztali parancsikon is készül, ha a Windows engedélyezi.
 
-Az alkalmazás jelenleg nincs digitálisan aláírva. A Windows figyelmeztetést jeleníthet meg.
+Windows 10/11 x64 Intel/AMD géphez készült. Rendszergazdai telepítés nem szükséges; a program nincs digitálisan aláírva. A Windows alatti indítást ebben a Linux-környezetben nem tudtuk közvetlenül kipróbálni. A csomag, az összes jegyzet helyi feldolgozása és a felület tesztjei ellenőrizve vannak.
 
-A jegyzetek az alkalmazás felhasználói adatkönyvtárában vannak: `%APPDATA%\jegyzetfuzet\notes.json`. Az évek és az üres napok az ugyanott található `archive.json` fájlban tárolódnak. Az előző fájlváltozatokat a `notes.json.bak` és `archive.json.bak` őrzi. A „Biztonsági mentés” gomb a jegyzeteket és a mappaszerkezetet együtt exportálja egy JSON fájlba. Automatikus felhőszinkron és importáló felület nincs. A biztonsági mentést őrizd meg; a fájlok sima szövegesek, nem titkosítottak.
+A helyi jegyzetek: `%APPDATA%\jegyzetfuzet\notes.json`, a mappák: `archive.json`. A „Biztonsági mentés” helyi JSON-fájlt készít. Import előtt külön másolat készül az `import-backups` mappába. Az eredeti TXT-k változatlanok maradnak. Felhőszinkron nincs.
 
 ## Fejlesztés
 

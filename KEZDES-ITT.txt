@@ -1,0 +1,16 @@
+TÖKI AUTÓ KFT. – JEGYZETEK
+
+1. A letöltött ZIP-et teljes egészében csomagold ki.
+2. Nyisd meg a kicsomagolt mappát.
+3. Kattints duplán a TokiAuto-Inditas.cmd fájlra.
+   Az első előkészítés eltarthat egy kicsit. Utána az app elindul.
+4. Az app bal alsó részén: Jegyzetmappa betöltése.
+   Válaszd ki a saját gépeden lévő Napi jegyzetek mappát,
+   amelyben az évszámok és hónapok vannak.
+
+A jegyzeteid helyben töltődnek be. Az eredeti fájlok megmaradnak.
+A teljes mappát csak egyszer kell betöltened. A program automatikusan ment.
+Később az asztali TokiAuto - Jegyzetek parancsikonnal is indíthatod.
+A downloads mappa részeit nem kell külön megnyitnod.
+
+Windows 10/11, 64 bites géphez. A program nincs digitálisan aláírva.

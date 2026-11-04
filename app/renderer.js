@@ -195,7 +195,8 @@ $('export').onclick = async () => {
 window.addEventListener('beforeunload', event => {
   if (pending || saveErrors.size) { event.preventDefault(); event.returnValue = false; queue.then(() => { if (!pending && !saveErrors.size) window.close(); }); }
 });
-Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data, archive]) => {
+function loadData() {
+return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data, archive]) => {
   ({ notes, years, days } = normalize(data, archive)); loaded = true;
   const initialDay = days.includes(today) ? today : [...days].sort().at(-1) ?? today;
   setDayContext(initialDay); selected = notes.find(note => note.day === initialDay)?.id ?? null;
@@ -204,3 +205,17 @@ Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data
   $('status').textContent = 'A mentett adatok nem olvashatók. Az eredeti fájlok megmaradtak.';
   for (const id of ['new', 'add-year', 'add-day']) $(id).disabled = true;
 });
+}
+$('import-folder').onclick = async () => {
+  if (!loaded) return;
+  $('import-folder').disabled = true;
+  try {
+    const result = await window.notesAPI.importFolder();
+    if (result.canceled) return;
+    if (!result.ok) { $('status').textContent = result.error; return; }
+    await loadData();
+    $('status').textContent = result.alreadyImported ? 'Ez a jegyzetmappa már be van töltve.' : 'Betöltve: ' + result.files + ' fájl, ' + result.notes + ' bejegyzés.';
+  } catch { $('status').textContent = 'A jegyzetmappa betöltése nem sikerült.'; }
+  finally { $('import-folder').disabled = false; }
+};
+loadData();

@@ -14,15 +14,20 @@ function validateBundle(bundle) {
   if (new Set(bundle.notes.map(note => note.id)).size !== bundle.notes.length) throw new Error('Ismétlődő importazonosító');
   return bundle;
 }
-function apply(dataDirectory, bundleFile) {
-  if (!fs.existsSync(bundleFile)) return { imported: 0, available: false };
-  const bundle = validateBundle(JSON.parse(fs.readFileSync(bundleFile, 'utf8')));
+function readLedger(dataDirectory) {
   const ledgerFile = path.join(dataDirectory, 'imports.json');
-  let ledger = { completed: [] };
-  if (fs.existsSync(ledgerFile)) {
-    ledger = JSON.parse(fs.readFileSync(ledgerFile, 'utf8'));
-    if (!ledger || !Array.isArray(ledger.completed) || ledger.completed.some(entry => !entry || typeof entry.bundleId !== 'string')) throw new Error('Sérült importnapló');
-  }
+  if (!fs.existsSync(ledgerFile)) return { completed: [] };
+  const ledger = JSON.parse(fs.readFileSync(ledgerFile, 'utf8'));
+  if (!ledger || !Array.isArray(ledger.completed) || ledger.completed.some(entry => !entry || typeof entry.bundleId !== 'string')) throw new Error('Sérült importnapló');
+  return ledger;
+}
+function isComplete(dataDirectory, bundleId) {
+  return readLedger(dataDirectory).completed.some(entry => entry.bundleId === bundleId);
+}
+function applyBundle(dataDirectory, input) {
+  const bundle = validateBundle(input);
+  const ledgerFile = path.join(dataDirectory, 'imports.json');
+  const ledger = readLedger(dataDirectory);
   if (ledger.completed.some(entry => entry.bundleId === bundle.bundleId)) return { imported: 0, alreadyImported: true };
   const notesFile = path.join(dataDirectory, 'notes.json'), archiveFile = path.join(dataDirectory, 'archive.json');
   const existingNotes = store.read(notesFile), existingArchive = archiveStore.read(archiveFile);
@@ -53,4 +58,8 @@ function apply(dataDirectory, bundleFile) {
   writeJson(ledgerFile, ledger);
   return { imported: additions.length, total: merged.notes.length, days: merged.days.length };
 }
-module.exports = { apply, validateBundle };
+function apply(dataDirectory, bundleFile) {
+  if (!fs.existsSync(bundleFile)) return { imported: 0, available: false };
+  return applyBundle(dataDirectory, JSON.parse(fs.readFileSync(bundleFile, 'utf8')));
+}
+module.exports = { apply, applyBundle, isComplete, validateBundle };
