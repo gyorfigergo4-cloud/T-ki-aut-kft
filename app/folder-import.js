@@ -41,18 +41,28 @@ function decode(raw){
  if(raw[0]===0xfe&&raw[1]===0xff)return new TextDecoder('utf-16be',{fatal:true,ignoreBOM:true}).decode(raw);
  try{return new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(raw);}catch{return new TextDecoder('windows-1250',{fatal:true}).decode(raw);}
 }
-function fileDay(relative,modified){
+function fileDay(relative,modified,override){
  const pieces=relative.split('/'),year=pieces.find(p=>/^20\d{2}$/.test(p)),month=months.findIndex(m=>pieces.some(p=>p.toLocaleLowerCase('hu')===m.toLocaleLowerCase('hu')))+1;
  if(!year||!month)throw new Error('Év- vagy hónapmappa hiányzik: '+relative);
  const m=dateName.exec(pieces.at(-1));let day;
  if(m){if(Number(m[1])!==month)throw new Error('Eltérő hónap a fájlnévben: '+relative);day=`${year}-${String(month).padStart(2,'0')}-${m[2].padStart(2,'0')}`;}
+ else if(override!==undefined){
+  if(!validDay(override)||!override.startsWith(`${year}-${String(month).padStart(2,'0')}-`))throw new Error('A kiválasztott napnak a fájl év- és hónapmappájába kell esnie: '+relative);
+  day=override;
+ }
  else{
   const fields=Object.fromEntries(new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Budapest',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(modified).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
-  if(fields.year!==year||Number(fields.month)!==month)throw new Error('A nap nem állapítható meg a fájl mentési dátumából: '+relative);
+  if(fields.year!==year||Number(fields.month)!==month){
+   const error=new Error('A nap nem állapítható meg a fájl mentési dátumából: '+relative);
+   error.code='DATE_REQUIRED';
+   const prefix=`${year}-${String(month).padStart(2,'0')}`;
+   error.issue={path:relative,min:prefix+'-01',max:prefix+'-'+new Date(Date.UTC(Number(year),month,0)).getUTCDate(),month:year+'. '+months[month-1].toLocaleLowerCase('hu')};
+   throw error;
+  }
   day=`${fields.year}-${fields.month}-${fields.day}`;
  }
  if(!validDay(day))throw new Error('Érvénytelen nap: '+relative);
- return {day,dateBasis:m?'filename':'file-modified'};
+ return {day,dateBasis:m?'filename':override!==undefined?'user-selected':'file-modified'};
 }
 function fields(text){
  const body=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/^\uFEFF/,'').trim(), lines=body.split('\n').map(l=>l.trim()).filter(Boolean);
@@ -65,9 +75,9 @@ function fields(text){
  }
  return {body,vin:vins(body).join(' / '),part:part.join('\n'),oil:oil.join('; '),fullPrice,discountPrice};
 }
-function build(directory){
+function scan(directory){
  const base=fs.realpathSync(directory);if(!fs.statSync(base).isDirectory())throw new Error('Válaszd a Napi jegyzetek mappát.');
- const rootName=path.basename(base).normalize('NFC'),sources=[],notes=[];let fileCount=0,byteCount=0,scanned=0;
+ const rootName=path.basename(base).normalize('NFC'),records=[];let byteCount=0,scanned=0;
  function walk(folder){
   for(const entry of fs.readdirSync(folder,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name,'en'))){
    if(++scanned>20000)throw new Error('Túl sok fájl van a kiválasztott mappában.');
@@ -77,21 +87,40 @@ function build(directory){
    if(!entry.isFile()||!entry.name.toLowerCase().endsWith('.txt'))continue;
    const stat=fs.statSync(file);byteCount+=stat.size;if(byteCount>100000000)throw new Error('A jegyzetmappa meghaladja a 100 MB-ot.');
    const raw=fs.readFileSync(file),text=decode(raw),relative=(rootName+'/'+path.relative(base,file).split(path.sep).join('/')).normalize('NFC');
-   const {day,dateBasis}=fileDay(relative,stat.mtime),fileHash=hash(raw),blocks=splitNotes(text,!dateName.test(entry.name));
-   fileCount++;sources.push({path:relative,sha256:fileHash});
+   records.push({relative,name:entry.name,text,fileHash:hash(raw),modified:stat.mtime.toISOString()});
+  }
+ }
+ walk(base);if(!records.length)throw new Error('Nem található TXT-jegyzet ebben a mappában.');
+ return records;
+}
+function dateIssues(records){
+ const issues=[];
+ for(const record of records){
+  try{fileDay(record.relative,new Date(record.modified));}
+  catch(error){if(error.code!=='DATE_REQUIRED')throw error;issues.push(error.issue);}
+ }
+ return issues;
+}
+function prepare(directory){const records=scan(directory);return {records,files:records.length,issues:dateIssues(records)};}
+function buildFromScan(records,dates={}){
+ if(!dates||typeof dates!=='object'||Array.isArray(dates))throw new Error('Válaszd ki a hiányzó napokat.');
+ const sources=[],notes=[];
+ for(const record of records){
+   const {relative,text,fileHash,name}=record,modified=new Date(record.modified);
+   const {day,dateBasis}=fileDay(relative,modified,Object.hasOwn(dates,relative)?dates[relative]:undefined),blocks=splitNotes(text,!dateName.test(name));
+   sources.push({path:relative,sha256:fileHash});
    if(blocks.map(b=>b.text).join('')!==text)throw new Error('Hibás szövegfeldolgozás: '+relative);
    blocks.forEach((block,index)=>{
     const first=block.text.split(/\r?\n/).map(cleanLine).find(Boolean)||'';
-    const title=!dateName.test(entry.name)?path.parse(entry.name).name:(block.kind==='name'||first.length<=80)?first:'Egyéb jegyzet · '+(index+1);
-    notes.push({id:'txt-'+hash(relative+'\0'+fileHash+'\0'+block.start).slice(0,32),title,day,created:new Date(Date.parse(day+'T12:00:00Z')+index*1000).toISOString(),updated:stat.mtime.toISOString(),...fields(block.text),source:{path:relative,fileHash,startLine:block.start+1,endLine:block.end,originalText:block.text,dateBasis,classification:block.kind}});
+    const title=!dateName.test(name)?path.parse(name).name:(block.kind==='name'||first.length<=80)?first:'Egyéb jegyzet · '+(index+1);
+    notes.push({id:'txt-'+hash(relative+'\0'+fileHash+'\0'+block.start).slice(0,32),title,day,created:new Date(Date.parse(day+'T12:00:00Z')+index*1000).toISOString(),updated:modified.toISOString(),...fields(block.text),source:{path:relative,fileHash,startLine:block.start+1,endLine:block.end,originalText:block.text,dateBasis,classification:block.kind}});
    });
-  }
  }
- walk(base);if(!fileCount)throw new Error('Nem található TXT-jegyzet ebben a mappában.');
  const bundleId='txt-zip-'+hash(JSON.stringify(sources.sort((a,b)=>a.path.localeCompare(b.path,'en'))));
  for(const note of notes)note.source.bundleId=bundleId;
  const days=[...new Set(notes.map(n=>n.day))].sort(),years=[...new Set([2024,2025,2026,...days.map(d=>Number(d.slice(0,4)))])].sort();
- return {format:'autobolt-initial-import',version:1,bundleId,notes,archive:{years,days},fileCount};
+ return {format:'autobolt-initial-import',version:1,bundleId,notes,archive:{years,days},fileCount:records.length};
 }
-function importFolder(directory,dataDirectory){const bundle=build(directory);const result=importer.applyBundle(dataDirectory,bundle);return {...result,files:bundle.fileCount,notes:bundle.notes.length,days:bundle.archive.days.length};}
-module.exports={build,importFolder,splitNotes,fileDay,fields};
+function build(directory,dates){return buildFromScan(scan(directory),dates);}
+function importFolder(directory,dataDirectory,dates){const bundle=build(directory,dates);const result=importer.applyBundle(dataDirectory,bundle);return {...result,files:bundle.fileCount,notes:bundle.notes.length,days:bundle.archive.days.length};}
+module.exports={build,prepare,buildFromScan,importFolder,splitNotes,fileDay,fields};

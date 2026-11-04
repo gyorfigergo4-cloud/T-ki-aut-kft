@@ -17,7 +17,7 @@
     <nav id="folders" aria-label="Év, hónap és nap szerinti mappák"></nav>
     </section>
     <section id="workorders-navigation" class="sidebar-navigation" hidden><input id="wo-search" type="search" placeholder="Ügyfél, alvázszám, sorszám…" aria-label="Munkalapok keresése"><button id="wo-new" class="primary">＋ Új munkalap / ajánlat</button><div class="section">MENTETT MUNKALAPOK</div><nav id="wo-list" aria-label="Mentett munkalapok"></nav></section>
-    <footer><div class="local-status"><span class="status-dot"></span>Automatikus mentés ezen a gépen</div><div class="import-buttons"><button id="import-folder" title="Jegyzetmappa betöltése">Jegyzetmappa</button><button id="import-excel" title="Excel-fájl beolvasása (.xlsx)">Excel beolvasása</button></div><button id="export"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>Biztonsági mentés</button><div class="brand-footer">TÖKI AUTÓ KFT. <span>BELSŐ HASZNÁLATRA</span></div></footer>
+    <footer><div class="local-status"><span class="status-dot"></span>Automatikus mentés ezen a gépen</div><div class="import-buttons"><button id="import-folder" title="Jegyzetmappa betöltése">Jegyzetmappa</button><button id="import-excel" title="Excel-fájl beolvasása (.xlsx)">Excel beolvasása</button></div><button id="export"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>Biztonsági mentés</button><div class="brand-footer">TÖKI AUTÓ KFT. <span>BELSŐ HASZNÁLATRA · v1.2.1</span></div></footer>
   </aside>
   <main id="notes-view" role="tabpanel" aria-labelledby="tab-notes">
     <div class="topbar"><div class="location"><span class="workspace-label">BELSŐ NYILVÁNTARTÁS</span><div id="breadcrumb" class="eyebrow"></div></div><div class="topbar-actions"><span id="status" role="status">Betöltés…</span><button id="add-day">＋ Nap hozzáadása</button></div></div>
@@ -69,6 +69,13 @@
       <details class="internal-details"><summary>Belső megjegyzés – nem nyomtatjuk</summary><textarea id="wo-internalNote" class="work-note" rows="4" placeholder="Belső információk, beszerzés, saját megjegyzések…"></textarea></details>
     </section>
   </main>
+  <dialog id="folder-dialog" aria-labelledby="folder-title">
+    <div class="eyebrow">RÉGI TXT-JEGYZETEK</div><h2 id="folder-title">Jegyzetmappa betöltése</h2>
+    <p id="folder-message" role="status">Válaszd ki a jegyzeteket tartalmazó teljes mappát.</p>
+    <p id="folder-error" class="error" role="alert" hidden></p>
+    <section id="folder-dates" hidden><h3>Hiányzó napok megadása</h3><p>Ezeknél a fájloknál a nap nem állapítható meg. Válaszd ki mindegyik helyes dátumát a megadott hónapon belül. Ezután a teljes mappa betölthető.</p><div id="folder-date-fields"></div></section>
+    <div class="dialog-actions"><button id="folder-close">Bezárás</button><button id="folder-choose">Mappa kiválasztása</button><button id="folder-commit" class="primary" hidden>Jegyzetek betöltése</button><button id="folder-view" class="primary" hidden>Jegyzetek megnyitása</button></div>
+  </dialog>
   <dialog id="wo-confirm"><h2>Törlöd ezt a munkalapot?</h2><p>A többi munkalap és a napi jegyzeteid megmaradnak.</p><div class="dialog-actions"><button id="wo-cancel-delete">Mégse</button><button id="wo-confirm-delete" class="danger">Törlés</button></div></dialog>
   <dialog id="excel-dialog"><div class="excel-heading"><div><div class="eyebrow">HELYI EXCEL-BEOLVASÁS</div><h2>Excel-tételek beolvasása</h2></div><button id="excel-close" aria-label="Excel ablak bezárása">×</button></div><p id="excel-file"></p>
     <div class="excel-settings"><label>Excel-munkalap<select id="excel-sheet"></select></label><label>Fejléc sora<input id="excel-header" type="number" min="1" step="1"></label><label>Beolvasás helye<select id="excel-target"><option value="notes">Napi jegyzetek</option><option value="workorder">A megnyitott munkalap tételei</option></select></label></div>
@@ -79,5 +86,5 @@
   <dialog id="year-dialog"><form id="year-form"><h2>Új év hozzáadása</h2><p>Az év alatt mind a 12 hónap megjelenik.</p><label>Év<input id="year-value" type="number" min="1900" max="9999" step="1" required placeholder="Pl. 2027"></label><p id="year-error" class="error" role="alert"></p><div class="dialog-actions"><button id="year-cancel" type="button">Mégse</button><button class="primary" type="submit">Év hozzáadása</button></div></form></dialog>
   <dialog id="day-dialog"><form id="day-form"><h2>Nap hozzáadása</h2><p>Válassz dátumot. Egy meglévő napot is megnyithatsz.</p><label>Dátum<input id="day-value" type="date" min="1900-01-01" max="9999-12-31" required></label><div class="dialog-actions"><button id="day-cancel" type="button">Mégse</button><button class="primary" type="submit">Nap megnyitása</button></div></form></dialog>
   <dialog id="confirm"><h2>Törlöd ezt a bejegyzést?</h2><p>Csak a kiválasztott név adatlapja törlődik. A nap és a többi bejegyzés megmarad.</p><div class="dialog-actions"><button id="cancel">Mégse</button><button id="remove" class="danger">Törlés</button></div></dialog>
-  <script src="items.js"></script><script src="archive.js"></script><script src="renderer.js"></script><script src="workorders-model.js"></script><script src="workorders-ui.js"></script><script src="excel-ui.js"></script>
+  <script src="items.js"></script><script src="archive.js"></script><script src="renderer.js"></script><script src="workorders-model.js"></script><script src="workorders-ui.js"></script><script src="excel-ui.js"></script><script src="folder-import-ui.js"></script>
 </body></html>

@@ -8,13 +8,13 @@ async function openUI(saved) {
   const dom = new JSDOM(fs.readFileSync('app/index.html', 'utf8'), { runScripts: 'outside-only', url: 'https://notes.local' });
   const { window } = dom;
   window.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
-  window.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+  window.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new window.Event('close')); };
   window.notesAPI = {
     load: async () => copy(saved.notes), loadArchive: async () => copy(saved.archive),
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
     export: async () => true
   };
-  for (const script of ['items.js', 'archive.js', 'renderer.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'archive.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   await tick();
   const $ = id => window.document.getElementById(id);
   const input = (id, value) => { $(id).value = value; $(id).dispatchEvent(new window.Event('input')); };
@@ -137,4 +137,38 @@ test('az Excel-import előtti mentésvárás bevárja a függő írást és jelz
  ui.dom.window.notesAPI.save=async()=>{throw new Error('disk full');};
  ui.input('title','Még nem menthető');await assert.rejects(ui.dom.window.NotesFlush(),/mentése nem sikerült/);
  assert.equal(saved.notes[0].title,'Frissen módosított név');ui.dom.window.close();
+});
+test('TXT-mappa: látható dátumválasztás, hiba és siker; a keresés nem rejti el a betöltött jegyzetet', async()=>{
+ const saved={notes:[],archive:{years:[2024,2025,2026],days:['2026-11-04']}};
+ const ui=await openUI(saved),w=ui.dom.window;let commits=0,closed=0;
+ const file='Jegyzetek/2026/Február/Minta jármű.txt';
+ w.notesAPI.importFolder=async()=>({ok:true,token:'fixture',files:1,issues:[{path:file,min:'2026-02-01',max:'2026-02-28',month:'2026. február'}]});
+ w.notesAPI.closeFolderImport=async()=>{closed++;};
+ w.notesAPI.commitFolderImport=async request=>{
+  commits++;assert.equal(request.dates[file],'2026-02-14');
+  saved.notes.push({id:'txt-test',title:'Áthozott ügyfél',body:'Teljes eredeti tartalom',day:'2026-02-14',updated:'2026-11-04T12:00:00Z'});
+  return {ok:true,files:1,imported:1,days:1,noteId:'txt-test'};
+ };
+ ui.input('search','Nemlétező keresés');ui.$('import-folder').click();await tick();await tick();
+ assert.equal(ui.$('folder-dialog').hasAttribute('open'),true);assert.equal(ui.$('folder-dates').hidden,false);
+ const input=ui.$('folder-date-fields').querySelector('input');assert.equal(input.min,'2026-02-01');assert.equal(input.max,'2026-02-28');
+ ui.$('folder-commit').click();await tick();assert.equal(commits,0,'Hiányzó nap mellett ne induljon részleges import');
+ input.value='2026-03-01';ui.$('folder-commit').click();await tick();assert.equal(commits,0);
+ input.value='2026-02-14';ui.$('folder-commit').click();await tick();await tick();
+ assert.equal(commits,1);assert.match(ui.$('folder-message').textContent,/1 új bejegyzés/);assert.equal(ui.$('folder-view').hidden,false);
+ assert.equal(ui.$('search').value,'');assert.equal(ui.$('title').value,'Áthozott ügyfél');assert.match(ui.$('breadcrumb').textContent,/2026.*Február.*14/);
+ ui.$('folder-view').click();assert.equal(ui.$('folder-dialog').hasAttribute('open'),false);
+ w.notesAPI.importFolder=async()=>({ok:false,error:'Nem olvasható a kiválasztott mappa.'});
+ ui.$('import-folder').click();await tick();await tick();assert.equal(ui.$('folder-error').hidden,false);assert.match(ui.$('folder-error').textContent,/Nem olvasható/);assert.equal(ui.$('folder-choose').disabled,false);
+ w.notesAPI.importFolder=async()=>({canceled:true});ui.$('folder-choose').click();await tick();await tick();assert.match(ui.$('folder-message').textContent,/Nem választottál/);
+ assert.equal(saved.notes.length,1);assert.equal(closed,0,'Sikeres commit után már nincs megtartott munkamenet');w.close();
+});
+test('a nap szerint egyértelmű TXT-mappa külön megerősítés nélkül betöltődik és a bezárás eldobja a dátumválasztást',async()=>{
+ const ui=await openUI({notes:[],archive:{years:[2024,2025,2026],days:[]}}),w=ui.dom.window;let imported=0,released=0;
+ w.notesAPI.importFolder=async()=>({ok:true,token:'fixture',files:1,issues:[]});
+ w.notesAPI.closeFolderImport=async()=>{released++;};
+ w.notesAPI.commitFolderImport=async()=>{imported++;return {ok:true,files:1,imported:0,days:1,alreadyImported:true};};
+ ui.$('import-folder').click();await tick();await tick();assert.equal(imported,1);assert.match(ui.$('folder-message').textContent,/már be van töltve/);ui.$('folder-close').click();
+ w.notesAPI.importFolder=async()=>({ok:true,token:'new',files:1,issues:[{path:'Jegyzetek/2026/Február/Teszt.txt',min:'2026-02-01',max:'2026-02-28',month:'2026. február'}]});
+ ui.$('import-folder').click();await tick();await tick();ui.$('folder-close').click();assert.equal(released,1);assert.equal(imported,1);w.close();
 });

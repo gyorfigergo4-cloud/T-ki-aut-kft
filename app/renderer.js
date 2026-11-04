@@ -271,27 +271,16 @@ return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then
   const preferred = notes.find(note => note.id === preferredNoteId);
   const initialDay = preferred?.day || (days.includes(today) ? today : [...days].sort().at(-1) ?? today);
   setDayContext(initialDay); selected = preferred?.id || notes.find(note => note.day === initialDay)?.id || null;
-  $('status').textContent = '✓ Minden változás mentve'; render();
+  $('status').textContent = '✓ Minden változás mentve'; render(); return true;
 }).catch(() => {
   $('status').textContent = 'A mentett adatok nem olvashatók. Az eredeti fájlok megmaradtak.';
   for (const id of ['new', 'add-year', 'add-day']) $(id).disabled = true;
+  return false;
 });
 }
-$('import-folder').onclick = async () => {
-  if (!loaded || !allowNavigation()) return;
-  $('import-folder').disabled = true;
-  try {
-    const result = await window.notesAPI.importFolder();
-    if (result.canceled) return;
-    if (!result.ok) { $('status').textContent = result.error; return; }
-    await loadData();
-    $('status').textContent = result.alreadyImported ? 'Ez a jegyzetmappa már be van töltve.' : 'Betöltve: ' + result.files + ' fájl, ' + result.notes + ' bejegyzés.';
-  } catch { $('status').textContent = 'A jegyzetmappa betöltése nem sikerült.'; }
-  finally { $('import-folder').disabled = false; }
-};
 loadData();
 window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowNavigation });
-window.NotesRefresh = loadData;
+window.NotesRefresh = id => { clearSearch(); return loadData(id); };
 window.NotesFlush = async () => {
  if (!loaded) throw new Error('A jegyzetek még nem töltődtek be.');
  await queue;

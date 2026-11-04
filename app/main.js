@@ -22,6 +22,7 @@ app.whenReady().then(() => {
   const file = path.join(app.getPath('userData'), 'notes.json');
   const workordersFile = path.join(app.getPath('userData'), 'workorders.json');
   const excelSessions = new Map();
+  const folderSessions = new Map();
   const archiveFile = path.join(app.getPath('userData'), 'archive.json');
   let prepared = false;
   function prepareInitialData() {
@@ -35,11 +36,28 @@ app.whenReady().then(() => {
   ipcMain.handle('load', () => { prepareInitialData(); return store.read(file); });
   ipcMain.handle('save', (_, notes) => store.write(file, notes));
   ipcMain.handle('import-folder', async () => {
-    const result = await dialog.showOpenDialog(win, { title: 'Válaszd ki a Napi jegyzetek mappát', properties: ['openDirectory'] });
-    if (result.canceled || !result.filePaths[0]) return { canceled: true };
-    try { return { ok: true, ...folderImport.importFolder(result.filePaths[0], app.getPath('userData')) }; }
+    try {
+      const result = await dialog.showOpenDialog(win, { title: 'Válaszd ki a TXT-jegyzetek teljes mappáját (év- és hónapmappákkal)', properties: ['openDirectory'] });
+      if (result.canceled || !result.filePaths[0]) return { canceled: true };
+      const prepared = folderImport.prepare(result.filePaths[0]);
+      const token = crypto.randomUUID(); folderSessions.clear(); folderSessions.set(token, prepared.records);
+      return { ok: true, token, files: prepared.files, issues: prepared.issues };
+    }
     catch (error) { return { ok: false, error: error.message }; }
   });
+  ipcMain.handle('commit-folder-import', (_, request) => {
+    try {
+      const records = folderSessions.get(request.token);
+      if (!records) throw new Error('Válaszd ki újra a jegyzetmappát.');
+      const bundle = folderImport.buildFromScan(records, request.dates);
+      const result = initialImport.applyBundle(app.getPath('userData'), bundle);
+      const knownIds = new Set(store.read(file).map(note => note.id));
+      const noteId = bundle.notes.filter(note => knownIds.has(note.id)).sort((a, b) => b.day.localeCompare(a.day))[0]?.id;
+      folderSessions.delete(request.token);
+      return { ok: true, ...result, files: bundle.fileCount, notes: bundle.notes.length, days: bundle.archive.days.length, noteId };
+    } catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle('close-folder-import', (_, token) => { folderSessions.delete(token); });
   ipcMain.handle('load-workorders', () => workordersStore.read(workordersFile));
   ipcMain.handle('save-workorders', (_, docs) => workordersStore.write(workordersFile, docs));
   function excelSession(token) { const s = excelSessions.get(token); if (!s) throw new Error('Nyisd meg újra az Excel-fájlt.'); return s; }

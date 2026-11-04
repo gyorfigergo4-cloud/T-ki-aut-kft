@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Javítás az 1.2.1-es verzióban
+
+A TXT-jegyzetmappa betöltése külön ablakban mutatja a folyamatot, a hibát és az eredményt. Ha egy névvel elmentett TXT-fájlnál a mentési dátum nem egyezik az év- és hónapmappával, a felhasználó kiválaszthatja a helyes napot. Csak az adott hónap valós napjai fogadhatók el; a program nem talál ki dátumot, és a teljes dátumellenőrzés előtt nem ír át adatot. A dátumválasztás idejére a beolvasott fájlok helyi pillanatképét tartja meg, az eredeti fájlokat nem módosítja. A kiválasztott dátum eredete az adatlap forrásadataiban megmarad.
+
+Sikeres betöltés után törli a keresési szűrőt és megnyit egy átvett bejegyzést. Az import előtt bevárja a függő mentéseket. A korábbi jegyzetek és munkalapok megmaradnak, az ismételt import továbbra sem írja felül a szerkesztett jegyzeteket és nem duplázza a már betöltött tételeket. A korábbi 571 TXT-fájl beolvasási eredménye változatlan.
+
 ## Újdonság az 1.2-es verzióban
 
 ### Excel-beolvasás
@@ -49,7 +55,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.2-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.2.1-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 
