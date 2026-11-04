@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'">
+  <title>Töki Autó Kft. · Belső jegyzetek</title><link rel="icon" type="image/svg+xml" href="assets/toki-mark.svg"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside>
+    <header class="brand"><img class="brand-logo" src="assets/toki-logo.png" alt="Töki Autó Alkatrész" width="238" height="103"><h1 class="sr-only">Töki Autó Kft. · Belső jegyzetek</h1><small class="brand-caption">BELSŐ JEGYZETEK</small></header>
+    <label class="sr-only" for="search">Keresés minden évben és adatmezőben</label>
+    <div class="search-box"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="search" type="search" placeholder="Keresés minden évben…"></div>
+    <button id="clear" hidden>Keresés törlése</button>
+    <div class="section"><span>ÉVEK ÉS HÓNAPOK</span><button id="add-year" title="Új év hozzáadása" aria-label="Új év hozzáadása">＋ Év</button></div>
+    <nav id="folders" aria-label="Év, hónap és nap szerinti mappák"></nav>
+    <footer><div class="local-status"><span class="status-dot"></span>Automatikus mentés ezen a gépen</div><button id="export"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>Biztonsági mentés</button><div class="brand-footer">TÖKI AUTÓ KFT. <span>BELSŐ HASZNÁLATRA</span></div></footer>
+  </aside>
+  <main>
+    <div class="topbar"><div class="location"><span class="workspace-label">BELSŐ NYILVÁNTARTÁS</span><div id="breadcrumb" class="eyebrow"></div></div><div class="topbar-actions"><span id="status" role="status">Betöltés…</span><button id="add-day">＋ Nap hozzáadása</button></div></div>
+    <section class="day-overview" aria-label="A naphoz tartozó nevek">
+      <div class="day-heading"><div><h2 id="day-heading">Napi bejegyzések</h2><p id="day-description"></p></div><button id="new" class="primary" disabled>＋ Új név a naphoz</button></div>
+      <nav id="list" aria-label="Bejegyzések"></nav>
+    </section>
+    <section id="empty"><div class="empty-icon">▤</div><h2>Ennek a napnak még nincs bejegyzése.</h2><p>Az „Új név a naphoz” gombbal veheted fel az első adatlapot.</p></section>
+    <section id="editor" hidden>
+      <div class="editor-top"><div><div class="eyebrow">ÜGYFÉL / ALKATRÉSZ</div><h2>Bejegyzés adatai</h2></div><button id="delete" class="danger" disabled>Bejegyzés törlése</button></div>
+      <div id="date"></div>
+      <details id="import-source" hidden><summary>Átvett jegyzet · eredeti szöveg megtekintése</summary><p id="import-path"></p><pre id="import-original"></pre></details>
+      <div class="fields">
+        <label>Név<input id="title" placeholder="Pl. Kovács Péter" maxlength="200"></label>
+        <label>Alvázszám<input id="vin" placeholder="Pl. WVWZZZ1KZ6W123456" maxlength="1000" spellcheck="false"></label>
+        <label class="full">Cikkszámok<textarea id="part" placeholder="Több cikkszámot is írhatsz, soronként egyet." maxlength="10000" spellcheck="false"></textarea></label>
+        <label class="full">Olaj <span class="optional">(ha szükséges)</span><input id="oil" placeholder="Pl. Castrol EDGE 5W-30 LL, 4,5 liter" maxlength="1000"></label>
+        <label>Teli ár (Ft)<input id="fullPrice" type="number" min="0" step="0.01" placeholder="0"></label>
+        <label>Kedvezményes ár (Ft)<input id="discountPrice" type="number" min="0" step="0.01" placeholder="0"></label>
+      </div>
+      <div id="price-summary" role="status"></div>
+      <label class="body-label" for="body">Megjegyzés</label><textarea id="body" placeholder="Egyeztetés, állapot, fontos tudnivalók…"></textarea><div id="words"></div>
+    </section>
+  </main>
+  <dialog id="year-dialog"><form id="year-form"><h2>Új év hozzáadása</h2><p>Az év alatt mind a 12 hónap megjelenik.</p><label>Év<input id="year-value" type="number" min="1900" max="9999" step="1" required placeholder="Pl. 2027"></label><p id="year-error" class="error" role="alert"></p><div class="dialog-actions"><button id="year-cancel" type="button">Mégse</button><button class="primary" type="submit">Év hozzáadása</button></div></form></dialog>
+  <dialog id="day-dialog"><form id="day-form"><h2>Nap hozzáadása</h2><p>Válassz dátumot. Egy meglévő napot is megnyithatsz.</p><label>Dátum<input id="day-value" type="date" min="1900-01-01" max="9999-12-31" required></label><div class="dialog-actions"><button id="day-cancel" type="button">Mégse</button><button class="primary" type="submit">Nap megnyitása</button></div></form></dialog>
+  <dialog id="confirm"><h2>Törlöd ezt a bejegyzést?</h2><p>Csak a kiválasztott név adatlapja törlődik. A nap és a többi bejegyzés megmarad.</p><div class="dialog-actions"><button id="cancel">Mégse</button><button id="remove" class="danger">Törlés</button></div></dialog>
+  <script src="archive.js"></script><script src="renderer.js"></script>
+</body></html>

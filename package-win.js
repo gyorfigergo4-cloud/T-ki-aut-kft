@@ -1,0 +1,2 @@
+const { packager } = require('@electron/packager');
+packager({ dir: __dirname, out: 'dist', name: 'TokiAuto', platform: 'win32', arch: 'x64', overwrite: true, asar: true, ignore: [/^\/imports($|\/)/, /^\/scripts($|\/)/, /^\/[^/]+\.zip$/, /^\/test($|\/)/, /^\/dist($|\/)/, /^\/package-win\.js$/, /^\/README\.md$/] }).then(paths => console.log(paths.join('\n'))).catch(error => { console.error(error); process.exitCode = 1; });

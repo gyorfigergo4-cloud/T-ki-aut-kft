@@ -1,0 +1,1 @@
+{"name":"jegyzetfuzet","version":"1.0.0","description":"Egyszerű, offline magyar jegyzetelő","main":"app/main.js","private":true,"scripts":{"start":"electron .","test":"node --test","package:win":"node package-win.js"},"devDependencies":{"@electron/packager":"19.0.1","electron":"45.2.2","jsdom":"^30.1.3"}}
