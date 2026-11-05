@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Görgetés nélkül megnyíló autóbuborékok · 1.9.1
+
+A névbuborék középre nyíló ablakban mutatja az ügyfél autóit. Egy autóbuborékra kattintva külön felugró adatlapban látszik a teljes autóleírás, alvázszám és rendszám, a módosítás és törlés gombjával. Az autólistában keresés és hatos lapozás helyettesíti a hosszú görgetést. Bezáráskor megmarad a háttérlista görgetési helye; az Escape először csak az autó adatlapját zárja be, az ügyfél autói nyitva maradnak. A négygépes megosztás és a külön helyi jegyzetek tárolása változatlan.
+
+Ellenőrzés: `node scripts/verify-garage-bubbles.cjs` aktív képernyővel (Linuxon `DISPLAY` szükséges). Valódi Electronban 1000×600-as ablak, 300 karakteres autóleírás, görgetés nélküli adatlap és autóválasztó, lapozás, Escape, változatlan háttérpozíció és adatfájl; továbbá a meglévő négygépes integrációs próba.
+
 ## Közös autónyilvántartó · 1.9.0
 
 A felhasználó által feltöltött ZIP fájlnevében megadott `eabbd9af4364534610329326b602eddc6fd09412` verzióra épül. A nagy ZIP a fájlátviteli méretkorlát miatt nem volt közvetlenül beolvasható; a pontos Git-verziót a projekt eredeti tárolójából kértük le. Megmaradt az alvázszámonkénti cikkszámkezelés. A jegyzetek, cikkszámok, archívum és munkalapok tárolója, illetve a jegyzetszerkesztő a fenti verzióval azonos.

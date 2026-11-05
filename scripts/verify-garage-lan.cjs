@@ -28,19 +28,19 @@ async function main(){
  // No manual refresh: the remaining renderers must observe the change through polling.
  console.log('Phase: automatic renderer refresh');for(const child of children){const result=await js(child,`for(let i=0;i<65;i++){if(document.querySelectorAll('#garage-people button').length===1)return true;await new Promise(r=>setTimeout(r,100));}throw Error('Polling did not update');`);assert.equal(result,true);}
  // Two editors open the same revision; the second save must not overwrite the first.
- console.log('Phase: overlapping edits');for(const child of children.slice(1,3))await js(child,`document.querySelector('#garage-people button').click();document.querySelector('#garage-cars button').click();return true;`);
+ console.log('Phase: overlapping edits');for(const child of children.slice(1,3))await js(child,`document.querySelector('#garage-people button').click();document.querySelector('#garage-cars button').click();document.getElementById('garage-car-edit').click();return true;`);
  await js(children[1],`document.getElementById('garage-field-plate').value='NEW-001';document.getElementById('garage-field-plate').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('garage-edit-form').requestSubmit();await new Promise(r=>setTimeout(r,200));if(document.getElementById('garage-edit-dialog').open)throw Error(document.getElementById('garage-edit-error').textContent);return true;`);
  await js(children[2],`document.getElementById('garage-field-plate').value='OLD-002';document.getElementById('garage-field-plate').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('garage-edit-form').requestSubmit();await new Promise(r=>setTimeout(r,200));if(!document.getElementById('garage-edit-dialog').open||!document.getElementById('garage-edit-error').textContent.includes('Valaki közben'))throw Error('Missing conflict guard');document.getElementById('garage-edit-cancel').click();return true;`);
  const shared=await js(children[3],`return notesAPI.loadGarage();`);assert.equal(shared.people[0].cars[0].plate,'NEW-001');
  for(const [file,before]of sentinels)assert.deepEqual(fs.readFileSync(file),before,'Private data changed by garage: '+file);
- await js(children[3],`document.querySelector('#garage-people button').click();return true;`);
+ await js(children[3],`document.querySelector('#garage-people button').click();document.querySelector('#garage-cars button').click();return true;`);
  await call(children[3],{action:'screenshot',path:path.join(folder,'autonyilvantarto.png')});
  // A cancelled app quit must leave the central server running.
  console.log('Phase: cancelled native quit');await call(children[0],{action:'quit-attempt'});await delay(150);
  await js(children[0],`if(!document.getElementById('note-review-dialog').open)throw Error('Close guard missing');document.getElementById('note-review-back').click();return true;`);
  assert.equal((await js(children[3],`return notesAPI.loadGarage();`)).people.length,1);
  // Notes are still editable independently, and do not appear on the other PCs.
- console.log('Phase: private notes');await js(children[3],`await WorkOrdersUI.showNotes();const body=document.getElementById('body');body.value='Csak a negyedik gép új jegyzete';body.dispatchEvent(new Event('input',{bubbles:true}));await NotesFlushForClose();return true;`);
+ console.log('Phase: private notes');await js(children[3],`document.getElementById('garage-car-dialog').close();document.getElementById('garage-person-dialog').close();await WorkOrdersUI.showNotes();const body=document.getElementById('body');body.value='Csak a negyedik gép új jegyzete';body.dispatchEvent(new Event('input',{bubbles:true}));await NotesFlushForClose();return true;`);
  for(let i=0;i<3;i++)assert.equal(JSON.parse(fs.readFileSync(path.join(folder,'pc'+i,'notes.json')))[0].body,'CSAK EZEN A GÉPEN '+i);
  assert.equal(JSON.parse(fs.readFileSync(path.join(folder,'pc3','notes.json')))[0].body,'Csak a negyedik gép új jegyzete');
  // Stop the central PC: private notes must continue to save on a client.

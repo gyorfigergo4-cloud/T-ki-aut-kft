@@ -1,12 +1,12 @@
 (function(){
  const $=id=>document.getElementById(id),Model=window.GarageModel;
- let people=[],selected=null,loaded=false,busy=false,queue=Promise.resolve(),editAction=null,deleteAction=null,rows=[],preview=null,dirty=false,revision=null,connected=false,networkInfo={mode:'local'},polling=false,conflict=false;
+ let people=[],selected=null,loaded=false,busy=false,queue=Promise.resolve(),editAction=null,deleteAction=null,rows=[],preview=null,dirty=false,revision=null,connected=false,networkInfo={mode:'local'},polling=false,conflict=false,selectedCar=null,carPage=0;
  const uid=()=>crypto.randomUUID();
  const fold=s=>s.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
  const current=()=>people.find(p=>p.id===selected);
  function node(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
  function button(text,action,cls){const b=node('button',text,cls);b.type='button';b.onclick=action;return b;}
- function setBusy(value){busy=value;for(const id of ['garage-backup','garage-new','garage-import','garage-edit-save','garage-edit-cancel','garage-delete-confirm','garage-delete-cancel','garage-import-cancel'])$(id).disabled=value||!loaded||(['garage-backup','garage-new','garage-import'].includes(id)&&!connected);for(const control of $('garage-detail').querySelectorAll('button'))control.disabled=value||!connected;for(const d of ['garage-edit-dialog','garage-import-dialog']){for(const input of $(d).querySelectorAll('input,textarea,select'))input.disabled=value;}}
+ function setBusy(value){busy=value;for(const id of ['garage-backup','garage-new','garage-import','garage-edit-save','garage-edit-cancel','garage-delete-confirm','garage-delete-cancel','garage-import-cancel'])$(id).disabled=value||!loaded||(['garage-backup','garage-new','garage-import'].includes(id)&&!connected);for(const id of ['garage-rename','garage-delete-person','garage-add-car','garage-car-edit','garage-car-delete'])$(id).disabled=value||!connected;for(const d of ['garage-edit-dialog','garage-import-dialog']){for(const input of $(d).querySelectorAll('input,textarea,select'))input.disabled=value;}}
  async function commit(next){
   if(busy||!loaded)throw Error('Várd meg a folyamatban lévő mentést.');if(conflict)throw Error('Előbb zárd be az ablakot a Mégse gombbal, várd meg a lista frissítését, majd nyisd meg újra.');Model.validate(next);setBusy(true);$('garage-status').textContent='Mentés…';
   const save=window.notesAPI.saveGarage({people:next,revision});queue=Promise.resolve(save).catch(()=>{});
@@ -19,20 +19,53 @@
   $('garage-count').textContent=`${people.length} név · ${people.reduce((n,p)=>n+p.cars.length,0)} autó`;
   $('garage-people').replaceChildren();
   for(const p of visible){
-   const b=button('',()=>{if(busy)return;selected=selected===p.id?null:p.id;render();},'garage-bubble');b.dataset.personId=p.id;b.setAttribute('aria-expanded',String(selected===p.id));b.setAttribute('aria-controls','garage-detail');
+   const b=button('',()=>openPerson(p.id),'garage-bubble');b.dataset.personId=p.id;b.setAttribute('aria-expanded',String(selected===p.id&&$('garage-person-dialog').open));b.setAttribute('aria-controls','garage-person-dialog');b.setAttribute('aria-haspopup','dialog');
    const avatar=node('span',p.name.trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toLocaleUpperCase('hu'),'garage-avatar');avatar.setAttribute('aria-hidden','true');const label=node('span');label.append(node('strong',p.name),node('small',`${p.cars.length} autó`));b.append(avatar,label);$('garage-people').append(b);
   }
   $('garage-empty').hidden=visible.length>0;if(people.length){$('garage-empty').querySelector('h3').textContent='Nincs találat.';$('garage-empty').querySelector('p').textContent='Próbálj másik nevet, rendszámot vagy alvázszámot.';}
   else{$('garage-empty').querySelector('h3').textContent='Az első névvel kezdődik.';$('garage-empty').querySelector('p').textContent='Adj hozzá egy nevet, vagy másold be a meglévő listádat Excelből.';}
-  const person=current();$('garage-detail').hidden=!person;$('garage-cars').replaceChildren();if(!person)return;
-  $('garage-person-name').textContent=person.name;
-  if(!person.cars.length)$('garage-cars').append(node('p','Még nincs autó ennél a névnél. Az Autó hozzáadása gombbal veheted fel.'));
-  for(const car of person.cars){
-   const card=node('article',undefined,'garage-car');card.dataset.carId=car.id;card.append(node('h3',car.vehicle||'Jármű'));
-   const dl=node('dl');for(const [label,value]of [['ALVÁZSZÁM',car.vin],['RENDSZÁM',car.plate]])dl.append(node('dt',label),node('dd',value||'Nincs megadva'));card.append(dl);
-   const actions=node('div',undefined,'garage-actions');actions.append(button('Módosítás',()=>edit('car',car)),button('Törlés',()=>confirmDelete('car',car),'danger'));card.append(actions);$('garage-cars').append(card);
-  }
+  renderCars();
  }
+ function openPerson(id){
+  if(busy)return;selected=id;selectedCar=null;carPage=0;
+  const query=$('garage-search').value.trim();$('garage-car-search').value=fold(current()?.name||'').includes(fold(query))?'':query;
+  if(!$('garage-person-dialog').open)$('garage-person-dialog').showModal();render();$('garage-person-close').focus({preventScroll:true});
+ }
+ function renderCars(){
+  const person=current();$('garage-detail').hidden=!person;$('garage-cars').replaceChildren();
+  if(!person){$('garage-car-dialog').close();$('garage-person-dialog').close();return;}
+  $('garage-person-name').textContent=person.name;
+  const query=fold($('garage-car-search').value.trim());const cars=person.cars.filter(c=>fold([c.vehicle,c.vin,c.plate].join(' ')).includes(query));
+  const pages=Math.max(1,Math.ceil(cars.length/6));carPage=Math.min(carPage,pages-1);
+  for(const car of cars.slice(carPage*6,carPage*6+6)){
+   const bubble=button('',()=>openCar(car.id),'garage-bubble garage-car-bubble');bubble.dataset.carId=car.id;bubble.setAttribute('aria-haspopup','dialog');bubble.setAttribute('aria-controls','garage-car-dialog');
+   const mark=node('span','▰','garage-avatar');mark.setAttribute('aria-hidden','true');const label=node('span',undefined,'garage-car-label');label.append(node('strong',car.vehicle||'Jármű'),node('small',car.plate||'Rendszám nincs megadva'));bubble.append(mark,label);$('garage-cars').append(bubble);
+  }
+  if(!cars.length)$('garage-cars').append(node('p',person.cars.length?'Nincs ilyen autó. Próbálj másik keresést.':'Még nincs autó ennél a névnél. Az Autó hozzáadása gombbal veheted fel.'));
+  $('garage-car-page').textContent=`${cars.length} autó · ${carPage+1} / ${pages}. oldal`;$('garage-car-prev').disabled=carPage===0;$('garage-car-next').disabled=carPage>=pages-1;
+  renderCarData();
+ }
+ function openCar(id){selectedCar=id;renderCarData();if(!$('garage-car-dialog').open)$('garage-car-dialog').showModal();$('garage-car-close').focus({preventScroll:true});}
+ function renderCarData(){
+  const person=current(),car=person?.cars.find(c=>c.id===selectedCar);
+  if(!car){$('garage-car-dialog').close();selectedCar=null;return;}
+  $('garage-car-owner').textContent=person.name;$('garage-car-title').textContent=car.vehicle||'Jármű';$('garage-car-vin').textContent=car.vin||'Nincs megadva';$('garage-car-plate').textContent=car.plate||'Nincs megadva';
+  $('garage-car-edit').disabled=busy||!connected;$('garage-car-delete').disabled=busy||!connected;
+ }
+ for(const id of ['garage-person-dialog','garage-car-dialog']){
+  const dialog=$(id);
+  dialog.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();dialog.close();}});
+  dialog.addEventListener('keyup',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();}});
+  dialog.addEventListener('cancel',event=>{event.preventDefault();event.stopPropagation();dialog.close();});
+ }
+ $('garage-person-close').onclick=()=>$('garage-person-dialog').close();
+ $('garage-person-dialog').addEventListener('close',()=>{for(const b of $('garage-people').querySelectorAll('button')){b.setAttribute('aria-expanded','false');if(b.dataset.personId===selected)b.focus({preventScroll:true});}});
+ $('garage-car-dialog').addEventListener('close',()=>{const b=[...$('garage-cars').querySelectorAll('button')].find(b=>b.dataset.carId===selectedCar);if(b)b.focus({preventScroll:true});});
+ $('garage-car-close').onclick=()=>$('garage-car-dialog').close();
+ $('garage-car-edit').onclick=()=>{const car=current()?.cars.find(c=>c.id===selectedCar);if(car)edit('car',car);};
+ $('garage-car-delete').onclick=()=>{const car=current()?.cars.find(c=>c.id===selectedCar);if(car)confirmDelete('car',car);};
+ $('garage-car-search').oninput=()=>{carPage=0;renderCars();};
+ $('garage-car-prev').onclick=()=>{carPage=Math.max(0,carPage-1);renderCars();};$('garage-car-next').onclick=()=>{carPage++;renderCars();};
  function edit(kind,car){
   if(busy||!loaded||!connected)return;const person=current();$('garage-edit-fields').replaceChildren();$('garage-edit-error').textContent='';
   $('garage-edit-heading').textContent=kind==='new'?'Új név':kind==='name'?'Név módosítása':car?'Autó módosítása':'Autó hozzáadása';
@@ -50,7 +83,7 @@
   dirty=false;$('garage-edit-dialog').showModal();$('garage-edit-fields').querySelector('input').focus();
  }
  $('garage-edit-form').oninput=()=>{dirty=true;};
- $('garage-edit-form').onsubmit=async e=>{e.preventDefault();if(busy)return;try{await editAction();$('garage-edit-dialog').close();}catch(error){$('garage-edit-error').textContent=error.message;}};
+ $('garage-edit-form').onsubmit=async e=>{e.preventDefault();if(busy)return;try{await editAction();$('garage-edit-dialog').close();if(current()&&!$('garage-person-dialog').open)openPerson(selected);}catch(error){$('garage-edit-error').textContent=error.message;}};
  $('garage-edit-cancel').onclick=()=>{dirty=false;conflict=false;$('garage-edit-dialog').close();void refresh();};
  function confirmDelete(kind,car){
   if(busy||!connected)return;const person=current();$('garage-delete-error').textContent='';$('garage-delete-heading').textContent=kind==='car'?'Törlöd ezt az autót?':`Törlöd ezt a nevet: ${person.name}?`;

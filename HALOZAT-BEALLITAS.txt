@@ -1,4 +1,4 @@
-TÖKI AUTÓ – KÖZÖS AUTÓNYILVÁNTARTÓ (1.9.0)
+TÖKI AUTÓ – KÖZÖS AUTÓNYILVÁNTARTÓ (1.9.1)
 
 FONTOS: csak az autónyilvántartó lesz közös.
 A jegyzetek, a napi bejegyzések, az autónkénti cikkszámok és a munkalapok
@@ -76,3 +76,8 @@ központ nélküli privát jegyzetmentés és megszakított programbezárás.
 A Windows natív futtatását és a bolti tűzfalon való kapcsolódást a helyszínen
 kell ellenőrizni. Először egy egyértelmű tesztnevet vegyetek fel a közös listába,
 és nézzétek meg, hogy mind a négy gépen megjelenik-e, majd töröljétek.
+
+AUTÓBUBORÉKOK
+Kattints a névbuborékra, majd az autóbuborékra. Az adatlap középen nyílik meg,
+alvázszámmal, rendszámmal és az autó adataival. Sok autónál a Következő/Előző
+gombot használd. Az Escape visszalép az autólistára, a Bezárás vissza a nevekhez.

@@ -10,12 +10,12 @@ test('buborékos felület: név, autó, módosítás, keresés, törlés és új
  $('garage-new').click();$('garage-field-name').value='Kovács Péter';$('garage-edit-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await tick();
  assert.equal(app.saved()[0].name,'Kovács Péter');assert.equal($('garage-people').querySelector('button').getAttribute('aria-expanded'),'true');
  $('garage-add-car').click();$('garage-field-vehicle').value='Škoda Octavia';$('garage-field-vin').value='VIN123';$('garage-field-plate').value='ABC-123';$('garage-edit-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await tick();
- assert.equal(app.saved()[0].cars.length,1);assert.match($('garage-cars').textContent,/VIN123/);
- $('garage-cars').querySelector('button').click();$('garage-field-plate').value='XYZ-456';$('garage-edit-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await tick();assert.equal(app.saved()[0].cars[0].plate,'XYZ-456');
- $('garage-search').value='xyz-456';$('garage-search').dispatchEvent(new w.Event('input'));assert.equal($('garage-people').children.length,1);
+ assert.equal(app.saved()[0].cars.length,1);$('garage-cars').querySelector('button').click();assert.equal($('garage-car-dialog').open,true);assert.equal($('garage-car-vin').textContent,'VIN123');
+ $('garage-car-edit').click();$('garage-field-plate').value='XYZ-456';$('garage-edit-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await tick();assert.equal(app.saved()[0].cars[0].plate,'XYZ-456');
+ $('garage-car-close').click();$('garage-person-close').click();$('garage-search').value='xyz-456';$('garage-search').dispatchEvent(new w.Event('input'));assert.equal($('garage-people').children.length,1);
  const reopened=await open(app.saved());assert.match(reopened.$('garage-people').textContent,/Kovács Péter/);reopened.close();
- $('garage-cars').querySelectorAll('button')[1].click();$('garage-delete-cancel').click();assert.equal(app.saved()[0].cars.length,1);
- $('garage-cars').querySelectorAll('button')[1].click();$('garage-delete-confirm').click();await tick();assert.equal(app.saved()[0].cars.length,0);
+ $('garage-people').querySelector('button').click();$('garage-cars').querySelector('button').click();$('garage-car-delete').click();$('garage-delete-cancel').click();assert.equal(app.saved()[0].cars.length,1);
+ $('garage-car-delete').click();$('garage-delete-confirm').click();await tick();assert.equal(app.saved()[0].cars.length,0);
  $('garage-delete-person').click();$('garage-delete-confirm').click();await tick();assert.equal(app.saved().length,0);
  }finally{app.close();}
 });
@@ -25,5 +25,14 @@ test('Excel előnézet és ismétlésvédelem; mentési hiba után a szerkesztő
  app.setFail(true);$('garage-import-save').click();await tick();assert.equal(app.saved().length,0);assert.equal($('garage-import-dialog').hasAttribute('open'),true);assert.match($('garage-import-error').textContent,/Nem sikerült/);
  app.setFail(false);$('garage-import-save').click();await tick();assert.equal(app.saved()[0].cars.length,1);
  $('garage-import').click();$('garage-paste').value='Név\tAutó\tAlvázszám\tRendszám\nTeszt Név\tGolf\tVIN123\tABC-123';$('garage-paste').dispatchEvent(new w.Event('input'));assert.equal($('garage-import-save').disabled,true);assert.match($('garage-import-summary').textContent,/1 teljesen azonos/);
+ }finally{app.close();}
+});
+
+test('autóbuborék: felugró adatlap, hatos lapozás és keresés adatváltozás nélkül',async()=>{
+ const initial=[{id:'p',name:'Teszt Név',cars:Array.from({length:9},(_,i)=>({id:'c'+i,vehicle:'Autó '+i,vin:'VIN'+i,plate:'ABC-'+i}))}];
+ const app=await open(initial),{$,w}=app;try{
+ $('garage-people').querySelector('button').click();assert.equal($('garage-person-dialog').open,true);assert.equal($('garage-cars').querySelectorAll('button').length,6);assert.equal($('garage-car-prev').disabled,true);
+ $('garage-car-next').click();assert.equal($('garage-cars').querySelectorAll('button').length,3);$('garage-cars').querySelector('button').click();assert.equal($('garage-car-vin').textContent,'VIN6');assert.equal($('garage-car-plate').textContent,'ABC-6');$('garage-car-dialog').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));assert.equal($('garage-car-dialog').open,false);assert.equal($('garage-person-dialog').open,true);
+ $('garage-car-search').value='VIN8';$('garage-car-search').dispatchEvent(new w.Event('input'));assert.equal($('garage-cars').querySelectorAll('button').length,1);$('garage-cars').querySelector('button').click();assert.equal($('garage-car-vin').textContent,'VIN8');assert.deepEqual(app.saved(),initial);
  }finally{app.close();}
 });
