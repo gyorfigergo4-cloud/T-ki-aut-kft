@@ -1,6 +1,7 @@
 (function (root) {
   const lineItems = typeof module !== 'undefined' ? require('./items') : root.LineItems;
   const noteStatuses = typeof module !== 'undefined' ? require('./note-status') : root.NoteStatuses;
+  const vehicles = typeof module !== 'undefined' ? require('./vehicles') : root.NoteVehicles;
   const defaultYears = [2024, 2025, 2026];
   const months = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
   const localDay = value => {
@@ -16,10 +17,10 @@
   }
   function normalize(data, archive) {
     validate(archive);
-    const notes = data.map(note => lineItems.normalizeNote({
+    const notes = data.map(note => vehicles.normalize(lineItems.normalizeNote({
       ...note, workflowStatus: noteStatuses.get(note).id, vin: note.vin ?? '', part: note.part ?? '', oil: note.oil ?? '', fullPrice: note.fullPrice ?? '', discountPrice: note.discountPrice ?? '',
       created: note.created ?? note.updated, day: note.day ?? localDay(note.created ?? note.updated)
-    }));
+    })));
     if (notes.some(note => !validDay(note.day))) throw new Error('Érvénytelen bejegyzésdátum');
     const days = [...new Set([...archive.days, ...notes.map(note => note.day)])].sort();
     const years = [...new Set([...defaultYears, ...archive.years, ...days.map(day => Number(day.slice(0, 4)))])].sort((a, b) => a - b);

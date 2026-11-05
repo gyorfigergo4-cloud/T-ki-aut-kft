@@ -38,7 +38,7 @@
   }
   function normalizeSupplier(value) { return /^unitra(?:c)?k$/i.test(value.trim()) ? 'Unitrak' : value; }
   function blank(id) {
-    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '' };
+    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '', paid: false };
   }
   function legacyOrdered(line) {
     return typeof line === 'string' && /\b(?:megrendelve|rendelve)\s*[.!]?\s*$/iu.test(line) && !/\b(?:nem|nincs|nincsen)\b.*\b(?:megrendelve|rendelve)\b/iu.test(line);
@@ -46,7 +46,21 @@
   function order(item) {
     return { ordered: item.ordered === undefined ? legacyOrdered(item.legacyLine) : item.ordered, orderedAt: item.orderedAt || '' };
   }
-  function normalizeItem(item) { return { ...item, ...order(item), supplier: normalizeSupplier(item.supplier) }; }
+  function normalizeItem(item) { return { ...item, ...order(item), supplier: normalizeSupplier(item.supplier), paid: item.paid ?? false }; }
+  function isActive(item) { return !!(item.partNumber || item.description || item.supplier || item.fullPrice !== '' || item.discountedPrice !== ''); }
+  function paymentState(items, fallback = false) {
+    if (typeof fallback !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
+    const active = items.filter(isActive), paidCount = active.filter(item => item.paid === true).length;
+    return { paid: active.length ? paidCount === active.length : fallback, partial: paidCount > 0 && paidCount < active.length, paidCount, total: active.length };
+  }
+  function withPaid(item, paid) {
+    if (typeof paid !== 'boolean' || (paid && !isActive(item))) throw new Error('Fizetés jelölése előtt add meg a tétel adatait.');
+    const next = { ...item, paid }; validate([next]); return next;
+  }
+  function setAllPaid(items, paid) {
+    if (typeof paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
+    const next = items.map(item => isActive(item) ? { ...item, paid } : { ...item }); validate(next); return next;
+  }
   function withOrder(item, ordered, at = new Date().toISOString()) {
     if (typeof ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
     if (ordered && !item.partNumber.trim() && !item.description?.trim()) throw new Error('Rendelés jelölése előtt add meg a cikkszámot vagy a megnevezést.');
@@ -67,12 +81,12 @@
       } else { next.priceMode = 'auto'; next.discountedPrice = discounted(next.fullPrice, next.discountPercent); }
     }
     if (identity(next.partNumber) !== identity(item.partNumber) || (!identity(next.partNumber) && identity(next.description) !== identity(item.description))) {
-      next.ordered = false; next.orderedAt = '';
+      next.ordered = false; next.orderedAt = ''; next.paid = false;
     }
     return next;
   }
   function orderCounts(items) {
-    const active = items.filter(i => i.partNumber || i.description || i.supplier || i.fullPrice !== '' || i.discountedPrice !== '');
+    const active = items.filter(isActive);
     return { ordered: active.filter(i => order(i).ordered).length, total: active.length };
   }
   const amount = '(?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,\\d{1,2})?';
@@ -115,10 +129,10 @@
     return item;
   }
   function normalizeNote(note) {
-    if (note.items !== undefined) { validate(note.items); return { ...note, items: note.items.map(normalizeItem) }; }
+    if (note.items !== undefined) { validate(note.items); const items = note.items.map(normalizeItem); return { ...note, items, paid: paymentState(items, note.paid).paid }; }
     const part = note.part ?? '';
     const items = part.split(/\r?\n/).filter(line => line.trim()).map(parseLegacyLine);
-    const result = { ...note, items };
+    const result = { ...note, items, paid: paymentState(items, note.paid).paid };
     if (part) result.legacyParts = note.legacyParts ?? part;
     if (note.fullPrice || note.discountPrice) result.legacyTotals = note.legacyTotals ?? { fullPrice: note.fullPrice || '', discountedPrice: note.discountPrice || '' };
     return result;
@@ -132,6 +146,7 @@
       if (item.description !== undefined && typeof item.description !== 'string') throw new Error('Érvénytelen tételmegnevezés');
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
       if (item.ordered !== undefined && typeof item.ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
+      if (item.paid !== undefined && typeof item.paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
       if (item.orderedAt !== undefined && (typeof item.orderedAt !== 'string' || (item.orderedAt !== '' && (!Number.isFinite(Date.parse(item.orderedAt)) || new Date(item.orderedAt).toISOString() !== item.orderedAt || item.ordered !== true)))) throw new Error('Érvénytelen rendelési időpont');
       quantity(item.quantity); percent(item.discountPercent);
       if (item.fullPrice !== '') cents(item.fullPrice);
@@ -147,7 +162,7 @@
   function totals(items) {
     let full = 0n, reduced = 0n, savings = 0n, active = 0, fullPriced = 0, discountedPriced = 0, priced = 0;
     for (const item of items) {
-      if (!item.partNumber && !item.description && !item.supplier && item.fullPrice === '' && item.discountedPrice === '') continue;
+      if (!isActive(item)) continue;
       active++;
       const count = quantity(item.quantity);
       const hasFull = item.fullPrice !== '', hasDiscounted = item.discountedPrice !== '';
@@ -172,12 +187,13 @@
     return (negative ? '−' : '') + whole + (fraction ? ',' + fraction.toString().padStart(2, '0') : '') + ' Ft';
   }
   function syncLegacy(note) {
-    note.part = note.items.filter(item => item.partNumber || item.description || item.fullPrice !== '' || item.discountedPrice !== '' || item.supplier).map(item => [item.partNumber || item.description, item.supplier, item.fullPrice !== '' ? item.fullPrice + 'Ft' + (item.discountedPrice !== '' ? '-' + item.discountedPrice + 'Ft' : '') : item.discountedPrice !== '' ? 'Kedvezményes ár: ' + item.discountedPrice + 'Ft' : '', item.quantity !== '1' ? 'x' + item.quantity : '', order(item).ordered ? 'Rendelve' : ''].filter(Boolean).join(' ')).join('\n');
+    note.part = note.items.filter(isActive).map(item => [item.partNumber || item.description, item.supplier, item.fullPrice !== '' ? item.fullPrice + 'Ft' + (item.discountedPrice !== '' ? '-' + item.discountedPrice + 'Ft' : '') : item.discountedPrice !== '' ? 'Kedvezményes ár: ' + item.discountedPrice + 'Ft' : '', item.quantity !== '1' ? 'x' + item.quantity : '', order(item).ordered ? 'Rendelve' : ''].filter(Boolean).join(' ')).join('\n');
     const result = totals(note.items);
     note.fullPrice = result.fullPriced && !result.missingFull ? result.fullPrice : '';
     note.discountPrice = result.discountedPriced && !result.missingDiscounted ? result.discountedPrice : '';
+    note.paid = paymentState(note.items, note.paid).paid;
   }
-  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, totalsHint, formatMoney, syncLegacy, order, withOrder, edit, orderCounts };
+  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, totalsHint, formatMoney, syncLegacy, order, withOrder, edit, orderCounts, isActive, paymentState, withPaid, setAllPaid };
   if (typeof module !== 'undefined') module.exports = api;
   else root.LineItems = api;
 })(globalThis);

@@ -1,12 +1,20 @@
 (function (root) {
- function create(item, rowLabel, onToggle) {
+ function create(item, rowLabel, onToggle, onPaidToggle) {
   const cell = document.createElement('td'); cell.className = 'item-order-cell';
   const label = document.createElement('label'); label.className = 'item-order-toggle';
   const input = document.createElement('input'); input.type = 'checkbox'; input.dataset.field = 'ordered'; input.setAttribute('aria-label', 'Megrendelve – ' + rowLabel);
   const text = document.createElement('span'), time = document.createElement('time'); time.className = 'item-order-time';
   label.append(input, text); cell.append(label, time);
+  let paidInput;
+  if (onPaidToggle) {
+   const paidLabel = document.createElement('label'); paidLabel.className = 'payment-toggle item-paid-toggle';
+   paidInput = document.createElement('input'); paidInput.type = 'checkbox'; paidInput.dataset.field = 'paid'; paidInput.setAttribute('aria-label', 'Fizetve – ' + rowLabel);
+   const paidText = document.createElement('span'); paidText.textContent = 'Fizetve'; paidLabel.append(paidInput, paidText); cell.append(paidLabel);
+   paidInput.onchange = () => { onPaidToggle(paidInput.checked); refresh(); };
+  }
   function refresh() {
    const status = root.LineItems.order(item); input.checked = status.ordered;
+   if (paidInput) { paidInput.checked = item.paid === true; paidInput.disabled = !item.paid && !root.LineItems.isActive(item); }
    input.disabled = !status.ordered && !item.partNumber.trim() && !item.description?.trim();
    label.title = input.disabled ? 'Előbb add meg a cikkszámot vagy a megnevezést.' : 'Jelöld, ha ezt a tételt már megrendelted.';
    text.textContent = status.ordered ? 'Megrendelve' : 'Nincs jelölve'; cell.classList.toggle('is-ordered', status.ordered);

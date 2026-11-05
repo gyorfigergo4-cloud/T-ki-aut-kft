@@ -14,7 +14,7 @@ async function openUI(saved) {
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
     export: async () => true
   };
-  for (const script of ['items.js', 'note-status.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   await tick();
   const $ = id => window.document.getElementById(id);
   const input = (id, value) => { $(id).value = value; $(id).dispatchEvent(new window.Event('input')); };
@@ -214,4 +214,22 @@ test('a csak kedvezményes árral rögzített tétel végösszege látszik teli 
  ui.dom.window.close();ui=await openUI(saved);assert.equal(amount('total-discounted'),'27000Ft');assert.equal(field('discountPercent').value,'');
  field('fullPrice').value='20000';field('fullPrice').dispatchEvent(new ui.dom.window.Event('input'));await tick();assert.equal(field('discountPercent').value,'32.5');assert.equal(amount('total-full'),'40000Ft');assert.equal(amount('total-savings'),'13000Ft');assert.equal(amount('total-discounted'),'27000Ft');
  ui.dom.window.close();
+});
+test('Fizetve pipák soronként, egyben és részlegesen, a kártyaszín módosítása nélkül',async()=>{
+ const item=id=>({id,partNumber:'DEMO-'+id,fullPrice:'10000',discountPercent:'20',discountedPrice:'8000',quantity:'1',supplier:'IC',priceMode:'auto'});
+ const saved={notes:[{id:'paid-note',title:'Minta ügyfél',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z',workflowStatus:'quote',items:[item('one'),item('two')]},{id:'empty-note',title:'Másik ügyfél',body:'Jegyzet',day:'2026-11-05',updated:'2026-11-05T09:00:00Z',items:[]}],archive:{years:[2026],days:['2026-11-05']}};
+ let ui=await openUI(saved);const paid=index=>ui.$('items-body').children[index].querySelector('[data-field=paid]');
+ paid(0).click();await tick();assert.equal(saved.notes[0].items[0].paid,true);assert.equal(saved.notes[0].items[1].paid,false);assert.equal(ui.$('note-paid').indeterminate,true);assert.equal(ui.$('note-paid').checked,false);
+ ui.$('note-paid').click();await tick();assert.equal(paid(0).checked,true);assert.equal(paid(1).checked,true);assert.equal(saved.notes[0].paid,true);assert.equal(saved.notes[0].workflowStatus,'quote');assert.equal(ui.cards()[0].dataset.workflowStatus,'quote');assert.equal(saved.notes[0].discountPrice,'16000');
+ ui.dom.window.close();ui=await openUI(saved);assert.equal(ui.$('note-paid').checked,true);assert.equal(paid(1).checked,true);paid(1).click();await tick();assert.equal(ui.$('note-paid').indeterminate,true);
+ ui.$('list').querySelector('[data-note=empty-note]').click();ui.$('note-paid').click();await tick();assert.equal(saved.notes[1].paid,true);assert.equal(saved.notes[0].items[0].paid,true);assert.equal(saved.notes[0].items[1].paid,false);ui.dom.window.close();
+});
+test('több alvázszám és saját márka, keresés, törlés és újranyitás adatvesztés nélkül',async()=>{
+ const vin1='WVWZZZ1KZ6W123456',vin2='WBAHT71010G123456';
+ const saved={notes:[{id:'cars',title:'Minta ügyfél',body:'',vin:vin1,day:'2026-11-05',updated:'2026-11-05T08:00:00Z',source:{originalText:'Eredeti forrás'}}],archive:{years:[2026],days:['2026-11-05']}};
+ let ui=await openUI(saved);const rows=()=>ui.$('vehicles-list').children,edit=(index,field,value)=>{const input=rows()[index].querySelector('[data-vehicle-field='+field+']');input.value=value;input.dispatchEvent(new ui.dom.window.Event('input'));if(field==='brand')input.dispatchEvent(new ui.dom.window.Event('change'));};
+ assert.equal(ui.$('vin').value,vin1);assert.ok(ui.$('car-brands').children.length>=400);edit(0,'brand','vw');ui.$('add-vehicle').click();edit(1,'vin',vin2);edit(1,'brand','Ford');await tick();assert.equal(saved.notes[0].vehicles.length,2);assert.equal(saved.notes[0].vehicles[0].brand,'Volkswagen');assert.equal(saved.notes[0].vin,vin1+' / '+vin2);
+ ui.input('search','Ford');assert.equal(ui.cards().length,1);ui.$('clear').click();edit(1,'brand','Saját márka');await tick();assert.ok([...ui.$('car-brands').children].some(option=>option.value==='Saját márka'));
+ ui.dom.window.close();ui=await openUI(saved);assert.equal(rows().length,2);assert.equal(rows()[1].querySelector('[data-vehicle-field=brand]').value,'Saját márka');rows()[0].querySelector('button').click();await tick();assert.equal(saved.notes[0].vin,vin2);rows()[0].querySelector('button').click();await tick();assert.equal(saved.notes[0].vin,'');assert.deepEqual(saved.notes[0].vehicles,[]);assert.equal(saved.notes[0].source.originalText,'Eredeti forrás');
+ ui.dom.window.close();ui=await openUI(saved);assert.equal(rows().length,0);ui.$('add-vehicle').click();assert.equal(rows().length,1);ui.dom.window.close();
 });

@@ -5,7 +5,7 @@
  const fold=s=>s.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
  const day=()=>window.NotesArchive.localDay(new Date());
  function canLeave(){for(const el of invalid)if(!el.isConnected)invalid.delete(el);const el=invalid.values().next().value;if(el){el.focus();el.reportValidity();return false;}return true;}
- function persist(){Model.validate(docs);const snapshot=JSON.parse(JSON.stringify(docs)),version=++revision;pending++;$('wo-status').textContent='Mentés…';queue=queue.catch(()=>{}).then(()=>window.notesAPI.saveWorkorders(snapshot)).then(()=>{saveError=false;if(version===revision)$('wo-status').textContent='✓ Munkalap mentve';}).catch(()=>{saveError=true;$('wo-status').textContent='A munkalap mentése nem sikerült. Ellenőrizd a lemez szabad helyét.';}).finally(()=>{pending--;});}
+ function persist(){const doc=current();if(doc)doc.paid=Items.paymentState(doc.items,doc.paid).paid;Model.validate(docs);const snapshot=JSON.parse(JSON.stringify(docs)),version=++revision;pending++;$('wo-status').textContent='Mentés…';queue=queue.catch(()=>{}).then(()=>window.notesAPI.saveWorkorders(snapshot)).then(()=>{saveError=false;if(version===revision)$('wo-status').textContent='✓ Munkalap mentve';}).catch(()=>{saveError=true;$('wo-status').textContent='A munkalap mentése nem sikerült. Ellenőrizd a lemez szabad helyét.';}).finally(()=>{pending--;});}
  async function flush(){await ready;await queue;if(saveError)throw new Error('A munkalap mentése nem sikerült.');}
  function showTab(next){
   if(next===tab)return true;
@@ -29,6 +29,7 @@
   $('wo-total').previousElementSibling.textContent=value.missingDiscounted?'Kedvezményes részösszeg':'Összesen';
   for(const [id,key,count]of [['wo-total-full','fullPrice',value.fullPriced],['wo-total-savings','savings',value.priced],['wo-total','discountedPrice',value.discountedPriced]])$(id).textContent=count?Items.formatMoney(value[key]):'—';
   $('wo-price-summary').textContent=Items.totalsHint(value)+(value.missing?' Nyomtatás előtt töltsd ki a hiányzó árakat.':'');
+  const payment=Items.paymentState(doc.items,doc.paid);$('wo-paid').checked=payment.paid;$('wo-paid').indeterminate=payment.partial;
   const orders=Items.orderCounts(doc.items);$('wo-order-summary').textContent='Megrendelve: '+orders.ordered+' / '+orders.total+' tétel';
  }
 
@@ -40,7 +41,7 @@
   doc.items.forEach((item,index)=>{
    const row=document.createElement('tr');row.dataset.itemId=item.id;
    const priceInputs={};let priceDriver=item.priceMode==='manual'||(item.priceMode==='legacy'&&item.discountedPrice!=='')?'manual':'auto';
-   const orderControl=window.ItemOrderUI.create(item,(index+1)+'. munkalapsor',checked=>{try{Object.assign(item,Items.withOrder(item,checked));doc.updated=new Date().toISOString();persist();totals();list();}catch(error){$('wo-error').textContent=error.message;}});
+   const orderControl=window.ItemOrderUI.create(item,(index+1)+'. munkalapsor',checked=>{try{Object.assign(item,Items.withOrder(item,checked));doc.updated=new Date().toISOString();persist();totals();list();}catch(error){$('wo-error').textContent=error.message;}},checked=>{try{Object.assign(item,Items.withPaid(item,checked));doc.updated=new Date().toISOString();persist();totals();}catch(error){$('wo-error').textContent=error.message;}});
    for(const [field,label,type]of [['partNumber','Cikkszám','text'],['description','Megnevezés','text'],['fullPrice','Teli ár','number'],['discountPercent','Kedvezmény %','number'],['discountedPrice','Kedvezményes ár','number'],['quantity','Db','number']]){
     const cell=document.createElement('td');
     const input=document.createElement('input');input.type=type;input.value=item[field]||'';input.dataset.field=field;input.setAttribute('aria-label',label+' – '+(index+1)+'. munkalapsor');
@@ -76,12 +77,14 @@
  function create(note){
   if(!loaded||!canLeave())return;
   const doc=Model.blank(crypto.randomUUID(),day(),docs,crypto.randomUUID());
-  if(note){doc.customer=note.title;doc.vin=note.vin;doc.items=note.items.map(i=>({...i,description:i.description||''}));doc.internalNote=note.body;doc.sourceNoteId=note.id;}
+  if(note){doc.customer=note.title;Object.assign(doc,window.NoteVehicles.quoteInfo(note));doc.items=note.items.map(i=>({...i,description:i.description||''}));doc.internalNote=note.body;doc.sourceNoteId=note.id;doc.paid=Items.paymentState(doc.items,note.paid).paid;}
+  try{Model.validate([...docs,doc]);}catch(error){$('status').textContent=error.message;$('wo-status').textContent=error.message;return;}
   docs.push(doc);selected=doc.id;persist();showTab('workorders');render();$('wo-customer').focus();
  }
  $('wo-new').onclick=()=>create();
  $('note-to-wo').onclick=()=>{const note=window.NoteForWorkOrder?.();if(note)create(note);};
  $('wo-add-item').onclick=()=>{const doc=current();if(!doc||!canLeave())return;doc.items.push({...Items.blank(crypto.randomUUID()),description:''});doc.updated=new Date().toISOString();persist();renderItems();totals();$('wo-items').lastElementChild.querySelector('input').focus();};
+ $('wo-paid').onchange=()=>{const doc=current();if(!doc||!canLeave()){totals();return;}doc.items=Items.setAllPaid(doc.items,$('wo-paid').checked);doc.paid=$('wo-paid').checked;doc.updated=new Date().toISOString();persist();renderItems();totals();};
  $('wo-search').oninput=list;
  $('wo-delete').onclick=()=>$('wo-confirm').showModal();$('wo-cancel-delete').onclick=()=>$('wo-confirm').close();
  $('wo-confirm-delete').onclick=()=>{invalid.clear();docs=docs.filter(d=>d.id!==selected);selected=docs[0]?.id||null;persist();$('wo-confirm').close();render();};

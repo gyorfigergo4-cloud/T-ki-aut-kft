@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.4.1
+TÖKI AUTÓ KFT. – JEGYZETEK 1.5.0
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -66,3 +66,19 @@ JAVÍTOTT ÖSSZESÍTÉS
 A megadott kedvezményes árat teli ár nélkül is összesíti.
 13 500 Ft és 1 db esetén a végösszeg 13 500 Ft, 2 db-nál 27 000 Ft.
 A hiányzó ár nem számít nullának, az ismeretlen kedvezmény helyén vonal látszik.
+
+FIZETVE JELÖLÉS
+Minden cikkszám mellett külön Fizetve pipa van.
+A Bejegyzés adatai mellett, a Megrendelve alatt lévő Fizetve pipa
+az összes kitöltött tételt egyszerre jelöli vagy törli.
+Vegyes fizetésnél a közös pipa köztes állapotot mutat.
+A fizetési pipák nem változtatják meg a bejegyzés színét.
+A munkalapokon is elérhetők, a nyomtatásban és PDF-ben nem szerepelnek.
+
+TÖBB ALVÁZSZÁM ÉS AUTÓMÁRKA
+A Járművek részben az Alvázszám hozzáadása gombbal új sort vehetsz fel.
+Minden alvázszám mellett külön autómárkát választhatsz.
+433 előre megadott márka közül választhatsz, és sajátot is beírhatsz.
+A kereső az összes alvázszámban és márkában keres.
+A korábban beírt alvázszámok megmaradnak.
+A Munkalap készítése gomb az összes jármű alvázszámát és márkáját átveszi.

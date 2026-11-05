@@ -9,6 +9,7 @@
    if(!doc||textFields.some(k=>typeof doc[k]!=='string')||!doc.id||!doc.number.trim()||doc.number.length>80||ids.has(doc.id)||numbers.has(doc.number.trim().toLowerCase()))throw new Error('A munkalap azonosítója vagy sorszáma hibás, illetve ismétlődik.');
    if(!['quote','workorder'].includes(doc.kind)||!dateValid(doc.day)||(doc.validUntil&&!dateValid(doc.validUntil))||!Number.isFinite(Date.parse(doc.created))||!Number.isFinite(Date.parse(doc.updated)))throw new Error('A munkalap dátuma vagy típusa hibás.');
    if(textFields.some(k=>doc[k].length>20000))throw new Error('Túl hosszú munkalapmező.');
+   if(doc.paid!==undefined&&typeof doc.paid!=='boolean')throw new Error('Érvénytelen fizetésjelölés');
    Items.validate(doc.items);ids.add(doc.id);numbers.add(doc.number.trim().toLowerCase());
   }
   return docs;
@@ -16,7 +17,7 @@
  function blank(id,day,docs,itemId){
   const year=day.slice(0,4),used=docs.map(d=>new RegExp('^TA-'+year+'-(\\d+)$').exec(d.number)).filter(Boolean).map(m=>Number(m[1]));
   const now=new Date().toISOString();
-  return {id,number:'TA-'+year+'-'+String(Math.max(0,...used)+1).padStart(4,'0'),kind:'quote',day,customer:'',phone:'',vin:'',vehicle:'',plate:'',validUntil:'',publicNote:'',internalNote:'',items:[{...Items.blank(itemId),description:''}],created:now,updated:now};
+  return {id,number:'TA-'+year+'-'+String(Math.max(0,...used)+1).padStart(4,'0'),kind:'quote',paid:false,day,customer:'',phone:'',vin:'',vehicle:'',plate:'',validUntil:'',publicNote:'',internalNote:'',items:[{...Items.blank(itemId),description:''}],created:now,updated:now};
  }
  function activeItems(doc){return doc.items.filter(i=>i.partNumber||i.description||i.supplier||i.fullPrice!==''||i.discountedPrice!=='');}
  function redactor(items){
@@ -38,7 +39,7 @@
   if(active.some(i=>Items.cents(i.discountedPrice)>Items.cents(i.fullPrice)))throw new Error('A kedvezményes ár nem lehet magasabb a teli árnál.');
   const safe=redactor(doc.items);
   // Only this whitelist crosses the boundary into the print document. Never
-  // pass partNumber, source, legacyLine, supplier, ordered, orderedAt or internalNote to the view.
+  // pass partNumber, source, legacyLine, supplier, ordered, orderedAt, paid or internalNote to the view.
   return {title:doc.kind==='quote'?'Árajánlat':'Munkalap',number:doc.number,day:doc.day,validUntil:doc.validUntil,customer:safe(doc.customer),phone:safe(doc.phone),vin:safe(doc.vin),vehicle:safe(doc.vehicle),plate:safe(doc.plate),note:safe(doc.publicNote),items:active.map(i=>({description:safe(i.description||'Alkatrész'),fullPrice:i.fullPrice,discountPercent:i.discountPercent||'0',discountedPrice:i.discountedPrice,quantity:i.quantity,total:Items.totals([i]).discountedPrice})),totals:Items.totals(active)};
  }
  const api={validate,blank,activeItems,printable};

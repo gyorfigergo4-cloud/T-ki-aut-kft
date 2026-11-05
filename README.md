@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Fizetési pipák és több jármű az 1.5-ös verzióban
+
+Minden kitöltött tételnek külön **Fizetve** pipája van. A Bejegyzés adatai mellett, a Megrendelve alatt lévő közös pipa az összes kitöltött tételt egyszerre jelöli vagy törli; részleges fizetésnél köztes állapotot mutat. Üres tétellista mellett az egész bejegyzés fizetése önállóan jelölhető. A fizetés nem változtatja meg a névkártyák színét és nem állít rendelési állapotot. A munkalapokon is van soronkénti és közös pipa. Más cikkszám beírása törli az adott sor korábbi fizetési jelölését. A jelölések automatikusan mentődnek, ügyfélnyomtatásba és PDF-be nem kerülnek.
+
+Egy jegyzethez több alvázszám és soronként külön autómárka adható. Az **Alvázszám hozzáadása** gomb új sort vesz fel; a sor végén törölhető. A korábbi alvázszámok és eredeti forrásszövegek megmaradnak, az explicit törölt járművek újranyitáskor sem térnek vissza. A kereső minden jármű alvázszámát és márkáját figyeli. A 433 márkát tartalmazó, offline használható lista saját márkanévvel kiegészíthető. A névjegyzék forrását és licencét az [adatforrás megjelölése](app/assets/car-brands-NOTICE.txt) tartalmazza; gyártói emblémákat nem használunk. A **Munkalap készítése** az összes alvázszámot és márkát átviszi.
+
 ## Önálló árösszesítés javítása az 1.4.1-es verzióban
 
 A megadott teli és kedvezményes árak külön-külön számítanak bele az összesítésbe. Ha csak 13 500 Ft kedvezményes egységár van megadva, a végösszeg 1 db-nál 13 500 Ft, 2 db-nál 27 000 Ft. A hiányzó teli ár nem rejti el az ismert kedvezményes végösszeget. Részösszegnek csak azt az oldalt jelöli, amelyen valóban hiányzik ár. Nulla forint ismert árként jelenik meg.
@@ -77,13 +83,13 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 - Kezdetben 2024, 2025 és 2026 év mappája látható. A „＋ Év” gombbal további év hozható létre; minden év alatt mind a 12 hónap elérhető.
 - Nyisd le az évet, majd a hónapot. A „Nap hozzáadása” gombbal válassz dátumot. Meglévő nap megnyitása nem készít másolatot. Az új üres évek és napok is megmaradnak újraindítás után.
 - A kiválasztott napon az „Új név a naphoz” gombbal több név és külön adatlap vehető fel. Fent a névkártyákkal válthatsz köztük.
-- Az adatlap mezői: név, alvázszám, cikkszámok (több sorban), opcionális olaj (típus és mennyiség), teli ár, kedvezményes ár (Ft), megjegyzés. Az árak az adott adatlap egészére vonatkoznak.
+- Az adatlap mezői: név, több alvázszám külön márkával, cikkszámok (több sorban), opcionális olaj (típus és mennyiség), teli ár, kedvezményes ár (Ft), megjegyzés. Az árak darabonkénti egységárak, az összesítés figyelembe veszi a darabszámot.
 - A kereső minden év minden adatlapjának mezőiben keres, ékezet nélkül is. A találatra kattintva annak napjához és adatlapjához jutsz.
 - A mentés automatikus és helyi. Egy név adatlapjának törlése nem törli a napot vagy a többi név adatait.
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.4.1-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.5.0-s, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 
