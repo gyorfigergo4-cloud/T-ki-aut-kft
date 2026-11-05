@@ -51,8 +51,8 @@
   } catch (error) { showError(error.message || 'A jegyzetmappa betöltése nem sikerült.'); $('folder-message').textContent = 'A mappát nem sikerült előkészíteni.'; }
   finally { setBusy(false); if (autoCommit) await commit(); }
  }
- $('import-folder').onclick = () => {
-  if (!window.NotesImportContext().canLeave()) return;
+ $('import-folder').onclick = async () => {
+  if (!await window.NotesImportContext().canLeave()) return;
   if (window.WorkOrdersUI && !window.WorkOrdersUI.canLeave()) return;
   $('folder-dialog').showModal(); choose();
  };

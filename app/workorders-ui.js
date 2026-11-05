@@ -7,9 +7,9 @@
  function canLeave(){for(const el of invalid)if(!el.isConnected)invalid.delete(el);const el=invalid.values().next().value;if(el){el.focus();el.reportValidity();return false;}return true;}
  function persist(){const doc=current();if(doc)doc.paid=Items.paymentState(doc.items,doc.paid).paid;Model.validate(docs);const snapshot=JSON.parse(JSON.stringify(docs)),version=++revision;pending++;$('wo-status').textContent='Mentés…';queue=queue.catch(()=>{}).then(()=>window.notesAPI.saveWorkorders(snapshot)).then(()=>{saveError=false;if(version===revision)$('wo-status').textContent='✓ Munkalap mentve';}).catch(()=>{saveError=true;$('wo-status').textContent='A munkalap mentése nem sikerült. Ellenőrizd a lemez szabad helyét.';}).finally(()=>{pending--;});}
  async function flush(){await ready;await queue;if(saveError)throw new Error('A munkalap mentése nem sikerült.');}
- function showTab(next){
+ async function showTab(next){
   if(next===tab)return true;
-  if(tab==='notes'&&window.NotesImportContext&&!window.NotesImportContext().canLeave())return false;
+  if(tab==='notes'&&window.NotesImportContext&&!await window.NotesImportContext().canLeave())return false;
   if(tab==='workorders'&&!canLeave())return false;
   tab=next;document.body.dataset.section=tab;
   for(const name of ['notes','workorders']){const active=name===tab;$('tab-'+name).setAttribute('aria-selected',String(active));$(name+'-view').hidden=!active;$(name+'-navigation').hidden=!active;}
@@ -74,15 +74,16 @@
    if(!input.validity.valid)throw new Error('Ellenőrizd a munkalap mezőjét.');const next={...doc,[field]:input.value};Model.validate(docs.map(d=>d.id===doc.id?next:d));Object.assign(doc,next);doc.updated=new Date().toISOString();invalid.delete(input);input.removeAttribute('aria-invalid');$('wo-error').textContent=invalid.size?'Javítsd a megjelölt mezőt.':'';persist();heading();list();
   }catch(error){input.setCustomValidity(error.message);input.setAttribute('aria-invalid','true');invalid.add(input);$('wo-error').textContent=error.message;}
  });}
- function create(note){
+ async function create(note){
   if(!loaded||!canLeave())return;
   const doc=Model.blank(crypto.randomUUID(),day(),docs,crypto.randomUUID());
   if(note){doc.customer=note.title;Object.assign(doc,window.NoteVehicles.quoteInfo(note));doc.items=note.items.map(i=>({...i,description:i.description||''}));doc.internalNote=note.body;doc.sourceNoteId=note.id;doc.paid=Items.paymentState(doc.items,note.paid).paid;}
   try{Model.validate([...docs,doc]);}catch(error){$('status').textContent=error.message;$('wo-status').textContent=error.message;return;}
-  docs.push(doc);selected=doc.id;persist();showTab('workorders');render();$('wo-customer').focus();
+  if(!await showTab('workorders'))return;
+  docs.push(doc);selected=doc.id;persist();render();$('wo-customer').focus();
  }
  $('wo-new').onclick=()=>create();
- $('note-to-wo').onclick=()=>{const note=window.NoteForWorkOrder?.();if(note)create(note);};
+ $('note-to-wo').onclick=async()=>{const note=await window.NoteForWorkOrder?.();if(note)await create(note);};
  $('wo-add-item').onclick=()=>{const doc=current();if(!doc||!canLeave())return;doc.items.push({...Items.blank(crypto.randomUUID()),description:''});doc.updated=new Date().toISOString();persist();renderItems();totals();$('wo-items').lastElementChild.querySelector('input').focus();};
  $('wo-paid').onchange=()=>{const doc=current();if(!doc||!canLeave()){totals();return;}doc.items=Items.setAllPaid(doc.items,$('wo-paid').checked);doc.paid=$('wo-paid').checked;doc.updated=new Date().toISOString();persist();renderItems();totals();};
  $('wo-search').oninput=list;
@@ -101,6 +102,6 @@
  async function reload(id){const data=await window.notesAPI.loadWorkorders();Model.validate(data);docs=data;selected=docs.find(d=>d.id===id)?.id||docs[0]?.id||null;render();}
  const ready=(async()=>{try{const data=window.notesAPI.loadWorkorders?await window.notesAPI.loadWorkorders():[];Model.validate(data);docs=data;loaded=true;selected=docs[0]?.id||null;$('wo-status').textContent='✓ Munkalapok betöltve';render();}catch{$('wo-status').textContent='A mentett munkalapok nem olvashatók. Az eredeti fájl megmaradt.';$('wo-new').disabled=true;}})();
  window.WorkOrdersUI={ready,flush,canLeave,getContext:()=>({tab,doc:current()?JSON.parse(JSON.stringify(current())):null}),showNotes:()=>showTab('notes'),showWorkorders:()=>showTab('workorders')};
- window.addEventListener('excel-imported',async event=>{if(event.detail.target==='workorder'){try{await reload(event.detail.workorderId);showTab('workorders');$('wo-status').textContent=event.detail.message;}catch{$('wo-error').textContent='A munkalap újratöltése nem sikerült.';}}});
- window.addEventListener('beforeunload',event=>{if(invalid.size){event.preventDefault();event.returnValue=false;canLeave();}else if(pending||saveError){event.preventDefault();event.returnValue=false;queue.then(()=>{if(!pending&&!saveError)window.close();});}});
+ window.addEventListener('excel-imported',async event=>{if(event.detail.target==='workorder'){try{await reload(event.detail.workorderId);await showTab('workorders');$('wo-status').textContent=event.detail.message;}catch{$('wo-error').textContent='A munkalap újratöltése nem sikerült.';}}});
+ window.addEventListener('beforeunload',event=>{if(invalid.size||pending||saveError){event.preventDefault();event.returnValue='';}});
 })();

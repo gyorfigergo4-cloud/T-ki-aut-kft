@@ -114,12 +114,11 @@ function visibleNotes() {
   return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + (note.reminders || []).map(reminder => reminder.text).join(' ') + ' ' + Vehicles.searchText(note) + ' ' + note.vin + ' ' + NoteStatuses.get(note).label + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
     .sort((a, b) => b.day.localeCompare(a.day) || a.created.localeCompare(b.created));
 }
-function openDay(day) {
-  if (!allowNavigation()) return;
+function openDay(day) { return navigate(() => {
   clearSearch(); setDayContext(day);
   selected = notes.find(note => note.day === day)?.id ?? null;
   render();
-}
+}); }
 function folderButton(label, type, badge, expanded) {
   const button = document.createElement('button');
   button.className = 'folder-row ' + type;
@@ -137,11 +136,10 @@ function renderFolders() {
     const yearKey = String(year), open = openedYears.has(year);
     const yearButton = folderButton(yearKey, 'year', notes.filter(note => note.day.startsWith(yearKey + '-')).length, open);
     yearButton.dataset.year = yearKey;
-    yearButton.onclick = () => {
-      if (!allowNavigation()) return;
+    yearButton.onclick = () => navigate(() => {
       open ? openedYears.delete(year) : openedYears.add(year);
       activeYear = year; selectedMonth = null; selectedDay = null; selected = null; clearSearch(); render();
-    };
+    });
     root.append(yearButton);
     if (!open) continue;
     const monthGroup = document.createElement('div'); monthGroup.className = 'months';
@@ -150,11 +148,10 @@ function renderFolders() {
       const monthButton = folderButton(month, 'month', notes.filter(note => note.day.startsWith(key + '-')).length, expanded);
       monthButton.dataset.month = key;
       if (key === selectedMonth) monthButton.classList.add('current');
-      monthButton.onclick = () => {
-        if (!allowNavigation()) return;
+      monthButton.onclick = () => navigate(() => {
         expanded ? openedMonths.delete(key) : openedMonths.add(key);
         activeYear = year; selectedMonth = key; selectedDay = null; selected = null; clearSearch(); render();
-      };
+      });
       monthGroup.append(monthButton);
       if (!expanded) return;
       const dayGroup = document.createElement('div'); dayGroup.className = 'days';
@@ -186,7 +183,7 @@ function renderList() {
     const title = document.createElement('strong'); title.textContent = note.title || 'Új név';
     const preview = document.createElement('small'); preview.textContent = query ? note.day : note.items.map(item => item.partNumber).filter(Boolean).join(' · ') || note.oil || note.vin || 'Adatok kitöltése…';
     const caption = document.createElement('span'); caption.className = 'note-status-caption'; caption.textContent = '● ' + workflowStatus.label;
-    button.append(title, preview, caption); button.onclick = () => { if (!validInputs() || (selected !== note.id && !allowNavigation())) return; selected = note.id; setDayContext(note.day); render(); }; $('list').append(button);
+    button.append(title, preview, caption); button.onclick = () => afterCheck(selected === note.id ? validInputs() : allowNavigation(), () => { selected = note.id; setDayContext(note.day); render(); }); $('list').append(button);
   }
   if (!visible.length) {
     const empty = document.createElement('p'); empty.className = 'list-empty';
@@ -224,13 +221,16 @@ function validInputs() {
   input.focus(); input.reportValidity(); return false;
 }
 function allowNavigation() { return validInputs() && reviewNote(current()); }
+function afterCheck(result, action) {
+  return result && typeof result.then === 'function' ? result.then(allowed => allowed ? action() : false) : result ? action() : false;
+}
+function navigate(action) { return afterCheck(allowNavigation(), action); }
 function reviewNote(note) {
   if (!note) return true;
   const pendingReminders = (note.reminders || []).filter(reminder => !reminder.done).map(reminder => reminder.text);
   if (!reviewNeeded.has(note.id) && (!pendingReminders.length || reviewed.has(note.id))) return true;
-  const accepted = window.notesAPI.confirmNoteExit({ title: note.title || 'Új név', pending: pendingReminders });
-  if (accepted !== true) return false;
-  reviewNeeded.delete(note.id); reviewed.add(note.id); return true;
+  const result = window.NoteReviewUI.confirm({ title: note.title || 'Új név', pending: pendingReminders });
+  return afterCheck(result, () => { reviewNeeded.delete(note.id); reviewed.add(note.id); return true; });
 }
 function renderTotals(note) {
   const result = Items.totals(note.items);
@@ -345,19 +345,22 @@ $('year-form').onsubmit = event => {
   const year = Number($('year-value').value);
   if (!Number.isInteger(year) || year < 1900 || year > 9999) { $('year-error').textContent = '1900 és 9999 közötti évet adj meg.'; return; }
   if (years.includes(year)) { $('year-error').textContent = 'Ez az év már szerepel a mappák között.'; return; }
-  if (!allowNavigation()) return;
+  return navigate(() => {
   years.push(year); years.sort((a, b) => a - b); openedYears.add(year); openedMonths.add(year + '-01');
   activeYear = year; selectedMonth = year + '-01'; selectedDay = null; selected = null; clearSearch();
   persistArchive(); $('year-dialog').close(); render();
+  });
 };
 $('new').onclick = () => {
-  if (!loaded || !selectedDay || !allowNavigation()) return;
+  if (!loaded || !selectedDay) return;
+  return navigate(() => {
   clearSearch(); const now = new Date().toISOString();
   const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [Vehicles.blank(crypto.randomUUID())], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
   notes.push(note); touchNote(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }
   persistNotes(); render(); $('title').focus();
+  });
 };
 for (const field of fields) $(field).addEventListener('input', () => {
   const note = current(); if (!note) return;
@@ -366,13 +369,16 @@ for (const field of fields) $(field).addEventListener('input', () => {
 });
 $('search').oninput = () => {
   if (!validInputs()) { $('search').value = appliedSearch; return; }
-  const visible = visibleNotes();
-  if (!visible.some(note => note.id === selected) && !allowNavigation()) { $('search').value = appliedSearch; return; }
-  appliedSearch = $('search').value;
-  if (!visible.some(note => note.id === selected)) selected = visible[0]?.id ?? null;
-  if (current()) setDayContext(current().day); render();
+  const query = $('search').value, visible = visibleNotes();
+  const move = !visible.some(note => note.id === selected);
+  if (move) $('search').value = appliedSearch;
+  return afterCheck(move ? allowNavigation() : true, () => {
+    $('search').value = query; appliedSearch = query;
+    if (move) selected = visible[0]?.id ?? null;
+    if (current()) setDayContext(current().day); render();
+  });
 };
-$('clear').onclick = () => { if (!allowNavigation()) return; clearSearch(); selected = notes.find(note => note.day === selectedDay)?.id ?? null; render(); };
+$('clear').onclick = () => navigate(() => { clearSearch(); selected = notes.find(note => note.day === selectedDay)?.id ?? null; render(); });
 $('delete').onclick = () => $('confirm').showModal(); $('cancel').onclick = () => $('confirm').close();
 $('remove').onclick = () => { invalidInputs.clear(); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
 $('export').onclick = async () => {
@@ -381,10 +387,19 @@ $('export').onclick = async () => {
   try { if (await window.notesAPI.export(notes, archiveData())) $('status').textContent = '✓ Biztonsági mentés elkészült'; }
   catch { $('status').textContent = 'Nem sikerült a biztonsági mentés.'; }
 };
+// Native closing is paused in main.js. Unload is only a final guard for reloads.
 window.addEventListener('beforeunload', event => {
-  if (!validInputs() || ![current(), ...notes.filter(note => note.id !== selected && reviewNeeded.has(note.id))].every(reviewNote)) { event.preventDefault(); event.returnValue = false; }
-  else if (pending || saveErrors.size) { event.preventDefault(); event.returnValue = false; queue.then(() => { if (!pending && !saveErrors.size) window.close(); }); }
+  if (invalidInputs.size || pending || saveErrors.size) { event.preventDefault(); event.returnValue = ''; }
 });
+window.NotesPrepareClose = async () => {
+  if (!validInputs()) return false;
+  for (const note of [current(), ...notes.filter(note => note.id !== selected && reviewNeeded.has(note.id))]) if (!await reviewNote(note)) return false;
+  return true;
+};
+window.NotesFlushForClose = async () => {
+  await queue;
+  if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült.');
+};
 function loadData(preferredNoteId) {
 return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data, archive]) => {
   ({ notes, years, days } = normalize(data, archive)); loaded = true;
@@ -408,11 +423,11 @@ window.ReminderChange = (noteId, transform) => {
   window.NoteReminders.validate(rows); note.reminders = rows; touchNote(note);
   persistNotes(); renderList(); window.RemindersUI?.render(); if (current()?.id === noteId) metadata(); return true;
 };
-window.ReminderOpenNote = id => {
-  if (!allowNavigation() || (window.WorkOrdersUI && !window.WorkOrdersUI.showNotes())) return false;
+window.ReminderOpenNote = id => navigate(() => afterCheck(window.WorkOrdersUI ? window.WorkOrdersUI.showNotes() : true, () => {
   const note = notes.find(note => note.id === id); if (!note) return false;
   selected = id; clearSearch(); setDayContext(note.day); render(); return true;
-};
+}));
+window.NotesNavigate = navigate;
 window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowNavigation });
 window.NotesRefresh = id => { clearSearch(); return loadData(id); };
 window.NotesFlush = async () => {
@@ -420,7 +435,7 @@ window.NotesFlush = async () => {
  await queue;
  if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült. Beolvasás előtt ellenőrizd a lemez szabad helyét.');
 };
-window.NoteForWorkOrder = () => { if (!allowNavigation()) return null; return current(); };
+window.NoteForWorkOrder = () => afterCheck(allowNavigation(), current);
 window.addEventListener('excel-imported', async event => {
  if (event.detail.target === 'notes') { await loadData(event.detail.noteId); $('status').textContent = event.detail.message; }
 });

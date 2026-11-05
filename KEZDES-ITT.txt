@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.6.0
+TÖKI AUTÓ KFT. – JEGYZETEK 1.6.1
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -98,3 +98,10 @@ A bal oldali Emlékeztetők gomb az összes név teendőit összegyűjti.
 A Kész pipával jelölheted az elvégzett teendőt; a szövegre kattintva szerkesztheted.
 A kilépési jóváhagyás nem pipálja automatikusan készre a teendőket.
 A mentés automatikus, a teendők újranyitáskor is megmaradnak.
+
+JAVÍTOTT KILÉPÉS ÉS TÖKI AUTÓS KÉRDÉSABLAK
+A kilépési ellenőrzés saját fekete–zöld, Töki Autó logós ablakot kapott.
+A Vissza a jegyzethez és az Escape megszakítja a bezárást.
+A program csak az Igen, minden felírva után, sikeres mentéssel záródik be.
+A folyamatban lévő munkalapmentés befejezése nem indít új bezárást.
+A bal oldali Emlékeztetők gomb állandó piros kiemelést kapott.

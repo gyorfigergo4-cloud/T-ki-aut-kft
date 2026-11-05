@@ -8,6 +8,7 @@ const folderImport = require('./folder-import');
 const excelImport = require('./excel-import');
 const workordersStore = require('./workorders-store');
 const workorderPrint = require('./workorder-print');
+const { attach: attachCloseGuard } = require('./window-close');
 const crypto = require('node:crypto');
 const syncFs = require('node:fs');
 const { validate: validateArchive } = require('./archive');
@@ -34,18 +35,6 @@ app.whenReady().then(() => {
   ipcMain.handle('load-archive', () => { prepareInitialData(); return archiveStore.read(archiveFile); });
   ipcMain.handle('save-archive', (_, archive) => archiveStore.write(archiveFile, archive));
   ipcMain.handle('load', () => { prepareInitialData(); return store.read(file); });
-  ipcMain.on('confirm-note-exit', (event, request) => {
-    const title = typeof request?.title === 'string' ? request.title.slice(0, 200) : 'Új név';
-    const allPending = Array.isArray(request?.pending) ? request.pending.filter(text => typeof text === 'string') : [];
-    const pending = allPending.slice(0, 8).map(text => '• ' + text.slice(0, 180));
-    if (allPending.length > 8) pending.push('… és még ' + (allPending.length - 8) + ' nyitott teendő.');
-    const detail = title + (pending.length ? '\n\nNyitott emlékeztetők:\n' + pending.join('\n') : '\nEllenőrizd a cikkszámokat, árakat és a darabszámokat.');
-    event.returnValue = dialog.showMessageBoxSync(win, {
-      type: 'question', title: 'Töki Autó – jegyzet ellenőrzése',
-      message: 'Biztosan minden tételt felírtál?', detail,
-      buttons: ['Igen, minden felírva', 'Vissza a jegyzethez'], defaultId: 1, cancelId: 1, noLink: true
-    }) === 0;
-  });
   ipcMain.handle('save', (_, notes) => store.write(file, notes));
   ipcMain.handle('import-folder', async () => {
     try {
@@ -143,6 +132,7 @@ app.whenReady().then(() => {
     return true;
   });
   win = new BrowserWindow({ width: 1240, height: 850, minWidth: 900, minHeight: 600, title: 'Töki Autó Kft. · Belső jegyzetek', backgroundColor: '#F5F7F2', icon: path.join(__dirname, 'assets', 'toki-icon.png'), webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  attachCloseGuard({ win, app, ipcMain, newToken: crypto.randomUUID });
   win.setMenuBarVisibility(false);
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type === 'keyDown' && !input.isAutoRepeat && (input.control || input.meta) && input.key.toLowerCase() === 'p') { event.preventDefault(); win.webContents.send('request-workorder-print'); }

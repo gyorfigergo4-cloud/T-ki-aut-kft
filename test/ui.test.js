@@ -4,24 +4,26 @@ const fs = require('node:fs');
 const { JSDOM } = require('jsdom');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const copy = value => JSON.parse(JSON.stringify(value));
-async function openUI(saved) {
+async function openUI(saved, options = {}) {
   const dom = new JSDOM(fs.readFileSync('app/index.html', 'utf8'), { runScripts: 'outside-only', url: 'https://notes.local' });
   const { window } = dom;
+  let closeRequest; const closeResults = [];
   window.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
   window.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new window.Event('close')); };
   window.notesAPI = {
     load: async () => copy(saved.notes), loadArchive: async () => copy(saved.archive),
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
-    export: async () => true, confirmNoteExit: () => true
+    export: async () => true, onAppCloseRequested: callback => { closeRequest = callback; }, completeAppClose: response => closeResults.push(copy(response)), appCloseReady: () => {}
   };
-  for (const script of ['items.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  if (!options.realReview) window.NoteReviewUI.confirm = () => true;
   await tick();
   const $ = id => window.document.getElementById(id);
   const input = (id, value) => { $(id).value = value; $(id).dispatchEvent(new window.Event('input')); };
   const submit = id => $(id).dispatchEvent(new window.Event('submit', { cancelable: true }));
   const newDay = day => { $('add-day').click(); $('day-value').value = day; submit('day-form'); };
   const cards = () => [...$('list').querySelectorAll('.note')];
-  return { dom, $, input, submit, newDay, cards };
+  return { dom, $, input, submit, newDay, cards, closeResults, requestClose: token => closeRequest(token) };
 }
 test('év/hónap/nap mappák, napi több név, visszakeresés és újranyitás', async () => {
   const saved = { notes: [{ id: 'old', title: 'Régi ügyfél', body: 'Korábbi egyeztetés', updated: '2024-01-15T12:00:00Z' }], archive: { years: [2024, 2025, 2026], days: [] } };
@@ -244,14 +246,34 @@ test('emlékeztető létrehozása, gyors szöveg, teendőlista, kész jelölés,
 
 test('kilépési ellenőrzés megszakítható: névváltás, keresés és appbezárás megőrzi a szerkesztést',async()=>{
  const saved={notes:[{id:'a',title:'Első minta',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z'},{id:'b',title:'Második minta',body:'',day:'2026-11-05',updated:'2026-11-05T09:00:00Z'}],archive:{years:[2026],days:['2026-11-05']}};
- const ui=await openUI(saved),calls=[];let accept=false;ui.dom.window.notesAPI.confirmNoteExit=request=>{calls.push(copy(request));return accept;};
+ const ui=await openUI(saved),calls=[];let accept=false;ui.dom.window.NoteReviewUI.confirm=request=>{calls.push(copy(request));return accept;};
  ui.input('body','Ezt már felírtam');ui.$('add-item').click();ui.$('add-vehicle').click();assert.equal(calls.length,0,'azonos jegyzet szerkesztése nem kilépés');ui.$('list').querySelector('[data-note=a]').click();assert.equal(calls.length,0,'azonos névkártyára kattintás nem kilépés');
  ui.$('list').querySelector('[data-note=b]').click();assert.equal(ui.$('title').value,'Első minta');assert.equal(calls.length,1);
  ui.input('search','Második');assert.equal(ui.$('title').value,'Első minta');assert.equal(ui.$('search').value,'');assert.equal(calls.length,2);
- const close=new ui.dom.window.Event('beforeunload',{cancelable:true});ui.dom.window.dispatchEvent(close);assert.equal(close.defaultPrevented,true);assert.equal(calls.length,3);await tick();assert.equal(saved.notes[0].body,'Ezt már felírtam');
+ const canClose=await ui.dom.window.NotesPrepareClose();assert.equal(canClose,false);assert.equal(calls.length,3);await tick();assert.equal(saved.notes[0].body,'Ezt már felírtam');
  accept=true;ui.$('list').querySelector('[data-note=b]').click();assert.equal(ui.$('title').value,'Második minta');assert.equal(calls.length,4);ui.$('list').querySelector('[data-note=a]').click();ui.$('list').querySelector('[data-note=b]').click();assert.equal(calls.length,4,'ellenőrzött, változatlan jegyzetnél nincs új kérdés');ui.$('list').querySelector('[data-note=a]').click();ui.input('oil','Új adat');ui.$('list').querySelector('[data-note=b]').click();assert.equal(calls.length,5);await tick();ui.dom.window.close();
 });
 test('nyitott telefonos teendő kilépéskor megjelenik, készre jelölés után eltűnik a listából',async()=>{
  const saved={notes:[{id:'a',title:'Első minta',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z',reminders:[{id:'call',text:'Felhívni az ügyfelet',done:false,createdAt:'2026-11-05T08:00:00.000Z'}]},{id:'b',title:'Másik minta',body:'',day:'2026-11-05',updated:'2026-11-05T09:00:00Z'}],archive:{years:[2026],days:[]}};
- const ui=await openUI(saved),requests=[];ui.dom.window.notesAPI.confirmNoteExit=request=>{requests.push(copy(request));return true;};ui.$('list').querySelector('[data-note=b]').click();assert.deepEqual(requests[0].pending,['Felhívni az ügyfelet']);ui.$('list').querySelector('[data-note=a]').click();ui.$('note-reminders').querySelector('input').click();await tick();assert.equal(saved.notes[0].reminders[0].done,true);assert.equal(ui.$('reminders-count').textContent,'0');ui.$('list').querySelector('[data-note=b]').click();assert.deepEqual(requests[1].pending,[]);ui.dom.window.close();
+ const ui=await openUI(saved),requests=[];ui.dom.window.NoteReviewUI.confirm=request=>{requests.push(copy(request));return true;};ui.$('list').querySelector('[data-note=b]').click();assert.deepEqual(requests[0].pending,['Felhívni az ügyfelet']);ui.$('list').querySelector('[data-note=a]').click();ui.$('note-reminders').querySelector('input').click();await tick();assert.equal(saved.notes[0].reminders[0].done,true);assert.equal(ui.$('reminders-count').textContent,'0');ui.$('list').querySelector('[data-note=b]').click();assert.deepEqual(requests[1].pending,[]);ui.dom.window.close();
+});
+
+test('az arculatos kilépési ablak Vissza és Escape után is nyitva tartja az appot, csak igen után engedi a bezárást',async()=>{
+ const saved={notes:[{id:'a',title:'Minta ügyfél',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z',reminders:[{id:'call',text:'Felhívni az ügyfelet',done:false,createdAt:'2026-11-05T08:00:00.000Z'}]}],archive:{years:[2026],days:[]}};
+ const ui=await openUI(saved,{realReview:true});ui.input('body','Ellenőrizendő tétel');let request=ui.requestClose('first');await tick();assert.equal(ui.$('note-review-dialog').open,true);assert.equal(ui.dom.window.document.activeElement.id,'note-review-back');assert.match(ui.$('note-review-tasks').textContent,/Felhívni/);ui.$('note-review-back').click();await request;assert.deepEqual(ui.closeResults,[{token:'first',approved:false}]);assert.equal(ui.$('body').value,'Ellenőrizendő tétel');assert.equal(ui.dom.window.document.body.inert,false);
+ request=ui.requestClose('second');await tick();const escape=new ui.dom.window.Event('cancel',{cancelable:true});ui.$('note-review-dialog').dispatchEvent(escape);await request;assert.equal(escape.defaultPrevented,true);assert.deepEqual(ui.closeResults.at(-1),{token:'second',approved:false});
+ request=ui.requestClose('third');await tick();ui.$('note-review-confirm').click();await request;assert.deepEqual(ui.closeResults.at(-1),{token:'third',approved:true});assert.equal(saved.notes[0].body,'Ellenőrizendő tétel');assert.equal(ui.dom.window.document.body.inert,true);ui.dom.window.close();
+});
+test('bezárás csak a jegyzet és a munkalap mentése után, mentési hiba esetén marad az ablak',async()=>{
+ const saved={notes:[{id:'a',title:'Minta ügyfél',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z'}],archive:{years:[2026],days:[]}};
+ const ui=await openUI(saved,{realReview:true});let release;ui.dom.window.notesAPI.save=async notes=>{await new Promise(resolve=>release=resolve);saved.notes=copy(notes);};ui.input('body','Várakozó mentés');await tick();const request=ui.requestClose('wait');await tick();ui.$('note-review-confirm').click();await tick();assert.equal(ui.closeResults.length,0);assert.equal(ui.dom.window.document.body.inert,true);release();await request;assert.deepEqual(ui.closeResults,[{token:'wait',approved:true}]);assert.equal(saved.notes[0].body,'Várakozó mentés');ui.dom.window.close();
+ const fail=await openUI(saved,{realReview:true});fail.dom.window.notesAPI.save=async()=>{throw new Error('disk full');};fail.input('body','Új szöveg');await tick();const blocked=fail.requestClose('error');await tick();fail.$('note-review-confirm').click();await blocked;assert.deepEqual(fail.closeResults,[{token:'error',approved:false}]);assert.equal(fail.$('app-close-error').open,true);assert.equal(fail.dom.window.document.body.inert,false);assert.match(fail.$('app-close-error-text').textContent,/nyitva maradt/);fail.dom.window.close();
+});
+test('a valódi arculatos ablak megszakítja a névváltást is, jóváhagyás után végrehajtja',async()=>{
+ const saved={notes:[{id:'a',title:'Első minta',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z'},{id:'b',title:'Másik minta',body:'',day:'2026-11-05',updated:'2026-11-05T09:00:00Z'}],archive:{years:[2026],days:[]}};
+ const ui=await openUI(saved,{realReview:true});ui.input('body','Megmaradó szöveg');ui.$('list').querySelector('[data-note=b]').click();assert.equal(ui.$('title').value,'Első minta');assert.equal(ui.$('note-review-dialog').open,true);ui.$('note-review-back').click();await tick();assert.equal(ui.$('title').value,'Első minta');ui.$('list').querySelector('[data-note=b]').click();ui.$('note-review-confirm').click();await tick();assert.equal(ui.$('title').value,'Másik minta');assert.equal(saved.notes[0].body,'Megmaradó szöveg');ui.dom.window.close();
+});
+
+test('az előző kérdésablak késve érkező close eseménye nem zárja be az új kérdést',async()=>{
+ const saved={notes:[],archive:{years:[2026],days:[]}},ui=await openUI(saved,{realReview:true});const review=ui.dom.window.NoteReviewUI;let first=review.confirm({title:'Minta',pending:[]});ui.$('note-review-back').click();assert.equal(await first,false);let settled=false;const second=review.confirm({title:'Második',pending:[]}).then(value=>{settled=true;return value;});ui.$('note-review-dialog').dispatchEvent(new ui.dom.window.Event('close'));await tick();assert.equal(ui.$('note-review-dialog').open,true);assert.equal(settled,false);ui.$('note-review-back').click();assert.equal(await second,false);ui.dom.window.close();
 });

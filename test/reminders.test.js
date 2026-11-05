@@ -12,13 +12,3 @@ test('a régi jegyzet és eredeti forrás megmarad, emlékeztetők mentődnek, h
  const file=path.join(dir,'notes.json');store.write(file,[note([reminder('call')]),normalized]);const before=fs.readFileSync(file);assert.equal(store.read(file)[0].reminders[0].text,'Felhívni a minta ügyfelet');assert.throws(()=>store.write(file,[note([{...reminder('bad'),done:1}])]));assert.ok(before.equals(fs.readFileSync(file)));
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
-test('a tényleges Electron ablakban Vissza az alapértelmezés, csak kifejezett igen engedi a továbblépést',async()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'toki-review-ipc-')),handlers=new Map(),options=[];let result=1;
- try{const filePath=path.resolve('app/main.js'),actualRequire=createRequire(filePath);
- class Window{constructor(){this.webContents={on(){},setWindowOpenHandler(){}};}setMenuBarVisibility(){}loadFile(){} }
- const electron={app:{requestSingleInstanceLock:()=>true,on(){},whenReady:()=>Promise.resolve(),getPath:()=>dir},BrowserWindow:Window,ipcMain:{handle(){},on:(name,handler)=>handlers.set(name,handler)},dialog:{showMessageBoxSync:(win,config)=>{options.push(config);return result;}},Menu:{}};
- vm.runInNewContext(fs.readFileSync(filePath,'utf8'),{require:name=>name==='electron'?electron:actualRequire(name),__dirname:path.dirname(filePath)},{filename:filePath});await new Promise(resolve=>setImmediate(resolve));
- const request={title:'Minta ügyfél',pending:['Felhívni az ügyfelet']},event={};handlers.get('confirm-note-exit')(event,request);assert.equal(event.returnValue,false);assert.equal(options[0].defaultId,1);assert.equal(options[0].cancelId,1);assert.equal(options[0].message,'Biztosan minden tételt felírtál?');assert.match(options[0].detail,/Felhívni az ügyfelet/);
- result=0;handlers.get('confirm-note-exit')(event,request);assert.equal(event.returnValue,true);assert.equal(fs.existsSync(path.join(dir,'notes.json')),false);
- }finally{fs.rmSync(dir,{recursive:true,force:true});}
-});

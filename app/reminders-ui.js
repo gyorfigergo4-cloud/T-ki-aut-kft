@@ -33,7 +33,7 @@
     const actions = document.createElement('div'); actions.className = 'reminder-actions';
     if (global) {
       const go = document.createElement('button'); go.type = 'button'; go.textContent = 'Jegyzet megnyitása';
-      go.onclick = () => { if (window.ReminderOpenNote(entry.noteId)) $('reminders-dialog').close(); }; actions.append(go);
+      go.onclick = async () => { if (await window.ReminderOpenNote(entry.noteId)) $('reminders-dialog').close(); }; actions.append(go);
     }
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'reminder-remove'; remove.textContent = '×'; remove.setAttribute('aria-label', 'Emlékeztető törlése: ' + reminder.text); remove.onclick = () => change(entry.noteId, rows => rows.filter(r => r.id !== reminder.id)); actions.append(remove);
     item.append(label, content, actions); return item;

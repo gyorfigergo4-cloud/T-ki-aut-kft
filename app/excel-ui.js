@@ -22,7 +22,7 @@
  }
  async function describe(){if(!session)return;const turn=++sequence;$('excel-commit').disabled=true;try{const result=await window.notesAPI.describeExcel({token:session.token,sheet:$('excel-sheet').value,headerRow:Number($('excel-header').value)||undefined});if(turn!==sequence||!session)return;if(!result.ok){messages('excel-errors',[result.error]);return;}$('excel-header').value=result.headerRow;renderMappings(result);await preview();}catch{messages('excel-errors',['Nem olvasható az Excel-munkalap.']);}}
  $('import-excel').onclick=async()=>{
-  if(window.NotesImportContext&&!window.NotesImportContext().canLeave())return;
+  if(window.NotesImportContext&&!await window.NotesImportContext().canLeave())return;
   if(window.WorkOrdersUI&&!window.WorkOrdersUI.canLeave())return;
   $('import-excel').disabled=true;
   try{
