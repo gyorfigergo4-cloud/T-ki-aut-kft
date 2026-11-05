@@ -77,7 +77,7 @@
  async function create(note){
   if(!loaded||!canLeave())return;
   const doc=Model.blank(crypto.randomUUID(),day(),docs,crypto.randomUUID());
-  if(note){doc.customer=note.title;Object.assign(doc,window.NoteVehicles.quoteInfo(note));doc.items=note.items.map(i=>({...i,description:i.description||''}));doc.internalNote=note.body;doc.sourceNoteId=note.id;doc.paid=Items.paymentState(doc.items,note.paid).paid;}
+  if(note){doc.customer=note.title;doc.phone=note.phone||'';Object.assign(doc,window.NoteVehicles.quoteInfo(note));doc.items=note.items.map(i=>({...i,description:i.description||''}));doc.internalNote=note.body;doc.sourceNoteId=note.id;doc.paid=Items.paymentState(doc.items,note.paid).paid;}
   try{Model.validate([...docs,doc]);}catch(error){$('status').textContent=error.message;$('wo-status').textContent=error.message;return;}
   if(!await showTab('workorders'))return;
   docs.push(doc);selected=doc.id;persist();render();$('wo-customer').focus();

@@ -14,7 +14,7 @@ function validate(notes) {
     if (note.paid !== undefined && typeof note.paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
     if (note.items !== undefined) lineItems.validate(note.items);
     if (note.day !== undefined && !validDay(note.day)) throw new Error('Érvénytelen bejegyzésdátum');
-    for (const field of ['vin', 'part', 'oil', 'fullPrice', 'discountPrice', 'created']) {
+    for (const field of ['vin', 'phone', 'part', 'oil', 'fullPrice', 'discountPrice', 'created']) {
       if (note[field] !== undefined && typeof note[field] !== 'string') throw new Error('Sérült mező: ' + field);
     }
     if (!Number.isFinite(Date.parse(note.updated)) || (note.created !== undefined && !Number.isFinite(Date.parse(note.created)))) throw new Error('Sérült dátum');

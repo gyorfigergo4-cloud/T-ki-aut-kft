@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 const { months, localDay, validDay, normalize } = window.NotesArchive;
-const fields = ['title', 'oil', 'body'];
+const fields = ['title', 'phone', 'oil', 'body'];
 const Items = window.LineItems;
 const NoteStatuses = window.NoteStatuses;
 const Vehicles = window.NoteVehicles;
@@ -11,8 +11,7 @@ let activeYear = Number(today.slice(0, 4)), selectedMonth = today.slice(0, 7);
 const openedYears = new Set(), openedMonths = new Set(), saveErrors = new Set();
 let queue = Promise.resolve(), revision = 0, pending = 0, appliedSearch = '';
 const current = () => notes.find(note => note.id === selected);
-const reviewNeeded = new Set(), reviewed = new Set();
-function touchNote(note) { note.updated = new Date().toISOString(); reviewNeeded.add(note.id); reviewed.delete(note.id); }
+function touchNote(note) { note.updated = new Date().toISOString(); }
 const fold = value => value.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const dateLabel = day => new Date(day + 'T12:00:00').toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
 const money = value => new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 2 }).format(value);
@@ -220,18 +219,11 @@ function validInputs() {
   if (!input) return true;
   input.focus(); input.reportValidity(); return false;
 }
-function allowNavigation() { return validInputs() && reviewNote(current()); }
+function allowNavigation() { return validInputs(); }
 function afterCheck(result, action) {
   return result && typeof result.then === 'function' ? result.then(allowed => allowed ? action() : false) : result ? action() : false;
 }
 function navigate(action) { return afterCheck(allowNavigation(), action); }
-function reviewNote(note) {
-  if (!note) return true;
-  const pendingReminders = (note.reminders || []).filter(reminder => !reminder.done).map(reminder => reminder.text);
-  if (!reviewNeeded.has(note.id) && (!pendingReminders.length || reviewed.has(note.id))) return true;
-  const result = window.NoteReviewUI.confirm({ title: note.title || 'Új név', pending: pendingReminders });
-  return afterCheck(result, () => { reviewNeeded.delete(note.id); reviewed.add(note.id); return true; });
-}
 function renderTotals(note) {
   const result = Items.totals(note.items);
   $('total-full').previousElementSibling.textContent = result.missingFull ? 'Teli részösszeg' : 'Teli összesen';
@@ -355,7 +347,7 @@ $('new').onclick = () => {
   if (!loaded || !selectedDay) return;
   return navigate(() => {
   clearSearch(); const now = new Date().toISOString();
-  const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [Vehicles.blank(crypto.randomUUID())], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
+  const note = { id: crypto.randomUUID(), title: '', phone: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [Vehicles.blank(crypto.randomUUID())], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
   notes.push(note); touchNote(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }
@@ -393,8 +385,8 @@ window.addEventListener('beforeunload', event => {
 });
 window.NotesPrepareClose = async () => {
   if (!validInputs()) return false;
-  for (const note of [current(), ...notes.filter(note => note.id !== selected && reviewNeeded.has(note.id))]) if (!await reviewNote(note)) return false;
-  return true;
+  const pendingReminders = notes.flatMap(note => (note.reminders || []).filter(reminder => !reminder.done).map(reminder => (note.title || 'Új név') + ': ' + reminder.text));
+  return await window.NoteReviewUI.confirm({ title: 'Kilépés előtti ellenőrzés', pending: pendingReminders }) === true;
 };
 window.NotesFlushForClose = async () => {
   await queue;

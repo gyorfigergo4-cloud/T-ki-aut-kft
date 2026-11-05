@@ -26,3 +26,9 @@ test('autóbolti mezők és árak megőrzése, hibás adatok elutasítása', () 
   assert.deepEqual(store.read(file),[n]);
  } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('a telefonszám formázással együtt megmarad, hibás típus nem írja felül a jegyzetet',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'toki-phone-'));
+ try{const file=path.join(dir,'notes.json'),note={id:'phone',title:'Minta ügyfél',body:'Eredeti szöveg',updated:'2026-11-05T08:00:00Z',phone:'+36 30 123 4567 / 12'};store.write(file,[note]);assert.deepEqual(store.read(file),[note]);const before=fs.readFileSync(file);assert.throws(()=>store.write(file,[{...note,phone:123}]));assert.ok(before.equals(fs.readFileSync(file)));}
+ finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

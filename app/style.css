@@ -107,7 +107,7 @@ input, textarea { color: var(--ink); }
 .fields input, .fields textarea { width: 100%; border: 1px solid #d4dfc8; border-radius: 6px; background: #fff; padding: 11px 12px; font-size: 14px; box-shadow: 0 1px 2px #20242b03; }
 .fields input::placeholder, .fields textarea::placeholder, #body::placeholder { color: #87957a; font-weight: 400; }
 .fields input:focus, .fields textarea:focus, #body:focus { border-color: #84af39; outline: 2px solid #96d50020; outline-offset: 0; }
-#title { font-size: 17px; font-weight: 500; }
+#title, #phone { font-size: 17px; font-weight: 500; }
 #vin, #part { font-family: Consolas, 'Courier New', monospace; font-weight: 500; }
 #part { min-height: 80px; resize: vertical; line-height: 1.6; }
 .optional { display: contents; font-weight: 400; color: #7d8c70; }

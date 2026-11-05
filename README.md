@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Telefonszám és egyetlen záró ellenőrzés az 1.7-es verzióban
+
+Minden jegyzetben a Név mellett külön **Telefonszám** mező van. A megadott szöveget formázással együtt, névenként automatikusan menti; újranyitáskor megmarad és a globális keresőben is kereshető. A régebbi jegyzeteknél alapból üres. A **Munkalap készítése** a telefonszámot is átmásolja a munkalap Telefon mezőjébe.
+
+Az **„Biztosan minden tételt felírtál?”** kérdés kizárólag a program bezárásakor, egyszer, közös ablakban jelenik meg. Név-, nap-, mappa- és fülváltáskor, kereséskor vagy új jegyzet létrehozásakor nem kérdez. A záró ablak az összes jegyzet nyitott emlékeztetőit együtt mutatja, névvel. A Vissza és Escape megszakítja a bezárást; az Igen után megvárja az összes mentést. A piros Emlékeztetők gomb és a Töki Autó arculat megmarad.
+
+Valódi Electron-folyamatban ellenőrizve: telefonszám mentése, keresése, újranyitása, munkalapra másolása, kérdés nélküli név- és fülváltás, egyszeri közös megerősítés, Vissza/Escape, folyamatban lévő és hibás mentések.
+
 ## Arculatos kérdésablak és javított bezárás az 1.6.1-es verzióban
 
 A kilépési ellenőrzés Töki Autó logós, fekete–zöld párbeszédablakban jelenik meg. A **Vissza a jegyzethez** és az Escape ténylegesen megszakítja a natív ablakbezárást. A bal oldali **Emlékeztetők** gomb állandó piros kiemelést és jól olvasható darabszámot kapott.
@@ -12,7 +20,7 @@ A natív bezárási folyamat valódi Linux Electron 45.2.2 futtatókörnyezetben
 
 ## Kilépési ellenőrzés és emlékeztetők az 1.6-os verzióban
 
-A szerkesztett jegyzet elhagyásakor — másik név, nap vagy mappa, új bejegyzés, másik fül, valamint az app bezárása esetén — az app arculatához illő ablak kérdez rá: **Biztosan minden tételt felírtál?** Az **Igen, minden felírva** továbblép, a **Vissza a jegyzethez** megszakítja a váltást vagy a bezárást. Enter és Escape alapértelmezésben a visszatérést választja. A sikeres ellenőrzés ugyanabban a munkamenetben a következő módosításig érvényes; változatlan jegyzet puszta olvasásakor nem kérdez. A mentés továbbra is automatikus, a kérdés jóváhagyása a mentés befejezését nem kerüli meg.
+Az 1.6-os verzió még a szerkesztett jegyzetek közötti váltáskor is rákérdezett. Az 1.7-es verzióban ez kizárólag a program bezárásakor jelenik meg: **Biztosan minden tételt felírtál?** Az **Igen, minden felírva** továbblép, a **Vissza a jegyzethez** megszakítja a bezárást. Enter és Escape alapértelmezésben a visszatérést választja. A záró ellenőrzés a teljes munkamenetre vonatkozik. A mentés továbbra is automatikus, a kérdés jóváhagyása a mentés befejezését nem kerüli meg.
 
 Minden névhez több saját teendő vehető fel az **Emlékeztetők** részen, gyors szövegekkel (például **Felhívni az ügyfelet**) és külön **Kész** pipával. A szöveg szerkeszthető, a teendő törölhető. A bal oldali gomb az összes nyitott vagy kész teendőt megmutatja, és a kapcsolódó jegyzet megnyitható belőle. A nyitott teendők a kilépési ellenőrzésben is megjelennek, korábban mentett jegyzetnél is. A jóváhagyás nem jelöli készre őket; a pipát kézzel kell beállítani. A teendők a helyi JSON-tárolóban és a biztonsági mentésben megmaradnak; ügyfélnyomtatásba nem kerülnek.
 
@@ -103,7 +111,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.6.1-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.7.0-s, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 

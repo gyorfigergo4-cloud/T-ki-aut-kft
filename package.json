@@ -1,6 +1,6 @@
 {
   "name": "jegyzetfuzet",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Töki Autó Kft. – jegyzetek és cikkszámok",
   "main": "app/main.js",
   "private": true,

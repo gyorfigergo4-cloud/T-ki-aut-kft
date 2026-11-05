@@ -18,7 +18,7 @@
   function normalize(data, archive) {
     validate(archive);
     const notes = data.map(note => vehicles.normalize(lineItems.normalizeNote({
-      ...note, reminders: note.reminders ?? [], workflowStatus: noteStatuses.get(note).id, vin: note.vin ?? '', part: note.part ?? '', oil: note.oil ?? '', fullPrice: note.fullPrice ?? '', discountPrice: note.discountPrice ?? '',
+      ...note, phone: note.phone ?? '', reminders: note.reminders ?? [], workflowStatus: noteStatuses.get(note).id, vin: note.vin ?? '', part: note.part ?? '', oil: note.oil ?? '', fullPrice: note.fullPrice ?? '', discountPrice: note.discountPrice ?? '',
       created: note.created ?? note.updated, day: note.day ?? localDay(note.created ?? note.updated)
     })));
     if (notes.some(note => !validDay(note.day))) throw new Error('Érvénytelen bejegyzésdátum');

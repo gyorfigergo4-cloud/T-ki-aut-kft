@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.6.1
+TÖKI AUTÓ KFT. – JEGYZETEK 1.7.0
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -84,12 +84,12 @@ A korábban beírt alvázszámok megmaradnak.
 A Munkalap készítése gomb az összes jármű alvázszámát és márkáját átveszi.
 
 KILÉPÉSI EMLÉKEZTETŐ ÉS SAJÁT TEENDŐK
-Szerkesztett jegyzet elhagyásakor vagy az app bezárásakor megkérdezi:
+Kizárólag a program bezárásakor, egy közös ablakban kérdezi meg:
 „Biztosan minden tételt felírtál?”
 Az Igen, minden felírva gombbal továbbléphetsz.
 A Vissza a jegyzethez gombbal a jegyzetnél maradsz, és folytathatod.
-Az ellenőrzött, változatlan jegyzetnél nem kérdez újra ugyanabban a munkamenetben.
-Új módosítás után ismét rákérdez.
+Másik név, nap, mappa vagy fül megnyitásakor nem kérdez rá.
+Bezáráskor az összes jegyzet nyitott emlékeztetőjét együtt mutatja.
 
 Az adatlap Emlékeztetők részén saját teendőket adhatsz hozzá, például:
 Felhívni az ügyfelet; Biztosan minden tételt felírtam?
@@ -105,3 +105,9 @@ A Vissza a jegyzethez és az Escape megszakítja a bezárást.
 A program csak az Igen, minden felírva után, sikeres mentéssel záródik be.
 A folyamatban lévő munkalapmentés befejezése nem indít új bezárást.
 A bal oldali Emlékeztetők gomb állandó piros kiemelést kapott.
+
+TELEFONSZÁM A JEGYZETBEN
+A Név mellett külön Telefonszám mező van.
+Automatikusan mentődik, a keresőben is visszakereshető.
+A Munkalap készítése gomb a telefonszámot is átveszi.
+A korábbi jegyzeteknél a mező kezdetben üres; a régi adatok megmaradnak.
