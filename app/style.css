@@ -215,4 +215,68 @@ body[data-section=workorders] #import-folder { display:none; }body[data-section=
 /* The confirmation uses the same company identity as the editor. */
 .review-dialog{width:620px;max-height:calc(100vh - 32px);padding:0;border-radius:14px;border:1px solid #c4d2b5;overflow-y:auto}.review-brand{display:flex;align-items:center;justify-content:space-between;gap:20px;background:#171a14;padding:19px 27px;border-bottom:3px solid #96d500}.review-brand img{width:145px;height:auto}.review-brand span{color:#b8d98c;letter-spacing:1.7px;font-size:10px;font-weight:650}.review-content{padding:27px 29px 28px;background:#f7f9f3}.review-content h2{font-size:25px;line-height:1.3;letter-spacing:-.6px;margin:10px 0 12px;color:#283323}.review-content #note-review-customer{color:#52762a;font-weight:650;font-size:15px;margin:0 0 17px;overflow-wrap:anywhere}.review-content #note-review-help{font-size:13px;line-height:1.7;color:#6c7d60}.review-content .dialog-actions{gap:12px;margin-top:27px;flex-wrap:wrap}.review-content .dialog-actions button{font-size:12px;padding:12px 16px}#note-review-back{border-color:#9aa98a;background:white;color:#3e4e32}#note-review-back:focus-visible{outline:2px solid #89b44b;outline-offset:3px}#note-review-pending{background:#edf4e3;border:1px solid #d9e6c9;border-radius:8px;padding:14px 17px;margin-top:19px}#note-review-pending h3{font-size:12px;color:#4a662d;margin:0 0 9px}#note-review-tasks{padding-left:20px;max-height:190px;overflow:auto;font-size:13px;color:#374a2c;line-height:1.8;margin:0;overflow-wrap:anywhere}#note-review-pending p{font-size:10px;color:#77886a;margin-bottom:0}#app-close-error-text{white-space:pre-wrap;overflow-wrap:anywhere}
 
+/* Töki Autó customer and vehicle directory */
+.app-tabs { flex-wrap: wrap; }
+#tab-garage { flex-basis: 100%; }
+.garage-nav-mark { color: var(--accent); font-size: 20px; font-weight: 800; line-height: 1.3; }
+#garage-navigation p { color: #c2cbb9; line-height: 1.8; }
+.garage-nav-tip { margin-top: 24px; border-top: 1px solid #394130; padding-top: 22px; color: var(--accent); font-size: 10px; letter-spacing: 1px; }
+.garage-nav-tip small { display: block; margin-top: 10px; color: #a8b79a; letter-spacing: 0; line-height: 1.7; font-size: 12px; }
+.garage-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 36px 0 30px; }
+.garage-kicker { font-size: 10px; letter-spacing: 2px; font-weight: 700; color: var(--muted); }
+.garage-hero h2 { margin: 12px 0; font-size: clamp(28px,3vw,44px); letter-spacing: -1.5px; }
+.garage-hero h2 span { color: var(--accent-hover); }
+.garage-hero p { color: var(--muted); line-height: 1.6; max-width: 430px; }
+.garage-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.garage-directory { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+.garage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.garage-search { width: min(480px,75%); }
+.garage-search input { width: 100%; border-radius: 30px; background: var(--page); padding: 13px 18px; }
+#garage-count { color: var(--muted); font-size: 12px; }
+.garage-bubbles { display: flex; gap: 12px; flex-wrap: wrap; }
+.garage-bubble { display: flex; align-items: center; gap: 12px; border-radius: 40px; background: #f5f7f2; padding: 10px 18px 10px 10px; text-align: left; max-width: 100%; }
+.garage-avatar { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #e4ecd8; color: #4d652f; font-weight: 800; flex-shrink: 0; }
+.garage-bubble strong { display: block; overflow-wrap: anywhere; }
+.garage-bubble small { display: block; margin-top: 4px; color: #68775b; }
+.garage-bubble[aria-expanded="true"] { background: #e4f6b7; border-color: #83b900; box-shadow: 0 0 0 2px #96d50022; }
+.garage-bubble[aria-expanded="true"] .garage-avatar { background: var(--accent); color: #22300b; }
+.garage-empty { text-align: center; padding: 40px 12px; color: var(--muted); }
+.garage-empty > div { font-size: 36px; color: #76944a; }
+.garage-empty h3 { color: var(--ink); font-size: 20px; }
+.garage-detail { margin: 24px 0; padding: 28px; border: 1px solid var(--line); background: white; border-radius: 18px; border-top: 4px solid var(--accent); }
+.garage-detail-heading { display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 24px; }
+#garage-person-name { margin: 8px 0 0; font-size: 26px; overflow-wrap: anywhere; }
+.garage-cars { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit,minmax(min(320px,100%),1fr)); }
+.garage-car { border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafbf8; min-width: 0; }
+.garage-car h3 { margin: 0 0 20px; font-size: 18px; }
+.garage-car dt { color: var(--muted); font-size: 10px; letter-spacing: 1px; margin-top: 16px; }
+.garage-car dd { margin: 6px 0 0; font: 600 16px ui-monospace,monospace; overflow-wrap: anywhere; }
+.garage-car .garage-actions { margin-top: 22px; }
+.garage-dialog { width: min(520px,90vw); }
+#garage-edit-fields { display: grid; gap: 18px; }
+#garage-edit-fields input { width: 100%; }
+.garage-import-dialog { width: min(940px,94vw); }
+#garage-paste { width: 100%; min-height: 150px; font: 13px ui-monospace,monospace; margin-top: 8px; }
+.garage-import-options { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+.garage-import-options label { display: flex; align-items: center; gap: 7px; }
+.garage-mapping { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.garage-mapping select { width: 100%; }
+.garage-preview { overflow: auto; max-height: 240px; margin-top: 18px; }
+.garage-preview table { width: 100%; border-collapse: collapse; }
+.garage-preview td,.garage-preview th { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; max-width: 260px; }
+.garage-import-hint { color: var(--muted); font-size: 12px; line-height: 1.6; }
+@media(max-width:1100px) { .garage-hero { align-items: flex-start; flex-direction: column; } .garage-mapping { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+#garage-view { display: block; overflow: auto; padding: 0 32px 32px; }
+#garage-view > .topbar { padding-left: 0; padding-right: 0; }
+.garage-import-dialog { max-height: 90vh; overflow: auto; }
+body[data-section=garage] .import-buttons { display: none; }
+#tab-garage { grid-column: 1 / -1; }
 #vehicle-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 16px}.vehicle-tab{display:flex;flex-direction:column;align-items:flex-start;gap:5px;max-width:100%;padding:10px 13px;background:#fff;border-color:#d5dfc9;text-align:left}.vehicle-tab strong{font-size:12px;font-weight:600;overflow-wrap:anywhere}.vehicle-tab small{font-size:10px;color:#7b8c6d}.vehicle-tab[aria-selected=true]{background:#edf6dd;border-color:#81ad34;box-shadow:inset 3px 0 #96d500}.vehicle-tab[aria-selected=true] strong{color:#3e641b}.vehicle-row{border-left:3px solid transparent;padding-left:9px}.vehicle-row.is-selected{border-left-color:#96d500}#vehicle-items-context{margin:6px 0 7px;color:#4f722e;font-size:12px;font-weight:600;overflow-wrap:anywhere}#items-table .item-vehicle-label{display:flex;flex-direction:column;gap:3px;margin-top:6px;font-size:9px;color:#77866b}#items-table .item-vehicle-select{display:block;width:100%;min-width:0;max-width:100%;padding:4px 5px;border:1px solid #dbe3d1;border-radius:4px;background:#f9fbf5;color:#546844;font-size:10px;text-overflow:ellipsis}
+.garage-network-banner { display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 0;color:#526149;font-size:12px; }
+.garage-network-banner strong { color:#3e5b24; }
+#garage-network-dialog { max-height:90vh;overflow:auto; }
+#garage-network-form > label,#garage-network-client label { margin:16px 0; }
+#garage-network-form input,#garage-network-form select { width:100%; }
+.garage-connection-card { padding:16px;background:#eff7df;border:1px solid #c5dca3;border-radius:10px; }
+#garage-network-code { font-family:ui-monospace,monospace;font-size:12px; }
+#garage-network-addresses { user-select:all;font-family:ui-monospace,monospace;font-size:18px;font-weight:700; }

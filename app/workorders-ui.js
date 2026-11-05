@@ -12,9 +12,10 @@
   if(tab==='notes'&&window.NotesImportContext&&!await window.NotesImportContext().canLeave())return false;
   if(tab==='workorders'&&!canLeave())return false;
   tab=next;document.body.dataset.section=tab;
-  for(const name of ['notes','workorders']){const active=name===tab;$('tab-'+name).setAttribute('aria-selected',String(active));$(name+'-view').hidden=!active;$(name+'-navigation').hidden=!active;}
+  for(const name of ['notes','workorders','garage']){const active=name===tab;if(!$('tab-'+name))continue;$('tab-'+name).setAttribute('aria-selected',String(active));$(name+'-view').hidden=!active;$(name+'-navigation').hidden=!active;}
   return true;
  }
+ if($('tab-garage'))$('tab-garage').onclick=()=>showTab('garage');
  $('tab-notes').onclick=()=>showTab('notes');$('tab-workorders').onclick=()=>showTab('workorders');
  function list(){
   $('wo-list').replaceChildren();const query=fold($('wo-search').value.trim());
@@ -101,7 +102,7 @@
  window.notesAPI.onPrintRequested?.(()=>{if(tab==='workorders')output('print');else $('status').textContent='Nyomtatni a Munkalapok fülről tudsz.';});
  async function reload(id){const data=await window.notesAPI.loadWorkorders();Model.validate(data);docs=data;selected=docs.find(d=>d.id===id)?.id||docs[0]?.id||null;render();}
  const ready=(async()=>{try{const data=window.notesAPI.loadWorkorders?await window.notesAPI.loadWorkorders():[];Model.validate(data);docs=data;loaded=true;selected=docs[0]?.id||null;$('wo-status').textContent='✓ Munkalapok betöltve';render();}catch{$('wo-status').textContent='A mentett munkalapok nem olvashatók. Az eredeti fájl megmaradt.';$('wo-new').disabled=true;}})();
- window.WorkOrdersUI={ready,flush,canLeave,getContext:()=>({tab,doc:current()?JSON.parse(JSON.stringify(current())):null}),showNotes:()=>showTab('notes'),showWorkorders:()=>showTab('workorders')};
+ window.WorkOrdersUI={ready,flush,canLeave,getContext:()=>({tab,doc:current()?JSON.parse(JSON.stringify(current())):null}),showGarage:()=>showTab('garage'),showNotes:()=>showTab('notes'),showWorkorders:()=>showTab('workorders')};
  window.addEventListener('excel-imported',async event=>{if(event.detail.target==='workorder'){try{await reload(event.detail.workorderId);await showTab('workorders');$('wo-status').textContent=event.detail.message;}catch{$('wo-error').textContent='A munkalap újratöltése nem sikerült.';}}});
  window.addEventListener('beforeunload',event=>{if(invalid.size||pending||saveError){event.preventDefault();event.returnValue='';}});
 })();

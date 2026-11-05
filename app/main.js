@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const store = require('./store');
+const { createService: createGarageService } = require('./garage-service');
 const archiveStore = require('./archive-store');
 const initialImport = require('./initial-import');
 const folderImport = require('./folder-import');
@@ -19,8 +20,30 @@ app.on('second-instance', () => {
   const active = win && !win.isDestroyed() ? win : BrowserWindow.getAllWindows()[0];
   if (active) { if (active.isMinimized()) active.restore(); active.show(); active.focus(); }
 });
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   const file = path.join(app.getPath('userData'), 'notes.json');
+  const garageService = createGarageService(app.getPath('userData'));
+  await garageService.start();
+  ipcMain.handle('load-garage', () => garageService.load());
+  ipcMain.handle('save-garage', async (_, payload) => {
+    try { return { ok: true, ...await garageService.save(payload) }; }
+    catch (error) { return { ok: false, code: error.code || 'unavailable', message: error.message }; }
+  });
+  ipcMain.handle('garage-backup', async () => {
+    try {
+      const snapshot = await garageService.load();
+      const result = await dialog.showSaveDialog(win, { defaultPath: 'TokiAuto-autonyilvantarto.json', filters: [{ name: 'Autónyilvántartó biztonsági mentése', extensions: ['json'] }] });
+      if (result.canceled) return { canceled: true };
+      await fs.writeFile(result.filePath, JSON.stringify({ format: 'toki-garage-backup', version: 1, people: snapshot.people }, null, 2), 'utf8');
+      return { ok: true };
+    } catch { return { ok: false, message: 'Az autólista biztonsági mentése nem sikerült. Ellenőrizd a központi gép elérhetőségét és a célmappát.' }; }
+  });
+  ipcMain.handle('garage-network-status', () => garageService.status());
+  ipcMain.handle('garage-network-configure', async (_, input) => {
+    try { return { ok: true, ...await garageService.configure(input) }; }
+    catch (error) { return { ok: false, message: error.message }; }
+  });
+  app.on('will-quit', () => { void garageService.close(); });
   const workordersFile = path.join(app.getPath('userData'), 'workorders.json');
   const excelSessions = new Map();
   const folderSessions = new Map();

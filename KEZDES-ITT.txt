@@ -1,4 +1,8 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.8.0
+ÚJ: KÖZÖS AUTÓNYILVÁNTARTÓ (1.9.0)
+A jegyzetek és munkalapok továbbra is gépenként külön maradnak.
+A központ és a másik három gép beállítását a HALOZAT-BEALLITAS.txt írja le.
+
+TÖKI AUTÓ KFT. – JEGYZETEK ÉS AUTÓNYILVÁNTARTÓ 1.9.0
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.

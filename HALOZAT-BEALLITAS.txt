@@ -1,0 +1,78 @@
+TÖKI AUTÓ – KÖZÖS AUTÓNYILVÁNTARTÓ (1.9.0)
+
+FONTOS: csak az autónyilvántartó lesz közös.
+A jegyzetek, a napi bejegyzések, az autónkénti cikkszámok és a munkalapok
+minden gépen a saját, eddigi helyükön maradnak. Ezek nem kerülnek a hálózatra.
+
+FRISSÍTÉS MIND A NÉGY GÉPEN
+1. A régi programban készíts Biztonsági mentést, majd zárd be a programot.
+2. A ZIP egészét csomagold ki az adott gép saját mappájába.
+3. Indítsd a TokiAuto-Inditas.cmd fájlt. A friss program a meglévő
+   jegyzeteket és munkalapokat használja, a régi felhasználói mappával.
+   Ne másold át az egyik gép jegyzetmappáját a másik gépre.
+
+A TE GÉPEDEN (KÖZPONT)
+1. Autónyilvántartó → Kapcsolat beállítása.
+2. Ennek a gépnek a szerepe → Ez a központi gép.
+3. Kapcsolat mentése. Az alapértelmezett port: 47831.
+4. Jegyezd fel az itt megjelenő IPv4-címet és kapcsolódási kódot.
+   Ha több helyi cím jelenik meg, a bolti vezetékes hálózat címét használd.
+5. Ha a Windows tűzfal rákérdez, a magánhálózati hozzáférést engedélyezd
+   ehhez a programhoz. A tűzfalat nem kell kikapcsolni.
+6. Ez a gép maradjon bekapcsolva, a program pedig fusson a közös lista használatakor.
+   Újraindítás után indítsd el a programot; a központi szerep megmarad.
+
+A MÁSIK HÁROM GÉPEN
+1. Autónyilvántartó → Kapcsolat beállítása.
+2. Ennek a gépnek a szerepe → Csatlakozás a központi géphez.
+3. Írd be a központi gép IPv4-címét, ugyanazt a portot és a kapcsolódási kódot.
+4. Kapcsolat mentése, majd Bezárás.
+5. Mindegyik gépen ugyanazoknak a névbuborékoknak kell megjelenniük.
+   A beállítás megmarad, nem kell minden indításkor újra megadni.
+
+EXCEL-ADATOK
+Elég egyetlen gépen beolvasni őket, a többin megjelennek.
+Excel: cellák kijelölése → Ctrl+C.
+Program: Excelből bemásolás → Ctrl+V → oszlopok párosítása → Adatok mentése.
+Ajánlott oszlopok: Név | Autó | Alvázszám | Rendszám.
+Egy sor egy autó. Egy névhez több sor tartozhat.
+
+FRISSÜLÉS ÉS EGYIDEJŰ SZERKESZTÉS
+A megnyitott autólista körülbelül 3 másodpercenként frissül.
+Szerkesztés közben nem változik meg alattad a megnyitott adatlap.
+Ha közben valaki más mentett, a program nem írja felül az adatait.
+Másold ki a saját módosításodat, válaszd a Mégse gombot, várd meg a frissítést,
+majd nyisd meg újra az autót és írd be a változtatást.
+
+HA A KÖZPONT NEM ÉRHETŐ EL
+A közös autólista nem szerkeszthető; az esetleg látható régi adatok nem naprakészek.
+A program nem tölt fel helyettük egy régi helyi listát, és nem készít offline
+módosításokat, amelyek később felülírhatnák mások munkáját.
+A saját jegyzetek és munkalapok eközben is használhatók és menthetők.
+Ellenőrizd: központ bekapcsolva, program fut, kábel csatlakoztatva,
+azonos cím/port/kód, Windows tűzfalon magánhálózati engedély.
+A központ helyi IP-címe később megváltozhat; ilyenkor a többi gépen frissítsd a címet.
+
+BIZTONSÁGI MENTÉS – KÜLÖN
+A bal oldali Biztonsági mentés továbbra is csak a saját jegyzeteket és
+munkalapokat menti, ahogyan a korábbi programban.
+Az autónyilvántartóban az Autólista mentése külön JSON-mentést készít a közös listáról.
+A központon az előző autólista automatikus .bak másolatban is megmarad.
+A JSON biztonsági mentés megőrzésre/helyreállításhoz való; nem Excel-beillesztés.
+
+TÁROLÁS (csak hibaelhárításhoz)
+A megszokott felhasználói könyvtár: %APPDATA%\jegyzetfuzet
+Saját fájlok, gépenként: notes.json, archive.json, workorders.json.
+Közös autólista, csak a központon: shared-garage\people.json.
+A központi adatfájl tartalmazza a módosítási verziót is; ezt ne szerkesszétek kézzel.
+A kapcsolat beállítása: garage-network.json (kapcsolódási kódot tartalmaz).
+A korábbi helyi autólista: garage.json. A Csak ezen a gépen mód ezt használja;
+a közös lista ilyenkor is megmarad a központon. A kettő nem másolja felül egymást.
+
+ELLENŐRZÉS
+A fejlesztéskor 4 külön Electron-alkalmazásban ellenőrizve: közös Excel-beillesztés,
+automatikus frissülés, két gép egyidejű módosítása, privát jegyzetek elkülönítése,
+központ nélküli privát jegyzetmentés és megszakított programbezárás.
+A Windows natív futtatását és a bolti tűzfalon való kapcsolódást a helyszínen
+kell ellenőrizni. Először egy egyértelmű tesztnevet vegyetek fel a közös listába,
+és nézzétek meg, hogy mind a négy gépen megjelenik-e, majd töröljétek.

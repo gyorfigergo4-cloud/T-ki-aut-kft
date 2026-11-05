@@ -1,6 +1,20 @@
 # Töki Autó Kft. · Belső jegyzetek
 
-Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
+Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
+
+## Közös autónyilvántartó · 1.9.0
+
+A felhasználó által feltöltött ZIP fájlnevében megadott `eabbd9af4364534610329326b602eddc6fd09412` verzióra épül. A nagy ZIP a fájlátviteli méretkorlát miatt nem volt közvetlenül beolvasható; a pontos Git-verziót a projekt eredeti tárolójából kértük le. Megmaradt az alvázszámonkénti cikkszámkezelés. A jegyzetek, cikkszámok, archívum és munkalapok tárolója, illetve a jegyzetszerkesztő a fenti verzióval azonos.
+
+A Töki Autó fekete–zöld autónyilvántartójában a névbuborékok az ügyfél autóit nyitják meg. Márka/típus, alvázszám és rendszám rögzíthető, kereshető, módosítható és megerősítés után törölhető. Excelből Ctrl+C/Ctrl+V segítségével, oszloppárosítással és előnézettel olvashatók be az adatok. Egy sor egy autó; azonos névhez több autó tartozhat. Azonos nevű különböző ügyfelekhez használj megkülönböztető nevet. A teljesen azonos sorokat kihagyja, hibás sor esetén semmit nem ment.
+
+**Csak az autónyilvántartó közös; a jegyzetek és munkalapok gépenként külön maradnak.** A Kapcsolat beállítása ablakban az egyik gép központ, a másik három kliens lehet. A központ az alkalmazás futása alatt szolgálja ki a helyi hálózati kéréseket, a lista körülbelül 3 másodpercenként frissül. A központ beállítása és az adatok újraindítás után is megmaradnak. A lépésenkénti Windows-útmutató: [HALOZAT-BEALLITAS.txt](HALOZAT-BEALLITAS.txt).
+
+A hálózati szolgáltatás egyetlen, kapcsolódási kóddal védett `/garage` végpontja csak a név és jármű mezőit fogadja el; nem kínál jegyzet-, munkalap- vagy tetszőleges fájlelérést. Kizárólag helyi IPv4-címre lehet csatlakozni. A kliensgépek nem töltenek fel saját jegyzetet vagy régi helyi autólistát. A központ adatfájlja külön `shared-garage/people.json`, tartós módosítási verzióval, atomi cserével és az előző állapot `.bak` mentésével. Elavult verzió mentése ütközési hibát ad, felülírás nélkül. Szerkesztés közben a felület nem cseréli le a megnyitott adatokat. Kapcsolat nélkül nincs helyi, később veszélyesen összefésülhető hálózati mentés; a saját jegyzetek és munkalapok tovább használhatók.
+
+Az alkalmazás neve és a korábbi felhasználói könyvtár változatlan. A jegyzetek korábbi **Biztonsági mentés** gombja továbbra is kizárólag a gép saját adatait menti; a külön **Autólista mentése** a nyilvántartóról készít JSON-mentést. A korábbi `garage.json` helyi autólista megmarad; az első központi beállítás csak ennek az autóadatait másolja át. A két adatforrás később nem írja felül automatikusan egymást.
+
+Ellenőrzések: `npm test` (négy külön szolgáltatás, egyidejű mentések, hitelesítés, tiltott végpontok, sérült fájl védelme, valamint a jegyzetek/archívumok/munkalapok bájtpontos változatlansága); Python importtesztek; négy valódi, elkülönített Linux Electron-folyamatban a beállítófelület, közös Excel-beillesztés, automatikus frissülés, ütközésvédelem, megszakított bezárás és központ nélküli saját jegyzetmentés. A Windows natív futtatása és a bolti hálózat/tűzfal külön helyszíni ellenőrzést igényel.
 
 ## Alvázszámonkénti cikkszámok az 1.8-as verzióban
 
@@ -121,7 +135,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.8.0-s, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+A jegyzetek és munkalapok egy-egy számítógép helyi adataival dolgoznak, és külön maradnak. Az 1.9.0-s csomagban kizárólag az autónyilvántartó osztható meg a négy gép között; a napi jegyzeteket és az autónkénti cikkszámokat nem szinkronizálja.
 
 ## Korábbi TXT-jegyzetek átvitele
 
@@ -163,7 +177,10 @@ npm ci
 npm test
 npm start
 npm run package:win
+python3 scripts/build-windows-downloads.py
 ```
+
+Négy elkülönített Electron-folyamat hálózati próbája aktív grafikus képernyő mellett: `node scripts/verify-garage-lan.cjs`. Fej nélküli Linuxon előbb indíts Xvfb-t, és add meg a `DISPLAY` változót. A teszt kizárólag ideiglenes, szintetikus jegyzetekkel dolgozik. A letölthető csomag az eredeti ellenőrzött `TokiAuto-Inditas.cmd` indítót és a hálózati útmutatót is tartalmazza.
 
 A Windows-csomag a `dist/TokiAuto-win32-x64` könyvtárba kerül. Proxyt igénylő környezetben az Electron letöltéséhez `ELECTRON_GET_USE_PROXY=1`, valamint a `GLOBAL_AGENT_HTTP_PROXY` és `GLOBAL_AGENT_HTTPS_PROXY` beállítása szükséges a meglévő proxycímekre. A TLS- és checksum-ellenőrzést hagyd bekapcsolva.
 
