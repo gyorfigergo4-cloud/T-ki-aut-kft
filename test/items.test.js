@@ -20,7 +20,7 @@ test('százalékból kedvezményes egységár, nulla és teljes kedvezmény, pon
 test('darabszám és több sor összesítése az egységárakból',()=>{
  const first={...items.blank('a'),partNumber:'A123',fullPrice:'10000',discountPercent:'20',discountedPrice:'8000',quantity:'3'};
  const second={...items.blank('b'),partNumber:'B456',fullPrice:'5000',discountPercent:'10',discountedPrice:'4500',quantity:'2'};
- assert.deepEqual(items.totals([first,second]),{fullPrice:'40000',discountedPrice:'33000',savings:'7000',missing:0,active:2,priced:2});
+ assert.deepEqual(items.totals([first,second]),{fullPrice:'40000',discountedPrice:'33000',savings:'7000',missing:0,active:2,priced:2,fullPriced:2,discountedPriced:2,missingFull:0,missingDiscounted:0});
  assert.equal(items.totals([first,{...items.blank('c'),partNumber:'Ár nélkül'}]).missing,1);
  assert.equal(items.formatMoney('19.99'),'19,99 Ft');
  assert.equal(items.formatMoney('0'),'0 Ft');

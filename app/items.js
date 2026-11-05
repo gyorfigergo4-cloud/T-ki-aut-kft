@@ -93,8 +93,13 @@
       item.discountPercent = discountFromPrices(item.fullPrice, item.discountedPrice);
       prefix = line.slice(0, pairs[0].index);
     } else if (!pairs.length && prices.length === 1) {
-      item.fullPrice = legacyAmount(prices[0][1]); item.discountedPrice = item.fullPrice;
-      item.discountPercent = '0'; prefix = line.slice(0, prices[0].index);
+      prefix = line.slice(0, prices[0].index);
+      if (/kedvezményes\s+ár\s*:\s*$/iu.test(prefix)) {
+        item.fullPrice = ''; item.discountedPrice = legacyAmount(prices[0][1]); item.discountPercent = ''; item.priceMode = 'manual';
+        prefix = prefix.replace(/kedvezményes\s+ár\s*:\s*$/iu, '');
+      } else {
+        item.fullPrice = legacyAmount(prices[0][1]); item.discountedPrice = item.fullPrice; item.discountPercent = '0';
+      }
       if (/Ft(?:\s*\/\s*db)?\s*[-–]\s*\d/i.test(line)) { item.discountedPrice = ''; item.discountPercent = ''; }
     } else if (pairs.length > 1 || prices.length > 2) {
       // Leave ambiguous prices in the original line, never invent a total.
@@ -140,15 +145,25 @@
     return items;
   }
   function totals(items) {
-    let full = 0n, reduced = 0n, missing = 0, active = 0;
+    let full = 0n, reduced = 0n, savings = 0n, active = 0, fullPriced = 0, discountedPriced = 0, priced = 0;
     for (const item of items) {
       if (!item.partNumber && !item.description && !item.supplier && item.fullPrice === '' && item.discountedPrice === '') continue;
       active++;
-      if (item.fullPrice === '' || item.discountedPrice === '') { missing++; continue; }
       const count = quantity(item.quantity);
-      full += cents(item.fullPrice) * count; reduced += cents(item.discountedPrice) * count;
+      const hasFull = item.fullPrice !== '', hasDiscounted = item.discountedPrice !== '';
+      if (hasFull) { full += cents(item.fullPrice) * count; fullPriced++; }
+      if (hasDiscounted) { reduced += cents(item.discountedPrice) * count; discountedPriced++; }
+      if (hasFull && hasDiscounted) { savings += (cents(item.fullPrice) - cents(item.discountedPrice)) * count; priced++; }
     }
-    return { fullPrice: decimal(full, 2), discountedPrice: decimal(reduced, 2), savings: decimal(full - reduced, 2), missing, active, priced: active - missing };
+    return { fullPrice: decimal(full, 2), discountedPrice: decimal(reduced, 2), savings: decimal(savings, 2), missing: active - priced, active, priced, fullPriced, discountedPriced, missingFull: active - fullPriced, missingDiscounted: active - discountedPriced };
+  }
+  function totalsHint(result) {
+    if (!result.missing) return 'Az összesítés a darabszámokat is figyelembe veszi.';
+    const messages = [];
+    if (result.missingFull) messages.push(result.missingFull + ' tételnél hiányzik a teli ár.');
+    if (result.missingDiscounted) messages.push(result.missingDiscounted + ' tételnél hiányzik a kedvezményes ár.');
+    messages.push(result.discountedPriced && !result.missingDiscounted ? 'A kedvezményes végösszeg az összes tételt tartalmazza.' : 'A részösszegek csak a megadott árakat tartalmazzák.');
+    return messages.join(' ');
   }
   function formatMoney(value) {
     if (value === '') return '—';
@@ -157,12 +172,12 @@
     return (negative ? '−' : '') + whole + (fraction ? ',' + fraction.toString().padStart(2, '0') : '') + ' Ft';
   }
   function syncLegacy(note) {
-    note.part = note.items.filter(item => item.partNumber || item.fullPrice || item.supplier).map(item => [item.partNumber, item.supplier, item.fullPrice ? item.fullPrice + 'Ft' + (item.discountedPrice ? '-' + item.discountedPrice + 'Ft' : '') : '', item.quantity !== '1' ? 'x' + item.quantity : '', order(item).ordered ? 'Rendelve' : ''].filter(Boolean).join(' ')).join('\n');
+    note.part = note.items.filter(item => item.partNumber || item.description || item.fullPrice !== '' || item.discountedPrice !== '' || item.supplier).map(item => [item.partNumber || item.description, item.supplier, item.fullPrice !== '' ? item.fullPrice + 'Ft' + (item.discountedPrice !== '' ? '-' + item.discountedPrice + 'Ft' : '') : item.discountedPrice !== '' ? 'Kedvezményes ár: ' + item.discountedPrice + 'Ft' : '', item.quantity !== '1' ? 'x' + item.quantity : '', order(item).ordered ? 'Rendelve' : ''].filter(Boolean).join(' ')).join('\n');
     const result = totals(note.items);
-    note.fullPrice = result.priced && !result.missing ? result.fullPrice : '';
-    note.discountPrice = result.priced && !result.missing ? result.discountedPrice : '';
+    note.fullPrice = result.fullPriced && !result.missingFull ? result.fullPrice : '';
+    note.discountPrice = result.discountedPriced && !result.missingDiscounted ? result.discountedPrice : '';
   }
-  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, formatMoney, syncLegacy, order, withOrder, edit, orderCounts };
+  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, totalsHint, formatMoney, syncLegacy, order, withOrder, edit, orderCounts };
   if (typeof module !== 'undefined') module.exports = api;
   else root.LineItems = api;
 })(globalThis);

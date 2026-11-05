@@ -205,3 +205,13 @@ test('névkártya állapotának mentése és kétirányú ármezők újranyitás
  edit('fullPrice','10000');await tick();assert.equal(saved.notes[0].items[0].discountedPrice,'9000');assert.equal(field('discountPercent').value,'10');assert.equal(field('discountedPrice').validity.valid,true);
  ui.input('search','ajanlat');assert.equal(ui.cards().length,1);assert.equal(ui.$('title').value,'Minta ügyfél');ui.dom.window.close();
 });
+test('a csak kedvezményes árral rögzített tétel végösszege látszik teli ár nélkül is',async()=>{
+ const saved={notes:[{id:'only-final',title:'Minta ügyfél',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z',fullPrice:'',discountPrice:'',items:[{id:'item',partNumber:'DEMO-FINAL',fullPrice:'',discountedPrice:'13500',discountPercent:'',priceMode:'manual',quantity:'1',supplier:'Láng'}]}],archive:{years:[2024,2025,2026],days:['2026-11-05']}};
+ let ui=await openUI(saved);const amount=id=>ui.$(id).textContent.replace(/\s/g,'');
+ assert.equal(amount('total-discounted'),'13500Ft');assert.equal(ui.$('total-discounted').previousElementSibling.textContent,'Kedvezményes összesen');assert.equal(amount('total-full'),'—');assert.equal(amount('total-savings'),'—');
+ const field=name=>ui.$('items-body').querySelector('[data-field="'+name+'"]');assert.equal(field('discountPercent').value,'');assert.equal(field('discountPercent').placeholder,'—');
+ field('quantity').value='2';field('quantity').dispatchEvent(new ui.dom.window.Event('input'));await tick();assert.equal(amount('total-discounted'),'27000Ft');assert.equal(saved.notes[0].discountPrice,'27000');assert.equal(saved.notes[0].fullPrice,'');
+ ui.dom.window.close();ui=await openUI(saved);assert.equal(amount('total-discounted'),'27000Ft');assert.equal(field('discountPercent').value,'');
+ field('fullPrice').value='20000';field('fullPrice').dispatchEvent(new ui.dom.window.Event('input'));await tick();assert.equal(field('discountPercent').value,'32.5');assert.equal(amount('total-full'),'40000Ft');assert.equal(amount('total-savings'),'13000Ft');assert.equal(amount('total-discounted'),'27000Ft');
+ ui.dom.window.close();
+});

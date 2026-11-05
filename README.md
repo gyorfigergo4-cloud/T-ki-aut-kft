@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Önálló árösszesítés javítása az 1.4.1-es verzióban
+
+A megadott teli és kedvezményes árak külön-külön számítanak bele az összesítésbe. Ha csak 13 500 Ft kedvezményes egységár van megadva, a végösszeg 1 db-nál 13 500 Ft, 2 db-nál 27 000 Ft. A hiányzó teli ár nem rejti el az ismert kedvezményes végösszeget. Részösszegnek csak azt az oldalt jelöli, amelyen valóban hiányzik ár. Nulla forint ismert árként jelenik meg.
+
+A kedvezmény összege csak az azonos soron ismert árpárokból számolható; különböző sorok hiányzó árait nem vonja ki egymásból. A ki nem számítható százalék helyén „—” jelenik meg. A mentés a teljesen ismert kedvezményes végösszeget teli ár nélkül is megőrzi; az eredeti tételek és forrásszövegek megmaradnak. A munkalap szerkesztőjének összesítése is javítva van. Az ügyfélnek készülő dokumentum továbbra is csak teljesen kitöltött árakkal nyomtatható, cikkszám és belső jelölések nélkül.
+
 ## Színes bejegyzések és kézi kedvezményes ár az 1.4-es verzióban
 
 A **Bejegyzés adatai** mellett négy, egymást kizáró állapot választható: **Megrendelve** (zöld), **Ajánlat** (kék), **Félbehagyott** (piros), **Felírva** (citromsárga). A felső névkártya teljes háttere, kerete és felirata követi az állapotot; az aktuális kártya kijelölése külön is látszik. A választás névenként mentődik és újranyitáskor megmarad. Az új és korábban nem jelölt bejegyzések alapállapota Felírva. A bejegyzés állapota kézzel választható, a tételenkénti rendelésjelöléstől függetlenül. A kereső az állapot nevére is keres.
@@ -77,7 +83,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.4-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.4.1-es, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 

@@ -162,12 +162,13 @@ function allowNavigation() {
 }
 function renderTotals(note) {
   const result = Items.totals(note.items);
-  $('total-full').previousElementSibling.textContent = result.missing ? 'Teli részösszeg' : 'Teli összesen';
-  $('total-discounted').previousElementSibling.textContent = result.missing ? 'Kedvezményes részösszeg' : 'Kedvezményes összesen';
-  $('total-full').textContent = result.priced ? Items.formatMoney(result.fullPrice) : '—';
+  $('total-full').previousElementSibling.textContent = result.missingFull ? 'Teli részösszeg' : 'Teli összesen';
+  $('total-savings').previousElementSibling.textContent = result.missing && result.priced ? 'Kedvezmény részösszeg' : 'Kedvezmény összesen';
+  $('total-discounted').previousElementSibling.textContent = result.missingDiscounted ? 'Kedvezményes részösszeg' : 'Kedvezményes összesen';
+  $('total-full').textContent = result.fullPriced ? Items.formatMoney(result.fullPrice) : '—';
   $('total-savings').textContent = result.priced ? Items.formatMoney(result.savings) : '—';
-  $('total-discounted').textContent = result.priced ? Items.formatMoney(result.discountedPrice) : '—';
-  $('price-summary').textContent = result.missing ? result.missing + ' sornál még hiányzik az ár. Az összesítés csak az ismert árú tételeket tartalmazza.' : 'Az összesítés a darabszámokat is figyelembe veszi.';
+  $('total-discounted').textContent = result.discountedPriced ? Items.formatMoney(result.discountedPrice) : '—';
+  $('price-summary').textContent = Items.totalsHint(result);
   const orders = Items.orderCounts(note.items); $('order-summary').textContent = 'Megrendelve: ' + orders.ordered + ' / ' + orders.total + ' tétel';
 }
 function renderItems(note) {
@@ -192,7 +193,7 @@ function renderItems(note) {
       const input = document.createElement('input'); input.type = type; input.value = item[field]; input.dataset.field = field;
       input.setAttribute('aria-label', label + ' – ' + (index + 1) + '. sor');
       if (field === 'fullPrice' || field === 'discountedPrice') { input.min = '0'; input.max = '999999999999.99'; input.step = '0.01'; input.placeholder = 'Ár nélkül'; }
-      if (field === 'discountPercent') { input.min = '0'; input.max = '100'; input.step = 'any'; input.placeholder = '0'; }
+      if (field === 'discountPercent') { input.min = '0'; input.max = '100'; input.step = 'any'; input.placeholder = '—'; }
       if (field === 'quantity') { input.min = '1'; input.max = '999999'; input.step = '1'; input.required = true; }
       if (field === 'partNumber') { input.placeholder = 'Cikkszám'; input.maxLength = 1000; input.spellcheck = false; }
       if (field === 'supplier') { input.setAttribute('list', 'suppliers'); input.placeholder = 'Pl. IC'; input.maxLength = 200; }
