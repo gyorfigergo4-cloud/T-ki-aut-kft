@@ -33,7 +33,8 @@ function renderPayment(note = current()) {
   const input = $('note-paid'); input.disabled = !note;
   const state = note ? Items.paymentState(note.items, note.paid) : { paid: false, partial: false, paidCount: 0, total: 0 };
   input.checked = state.paid; input.indeterminate = state.partial;
-  $('note-paid-wrap').title = state.total ? 'Fizetve: ' + state.paidCount + ' / ' + state.total + ' tétel. A pipával az összes tételt egyszerre jelölheted.' : 'A teljes bejegyzés fizetve jelölése.';
+  $('note-paid-label').textContent = note?.vehicles.length > 1 ? 'Fizetve – teljes bejegyzés' : 'Fizetve';
+  $('note-paid-wrap').title = state.total ? 'Fizetve: ' + state.paidCount + ' / ' + state.total + ' tétel. A pipával a teljes bejegyzés összes tételét egyszerre jelölheted.' : 'A teljes bejegyzés fizetve jelölése.';
 }
 function renderWorkflowStatus() {
   const note = current();
@@ -59,6 +60,28 @@ $('note-paid').onchange = () => {
   note.items = Items.setAllPaid(note.items, $('note-paid').checked); note.paid = $('note-paid').checked;
   Items.syncLegacy(note); touchNote(note); persistNotes(); renderItems(note); metadata();
 };
+function renderVehicleTabs(note) {
+  $('vehicle-tabs').replaceChildren();
+  const choices = note.vehicles.map((vehicle, index) => ({ id: vehicle.id, text: Vehicles.label(vehicle, index) }));
+  if (!note.vehicles.length || note.activeVehicleId === '' || note.items.some(item => item.vehicleId === '')) choices.push({ id: '', text: 'Hozzárendelés nélkül' });
+  for (const choice of choices) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'vehicle-tab'; button.dataset.vehicleId = choice.id;
+    button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', String(note.activeVehicleId === choice.id));
+    const name = document.createElement('strong'); name.textContent = choice.text;
+    const count = document.createElement('small'); count.textContent = Vehicles.itemsFor(note, choice.id).filter(Items.isActive).length + ' tétel';
+    button.append(name, count); button.onclick = () => selectVehicle(note, choice.id); $('vehicle-tabs').append(button);
+  }
+  for (const row of $('vehicles-list').children) row.classList.toggle('is-selected', row.dataset.vehicleId === note.activeVehicleId);
+  const vehicle = note.vehicles.find(row => row.id === note.activeVehicleId);
+  $('vehicle-items-context').textContent = vehicle ? 'Kiválasztott autó: ' + Vehicles.label(vehicle, note.vehicles.indexOf(vehicle)) : 'Hozzárendelés nélküli tételek – a sor Autó mezőjében választhatsz alvázszámot.';
+  $('note-to-wo').textContent = vehicle ? 'Munkalap – kiválasztott autó' : 'Munkalap – közös tételek';
+  $('note-to-wo').title = 'Csak az itt látható tételeket és a kiválasztott autót veszi át.';
+}
+function selectVehicle(note, id) {
+  if (!validInputs()) return false;
+  if (note.activeVehicleId !== id) { note.activeVehicleId = id; persistNotes(); }
+  renderVehicleTabs(note); renderItems(note); metadata(); return true;
+}
 function renderBrandOptions() {
   const names = new Set(Vehicles.brands);
   for (const note of notes) for (const row of Vehicles.get(note)) if (row.brand.trim()) names.add(row.brand.trim());
@@ -82,9 +105,10 @@ function renderVehicles(note) {
           if (!input.validity.valid) throw new Error('Ellenőrizd az alvázszámot vagy az autómárkát.');
           const next = note.vehicles.map(entry => entry.id === vehicle.id ? { ...entry, [field]: input.value } : entry); Vehicles.validate(next);
           note.vehicles = next; Vehicles.sync(note); touchNote(note); invalidInputs.delete(input); input.removeAttribute('aria-invalid'); $('vehicle-error').textContent = '';
-          persistNotes(); renderList(); metadata();
+          persistNotes(); renderVehicleTabs(note); renderList(); metadata();
         } catch (error) { input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('vehicle-error').textContent = error.message; }
       }
+      input.onfocus = () => { if (note.activeVehicleId !== vehicle.id) selectVehicle(note, vehicle.id); };
       input.oninput = save;
       if (field === 'brand') input.onchange = () => { input.value = Vehicles.normalizeBrand(input.value); save(); renderBrandOptions(); };
       label.append(input); row.append(label);
@@ -93,16 +117,17 @@ function renderVehicles(note) {
     remove.onclick = () => {
       const ownInvalid = [...row.querySelectorAll('input')].filter(input => invalidInputs.has(input)); for (const input of ownInvalid) invalidInputs.delete(input);
       if (!validInputs()) { for (const input of ownInvalid) invalidInputs.add(input); return; }
-      note.vehicles = note.vehicles.filter(entry => entry.id !== vehicle.id); Vehicles.sync(note); touchNote(note); persistNotes(); renderVehicles(note); renderList(); metadata();
+      const moved = Vehicles.remove(note, vehicle.id); touchNote(note); persistNotes(); renderVehicles(note); renderItems(note); renderList(); metadata(); if (moved) $('vehicle-error').textContent = 'A tételek megmaradtak a Hozzárendelés nélkül listában.';
     };
     row.append(remove); $('vehicles-list').append(row);
   });
+  renderVehicleTabs(note);
 }
 $('add-vehicle').onclick = () => {
   const note = current(); if (!note || !validInputs()) return;
   const next = [...note.vehicles, Vehicles.blank(crypto.randomUUID())];
   try { Vehicles.validate(next); } catch (error) { $('vehicle-error').textContent = error.message; return; }
-  note.vehicles = next; Vehicles.sync(note); touchNote(note); persistNotes(); renderVehicles(note); metadata(); $('vehicles-list').lastElementChild.querySelector('input').focus();
+  note.vehicles = next; note.activeVehicleId = next.at(-1).id; note.items.push({ ...Items.blank(crypto.randomUUID()), vehicleId: note.activeVehicleId }); Vehicles.sync(note); touchNote(note); persistNotes(); renderVehicles(note); renderItems(note); metadata(); $('vehicles-list').lastElementChild.querySelector('input').focus();
 };
 function setDayContext(day) {
   selectedDay = day; selectedMonth = day.slice(0, 7); activeYear = Number(day.slice(0, 4));
@@ -211,6 +236,7 @@ function render() {
     $('import-path').textContent = note.source.path || '';
     $('import-original').textContent = note.source.originalText || '';
   }
+  if (note && $('search').value.trim()) { const id = Vehicles.findSelection(note, $('search').value); if (id !== undefined && note.activeVehicleId !== id) { note.activeVehicleId = id; persistNotes(); } }
   if (note) { for (const field of fields) $(field).value = note[field]; renderVehicles(note); renderItems(note); metadata(); }
 }
 function validInputs() {
@@ -225,7 +251,7 @@ function afterCheck(result, action) {
 }
 function navigate(action) { return afterCheck(allowNavigation(), action); }
 function renderTotals(note) {
-  const result = Items.totals(note.items);
+  const result = Items.totals(Vehicles.itemsFor(note));
   $('total-full').previousElementSibling.textContent = result.missingFull ? 'Teli részösszeg' : 'Teli összesen';
   $('total-savings').previousElementSibling.textContent = result.missing && result.priced ? 'Kedvezmény részösszeg' : 'Kedvezmény összesen';
   $('total-discounted').previousElementSibling.textContent = result.missingDiscounted ? 'Kedvezményes részösszeg' : 'Kedvezményes összesen';
@@ -234,16 +260,16 @@ function renderTotals(note) {
   $('total-discounted').textContent = result.discountedPriced ? Items.formatMoney(result.discountedPrice) : '—';
   $('price-summary').textContent = Items.totalsHint(result);
   renderPayment(note);
-  const orders = Items.orderCounts(note.items); $('order-summary').textContent = 'Megrendelve: ' + orders.ordered + ' / ' + orders.total + ' tétel';
+  const orders = Items.orderCounts(Vehicles.itemsFor(note)); $('order-summary').textContent = 'Megrendelve: ' + orders.ordered + ' / ' + orders.total + ' tétel';
 }
 function renderItems(note) {
   $('items-body').replaceChildren();
   invalidInputs.clear(); $('item-error').textContent = '';
-  $('items-empty').hidden = note.items.length > 0;
+  $('items-empty').hidden = Vehicles.itemsFor(note).length > 0;
   const legacy = [note.legacyParts || '', note.legacyTotals?.fullPrice ? 'Korábbi teli összeg: ' + note.legacyTotals.fullPrice + ' Ft' : '', note.legacyTotals?.discountedPrice ? 'Korábbi kedvezményes összeg: ' + note.legacyTotals.discountedPrice + ' Ft' : ''].filter(Boolean).join('\n');
   $('legacy-parts').hidden = !legacy; $('legacy-parts').open = false; $('legacy-parts-text').textContent = legacy;
-  note.items.forEach((item, index) => {
-    const row = document.createElement('tr'); row.dataset.itemId = item.id;
+  Vehicles.itemsFor(note).forEach((item, index) => {
+    const row = document.createElement('tr'); row.dataset.itemId = item.id; row.dataset.vehicleId = item.vehicleId;
     const priceInputs = {};
     let priceDriver = item.priceMode === 'manual' || (item.priceMode === 'legacy' && item.discountedPrice !== '') ? 'manual' : 'auto';
     const orderControl = window.ItemOrderUI.create(item, (index + 1) + '. sor', checked => {
@@ -287,12 +313,24 @@ function renderItems(note) {
           if (field === 'supplier') input.value = item.supplier;
           $('item-error').textContent = invalidInputs.size ? 'Javítsd a megjelölt mezőt a továbblépéshez.' : '';
           orderControl.refresh();
-          Items.syncLegacy(note); touchNote(note); persistNotes(); renderList(); metadata();
+          Items.syncLegacy(note); touchNote(note); persistNotes(); renderVehicleTabs(note); renderList(); metadata();
         } catch (error) {
           input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('item-error').textContent = error.message;
         }
       });
-      cell.append(input); row.append(cell);
+      cell.append(input);
+      if (field === 'partNumber') {
+        const assignment = document.createElement('select'); assignment.className = 'item-vehicle-select'; assignment.dataset.field = 'vehicleId'; assignment.setAttribute('aria-label', 'Autó – ' + (index + 1) + '. cikkszámsor');
+        const choices = [{ id: '', text: 'Hozzárendelés nélkül' }, ...note.vehicles.map((vehicle, number) => ({ id: vehicle.id, text: Vehicles.label(vehicle, number) }))];
+        for (const choice of choices) { const option = document.createElement('option'); option.value = choice.id; option.textContent = choice.text; assignment.append(option); }
+        assignment.value = item.vehicleId || '';
+        assignment.onchange = () => {
+          if (!validInputs()) { assignment.value = item.vehicleId || ''; return; }
+          item.vehicleId = assignment.value; Vehicles.validateAssignments(note); touchNote(note); persistNotes(); renderVehicleTabs(note); renderItems(note); renderList(); metadata();
+        };
+        const label = document.createElement('label'); label.className = 'item-vehicle-label'; label.textContent = 'Autó'; label.append(assignment); cell.append(label);
+      }
+      row.append(cell);
     }
     row.append(orderControl.cell);
     const actions = document.createElement('td'), remove = document.createElement('button');
@@ -300,14 +338,14 @@ function renderItems(note) {
     remove.onclick = () => {
       for (const input of row.querySelectorAll('input')) invalidInputs.delete(input);
       if (!validInputs()) return;
-      note.items = note.items.filter(entry => entry.id !== item.id); Items.syncLegacy(note); touchNote(note); persistNotes(); renderItems(note); renderList(); metadata();
+      note.items = note.items.filter(entry => entry.id !== item.id); Items.syncLegacy(note); touchNote(note); persistNotes(); renderVehicleTabs(note); renderItems(note); renderList(); metadata();
     };
     actions.append(remove); row.append(actions); $('items-body').append(row);
   });
 }
 $('add-item').onclick = () => {
   const note = current(); if (!note || !validInputs()) return;
-  note.items.push(Items.blank(crypto.randomUUID())); touchNote(note); persistNotes(); renderItems(note); metadata();
+  note.items.push({ ...Items.blank(crypto.randomUUID()), vehicleId: note.activeVehicleId }); touchNote(note); persistNotes(); renderItems(note); metadata();
   $('items-body').lastElementChild.querySelector('input').focus();
 };
 function showDayDialog(month = selectedMonth) {
@@ -348,6 +386,7 @@ $('new').onclick = () => {
   return navigate(() => {
   clearSearch(); const now = new Date().toISOString();
   const note = { id: crypto.randomUUID(), title: '', phone: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [Vehicles.blank(crypto.randomUUID())], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
+  note.activeVehicleId = note.vehicles[0].id; note.items[0].vehicleId = note.activeVehicleId;
   notes.push(note); touchNote(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }
@@ -427,7 +466,7 @@ window.NotesFlush = async () => {
  await queue;
  if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült. Beolvasás előtt ellenőrizd a lemez szabad helyét.');
 };
-window.NoteForWorkOrder = () => afterCheck(allowNavigation(), current);
+window.NoteForWorkOrder = () => afterCheck(allowNavigation(), () => current() ? Vehicles.selectedNote(current()) : null);
 window.addEventListener('excel-imported', async event => {
  if (event.detail.target === 'notes') { await loadData(event.detail.noteId); $('status').textContent = event.detail.message; }
 });

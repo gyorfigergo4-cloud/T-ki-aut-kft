@@ -1,4 +1,4 @@
-TÖKI AUTÓ KFT. – JEGYZETEK 1.7.0
+TÖKI AUTÓ KFT. – JEGYZETEK 1.8.0
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -81,7 +81,7 @@ Minden alvázszám mellett külön autómárkát választhatsz.
 433 előre megadott márka közül választhatsz, és sajátot is beírhatsz.
 A kereső az összes alvázszámban és márkában keres.
 A korábban beírt alvázszámok megmaradnak.
-A Munkalap készítése gomb az összes jármű alvázszámát és márkáját átveszi.
+A Munkalap készítése a kiválasztott autót és annak tételeit veszi át.
 
 KILÉPÉSI EMLÉKEZTETŐ ÉS SAJÁT TEENDŐK
 Kizárólag a program bezárásakor, egy közös ablakban kérdezi meg:
@@ -111,3 +111,20 @@ A Név mellett külön Telefonszám mező van.
 Automatikusan mentődik, a keresőben is visszakereshető.
 A Munkalap készítése gomb a telefonszámot is átveszi.
 A korábbi jegyzeteknél a mező kezdetben üres; a régi adatok megmaradnak.
+
+CIKKSZÁMOK KÜLÖN ALVÁZSZÁMONKÉNT
+Egy névhez több autó tartozhat, mindegyik saját cikkszámokkal.
+A Járművek részen kattints az autó alvázszámos gombjára vagy alvázszámmezőjére.
+A táblázat az adott autó cikkszámait, árait, darabszámait és pipáit mutatja.
+Az új cikkszám a kiválasztott autóhoz kerül. Új autó üres saját sorral indul.
+A hozzárendelés és az utoljára kiválasztott autó automatikusan mentődik.
+A kereső a találatnak megfelelő autó tételeit nyitja meg.
+
+RÉGI TÉTELEK ÉS ÁTSOROLÁS
+Egyetlen autót tartalmazó régi jegyzetnél a tételek ahhoz az autóhoz kerülnek.
+Több autó közös régi tételei a Hozzárendelés nélkül listában maradnak.
+A cikkszámsor Autó mezőjével válaszd ki, melyik alvázszámhoz tartozik.
+Ezzel később másik autóhoz is áthelyezheted a sort.
+Autó törlése nem törli a tételeit: a Hozzárendelés nélkül listába kerülnek.
+A Munkalap – kiválasztott autó gomb kizárólag az aktuális autó tételeit veszi át.
+A fejléc Fizetve – teljes bejegyzés pipája továbbra is az összes autót együtt jelöli.

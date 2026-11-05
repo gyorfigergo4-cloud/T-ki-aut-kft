@@ -13,6 +13,7 @@ function validate(notes) {
     reminders.validate(note.reminders);
     if (note.paid !== undefined && typeof note.paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
     if (note.items !== undefined) lineItems.validate(note.items);
+    vehicles.validateAssignments(note);
     if (note.day !== undefined && !validDay(note.day)) throw new Error('Érvénytelen bejegyzésdátum');
     for (const field of ['vin', 'phone', 'part', 'oil', 'fullPrice', 'discountPrice', 'created']) {
       if (note[field] !== undefined && typeof note[field] !== 'string') throw new Error('Sérült mező: ' + field);

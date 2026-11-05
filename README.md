@@ -2,6 +2,16 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Alvázszámonkénti cikkszámok az 1.8-as verzióban
+
+Egy név alatt több autó külön tétellistát kap. A Járművek részen az alvázszámos gomb vagy a szerkeszthető alvázszámmező kiválasztja az autót; az alatta lévő táblázat és összesítés annak cikkszámait mutatja. Új sor a kiválasztott autóhoz kerül, új autó üres saját sorral indul. Azonos cikkszám két autónál is megadható, külön árral, darabszámmal, rendelési és fizetési pipával. A hozzárendelés és az utolsó kiválasztás újraindítás után is megmarad; az alvázszám szövegének javítása nem választja le a tételeket. A név, telefon és megjegyzés közös marad.
+
+A tárolás a meglévő, teljes `note.items` listát őrzi meg; a sor opcionális `vehicleId` mezője az adott jegyzet stabil járműazonosítójára mutat. A régi, egyautós jegyzet egyértelmű tételei az autóhoz kerülnek. Többautós jegyzet korábbi közös sorai **Hozzárendelés nélkül** maradnak, és az **Autó** választóval soronként átsorolhatók. Az explicit közös sorok újranyitáskor sem sorolódnak át automatikusan. Autó törlése annak tételeit áthelyezi a hozzárendelés nélküli listába, árat vagy jelölést nem töröl. A tároló az érvénytelen járműhivatkozást írás előtt elutasítja.
+
+A kereső minden autóban keres, és a találat autóját nyitja meg. A **Munkalap – kiválasztott autó** kizárólag annak alvázszámát, márkáját és tételeit másolja át; a telefon továbbra is átkerül. A PDF és a nyomtatás engedélyezett mezőkből készül, cikkszám és belső jelölések nélkül. A fejléc **Fizetve – teljes bejegyzés** pipája az összes autó tételeire vonatkozik, a táblázat alatti összegek a kiválasztott autóra. A teljes bejegyzés eredeti összesített adatai és forrásszövegei megmaradnak a mentésben.
+
+Valódi Electron-folyamatban ellenőrizve: régi egy- és többautós jegyzetek, két autón azonos cikkszám külön adatokkal, alvázszámra kattintás, új autó, átsorolás, törlés adatmegőrzéssel, mentés/újratöltés, keresés, hibás ár miatti váltásmegállítás, kizárólag egy autót tartalmazó tényleges PDF, valamint a végső bezárás.
+
 ## Telefonszám és egyetlen záró ellenőrzés az 1.7-es verzióban
 
 Minden jegyzetben a Név mellett külön **Telefonszám** mező van. A megadott szöveget formázással együtt, névenként automatikusan menti; újranyitáskor megmarad és a globális keresőben is kereshető. A régebbi jegyzeteknél alapból üres. A **Munkalap készítése** a telefonszámot is átmásolja a munkalap Telefon mezőjébe.
@@ -28,7 +38,7 @@ Minden névhez több saját teendő vehető fel az **Emlékeztetők** részen, g
 
 Minden kitöltött tételnek külön **Fizetve** pipája van. A Bejegyzés adatai mellett, a Megrendelve alatt lévő közös pipa az összes kitöltött tételt egyszerre jelöli vagy törli; részleges fizetésnél köztes állapotot mutat. Üres tétellista mellett az egész bejegyzés fizetése önállóan jelölhető. A fizetés nem változtatja meg a névkártyák színét és nem állít rendelési állapotot. A munkalapokon is van soronkénti és közös pipa. Más cikkszám beírása törli az adott sor korábbi fizetési jelölését. A jelölések automatikusan mentődnek, ügyfélnyomtatásba és PDF-be nem kerülnek.
 
-Egy jegyzethez több alvázszám és soronként külön autómárka adható. Az **Alvázszám hozzáadása** gomb új sort vesz fel; a sor végén törölhető. A korábbi alvázszámok és eredeti forrásszövegek megmaradnak, az explicit törölt járművek újranyitáskor sem térnek vissza. A kereső minden jármű alvázszámát és márkáját figyeli. A 433 márkát tartalmazó, offline használható lista saját márkanévvel kiegészíthető. A névjegyzék forrását és licencét az [adatforrás megjelölése](app/assets/car-brands-NOTICE.txt) tartalmazza; gyártói emblémákat nem használunk. A **Munkalap készítése** az összes alvázszámot és márkát átviszi.
+Egy jegyzethez több alvázszám és soronként külön autómárka adható. Az **Alvázszám hozzáadása** gomb új sort vesz fel; a sor végén törölhető. A korábbi alvázszámok és eredeti forrásszövegek megmaradnak, az explicit törölt járművek újranyitáskor sem térnek vissza. A kereső minden jármű alvázszámát és márkáját figyeli. A 433 márkát tartalmazó, offline használható lista saját márkanévvel kiegészíthető. A névjegyzék forrását és licencét az [adatforrás megjelölése](app/assets/car-brands-NOTICE.txt) tartalmazza; gyártói emblémákat nem használunk. Az 1.8-as verziótól a **Munkalap készítése** a kiválasztott autót és annak tételeit viszi át.
 
 ## Önálló árösszesítés javítása az 1.4.1-es verzióban
 
@@ -111,7 +121,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.7.0-s, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.8.0-s, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 

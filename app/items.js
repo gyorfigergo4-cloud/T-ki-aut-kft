@@ -147,6 +147,7 @@
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
       if (item.ordered !== undefined && typeof item.ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
       if (item.paid !== undefined && typeof item.paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
+      if (item.vehicleId !== undefined && (typeof item.vehicleId !== 'string' || item.vehicleId.length > 200)) throw new Error('Érvénytelen autó-hozzárendelés');
       if (item.orderedAt !== undefined && (typeof item.orderedAt !== 'string' || (item.orderedAt !== '' && (!Number.isFinite(Date.parse(item.orderedAt)) || new Date(item.orderedAt).toISOString() !== item.orderedAt || item.ordered !== true)))) throw new Error('Érvénytelen rendelési időpont');
       quantity(item.quantity); percent(item.discountPercent);
       if (item.fullPrice !== '') cents(item.fullPrice);
