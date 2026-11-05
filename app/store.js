@@ -4,11 +4,13 @@ const { validDay } = require('./archive');
 const lineItems = require('./items');
 const noteStatuses = require('./note-status');
 const vehicles = require('./vehicles');
+const reminders = require('./reminders');
 function validate(notes) {
   if (!Array.isArray(notes) || notes.some(n => !n || typeof n.id !== 'string' || typeof n.title !== 'string' || typeof n.body !== 'string' || typeof n.updated !== 'string')) throw new Error('Sérült jegyzetadatok');
   for (const note of notes) {
     noteStatuses.validate(note.workflowStatus);
     vehicles.validate(note.vehicles);
+    reminders.validate(note.reminders);
     if (note.paid !== undefined && typeof note.paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
     if (note.items !== undefined) lineItems.validate(note.items);
     if (note.day !== undefined && !validDay(note.day)) throw new Error('Érvénytelen bejegyzésdátum');

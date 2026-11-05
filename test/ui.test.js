@@ -12,9 +12,9 @@ async function openUI(saved) {
   window.notesAPI = {
     load: async () => copy(saved.notes), loadArchive: async () => copy(saved.archive),
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
-    export: async () => true
+    export: async () => true, confirmNoteExit: () => true
   };
-  for (const script of ['items.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   await tick();
   const $ = id => window.document.getElementById(id);
   const input = (id, value) => { $(id).value = value; $(id).dispatchEvent(new window.Event('input')); };
@@ -232,4 +232,26 @@ test('több alvázszám és saját márka, keresés, törlés és újranyitás a
  ui.input('search','Ford');assert.equal(ui.cards().length,1);ui.$('clear').click();edit(1,'brand','Saját márka');await tick();assert.ok([...ui.$('car-brands').children].some(option=>option.value==='Saját márka'));
  ui.dom.window.close();ui=await openUI(saved);assert.equal(rows().length,2);assert.equal(rows()[1].querySelector('[data-vehicle-field=brand]').value,'Saját márka');rows()[0].querySelector('button').click();await tick();assert.equal(saved.notes[0].vin,vin2);rows()[0].querySelector('button').click();await tick();assert.equal(saved.notes[0].vin,'');assert.deepEqual(saved.notes[0].vehicles,[]);assert.equal(saved.notes[0].source.originalText,'Eredeti forrás');
  ui.dom.window.close();ui=await openUI(saved);assert.equal(rows().length,0);ui.$('add-vehicle').click();assert.equal(rows().length,1);ui.dom.window.close();
+});
+
+test('emlékeztető létrehozása, gyors szöveg, teendőlista, kész jelölés, szerkesztés és újranyitás',async()=>{
+ const saved={notes:[{id:'note',title:'Minta ügyfél',body:'Eredeti tartalom',day:'2026-11-05',updated:'2026-11-05T08:00:00Z'}],archive:{years:[2026],days:['2026-11-05']}};
+ let ui=await openUI(saved);ui.$('reminder-add').click();assert.equal(ui.$('reminder-edit').open,true);ui.$('reminder-preset').value='Felhívni az ügyfelet';ui.$('reminder-preset').dispatchEvent(new ui.dom.window.Event('change'));assert.equal(ui.$('reminder-text').value,'Felhívni az ügyfelet');ui.submit('reminder-form');await tick();assert.equal(saved.notes[0].reminders.length,1);assert.equal(ui.$('reminders-count').textContent,'1');assert.equal(ui.$('reminder-edit').open,false);
+ ui.$('reminders-open').click();assert.equal(ui.$('reminders-list').querySelectorAll('.reminder-row').length,1);ui.$('reminders-list').querySelector('.reminder-text').click();ui.input('reminder-text','Biztosan minden tételt felírtam?');ui.submit('reminder-form');await tick();assert.equal(saved.notes[0].reminders[0].text,'Biztosan minden tételt felírtam?');assert.equal(ui.$('reminders-dialog').open,true);
+ const check=ui.$('reminders-list').querySelector('input[type=checkbox]');check.click();await tick();assert.equal(saved.notes[0].reminders[0].done,true);assert.equal(ui.$('reminders-count').textContent,'0');ui.$('reminders-filter').value='done';ui.$('reminders-filter').dispatchEvent(new ui.dom.window.Event('change'));assert.equal(ui.$('reminders-list').querySelectorAll('.reminder-row').length,1);ui.dom.window.close();
+ ui=await openUI(saved);assert.equal(ui.$('note-reminders').querySelector('input').checked,true);assert.equal(saved.notes[0].body,'Eredeti tartalom');ui.$('note-reminders').querySelector('.reminder-remove').click();await tick();assert.equal(saved.notes[0].reminders.length,0);ui.dom.window.close();
+});
+
+test('kilépési ellenőrzés megszakítható: névváltás, keresés és appbezárás megőrzi a szerkesztést',async()=>{
+ const saved={notes:[{id:'a',title:'Első minta',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z'},{id:'b',title:'Második minta',body:'',day:'2026-11-05',updated:'2026-11-05T09:00:00Z'}],archive:{years:[2026],days:['2026-11-05']}};
+ const ui=await openUI(saved),calls=[];let accept=false;ui.dom.window.notesAPI.confirmNoteExit=request=>{calls.push(copy(request));return accept;};
+ ui.input('body','Ezt már felírtam');ui.$('add-item').click();ui.$('add-vehicle').click();assert.equal(calls.length,0,'azonos jegyzet szerkesztése nem kilépés');ui.$('list').querySelector('[data-note=a]').click();assert.equal(calls.length,0,'azonos névkártyára kattintás nem kilépés');
+ ui.$('list').querySelector('[data-note=b]').click();assert.equal(ui.$('title').value,'Első minta');assert.equal(calls.length,1);
+ ui.input('search','Második');assert.equal(ui.$('title').value,'Első minta');assert.equal(ui.$('search').value,'');assert.equal(calls.length,2);
+ const close=new ui.dom.window.Event('beforeunload',{cancelable:true});ui.dom.window.dispatchEvent(close);assert.equal(close.defaultPrevented,true);assert.equal(calls.length,3);await tick();assert.equal(saved.notes[0].body,'Ezt már felírtam');
+ accept=true;ui.$('list').querySelector('[data-note=b]').click();assert.equal(ui.$('title').value,'Második minta');assert.equal(calls.length,4);ui.$('list').querySelector('[data-note=a]').click();ui.$('list').querySelector('[data-note=b]').click();assert.equal(calls.length,4,'ellenőrzött, változatlan jegyzetnél nincs új kérdés');ui.$('list').querySelector('[data-note=a]').click();ui.input('oil','Új adat');ui.$('list').querySelector('[data-note=b]').click();assert.equal(calls.length,5);await tick();ui.dom.window.close();
+});
+test('nyitott telefonos teendő kilépéskor megjelenik, készre jelölés után eltűnik a listából',async()=>{
+ const saved={notes:[{id:'a',title:'Első minta',body:'',day:'2026-11-05',updated:'2026-11-05T08:00:00Z',reminders:[{id:'call',text:'Felhívni az ügyfelet',done:false,createdAt:'2026-11-05T08:00:00.000Z'}]},{id:'b',title:'Másik minta',body:'',day:'2026-11-05',updated:'2026-11-05T09:00:00Z'}],archive:{years:[2026],days:[]}};
+ const ui=await openUI(saved),requests=[];ui.dom.window.notesAPI.confirmNoteExit=request=>{requests.push(copy(request));return true;};ui.$('list').querySelector('[data-note=b]').click();assert.deepEqual(requests[0].pending,['Felhívni az ügyfelet']);ui.$('list').querySelector('[data-note=a]').click();ui.$('note-reminders').querySelector('input').click();await tick();assert.equal(saved.notes[0].reminders[0].done,true);assert.equal(ui.$('reminders-count').textContent,'0');ui.$('list').querySelector('[data-note=b]').click();assert.deepEqual(requests[1].pending,[]);ui.dom.window.close();
 });

@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline autóbolti belső jegyzetelő Windowsra. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Kilépési ellenőrzés és emlékeztetők az 1.6-os verzióban
+
+A szerkesztett jegyzet elhagyásakor — másik név, nap vagy mappa, új bejegyzés, másik fül, valamint az app bezárása esetén — natív ablak kérdez rá: **Biztosan minden tételt felírtál?** Az **Igen, minden felírva** továbblép, a **Vissza a jegyzethez** megszakítja a váltást vagy a bezárást. Enter és Escape alapértelmezésben a visszatérést választja. A sikeres ellenőrzés ugyanabban a munkamenetben a következő módosításig érvényes; változatlan jegyzet puszta olvasásakor nem kérdez. A mentés továbbra is automatikus, a kérdés jóváhagyása a mentés befejezését nem kerüli meg.
+
+Minden névhez több saját teendő vehető fel az **Emlékeztetők** részen, gyors szövegekkel (például **Felhívni az ügyfelet**) és külön **Kész** pipával. A szöveg szerkeszthető, a teendő törölhető. A bal oldali gomb az összes nyitott vagy kész teendőt megmutatja, és a kapcsolódó jegyzet megnyitható belőle. A nyitott teendők a kilépési ellenőrzésben is megjelennek, korábban mentett jegyzetnél is. A jóváhagyás nem jelöli készre őket; a pipát kézzel kell beállítani. A teendők a helyi JSON-tárolóban és a biztonsági mentésben megmaradnak; ügyfélnyomtatásba nem kerülnek.
+
 ## Fizetési pipák és több jármű az 1.5-ös verzióban
 
 Minden kitöltött tételnek külön **Fizetve** pipája van. A Bejegyzés adatai mellett, a Megrendelve alatt lévő közös pipa az összes kitöltött tételt egyszerre jelöli vagy törli; részleges fizetésnél köztes állapotot mutat. Üres tétellista mellett az egész bejegyzés fizetése önállóan jelölhető. A fizetés nem változtatja meg a névkártyák színét és nem állít rendelési állapotot. A munkalapokon is van soronkénti és közös pipa. Más cikkszám beírása törli az adott sor korábbi fizetési jelölését. A jelölések automatikusan mentődnek, ügyfélnyomtatásba és PDF-be nem kerülnek.
@@ -89,7 +95,7 @@ A felület a küldött Töki Autó Alkatrész logó fekete–fehér–élénkzö
 
 A régi bejegyzések külön adatlapként megmaradnak, a rögzítési dátumuk szerinti naphoz kerülnek. Korábbi rögzítési dátum hiányában a meglévő módosítási időt használja. A későbbi szerkesztés nem változtatja meg a bejegyzés napját. A korábbi általános jegyzet címe a Név mezőben, szövege a Megjegyzésben marad.
 
-Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.5.0-s, Excel-beolvasást és külön munkalapokat tartalmazó változat.
+Az alkalmazás egy számítógép helyi adataival dolgozik; többgépes közös használatot és változattörténetet nem tartalmaz. A letölthető csomag az 1.6.0-s, Excel-beolvasást és külön munkalapokat tartalmazó változat.
 
 ## Korábbi TXT-jegyzetek átvitele
 

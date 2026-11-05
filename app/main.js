@@ -34,6 +34,18 @@ app.whenReady().then(() => {
   ipcMain.handle('load-archive', () => { prepareInitialData(); return archiveStore.read(archiveFile); });
   ipcMain.handle('save-archive', (_, archive) => archiveStore.write(archiveFile, archive));
   ipcMain.handle('load', () => { prepareInitialData(); return store.read(file); });
+  ipcMain.on('confirm-note-exit', (event, request) => {
+    const title = typeof request?.title === 'string' ? request.title.slice(0, 200) : 'Új név';
+    const allPending = Array.isArray(request?.pending) ? request.pending.filter(text => typeof text === 'string') : [];
+    const pending = allPending.slice(0, 8).map(text => '• ' + text.slice(0, 180));
+    if (allPending.length > 8) pending.push('… és még ' + (allPending.length - 8) + ' nyitott teendő.');
+    const detail = title + (pending.length ? '\n\nNyitott emlékeztetők:\n' + pending.join('\n') : '\nEllenőrizd a cikkszámokat, árakat és a darabszámokat.');
+    event.returnValue = dialog.showMessageBoxSync(win, {
+      type: 'question', title: 'Töki Autó – jegyzet ellenőrzése',
+      message: 'Biztosan minden tételt felírtál?', detail,
+      buttons: ['Igen, minden felírva', 'Vissza a jegyzethez'], defaultId: 1, cancelId: 1, noLink: true
+    }) === 0;
+  });
   ipcMain.handle('save', (_, notes) => store.write(file, notes));
   ipcMain.handle('import-folder', async () => {
     try {

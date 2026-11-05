@@ -9,8 +9,10 @@ const today = localDay(new Date());
 let notes = [], years = [], days = [], loaded = false, selected = null, selectedDay = today;
 let activeYear = Number(today.slice(0, 4)), selectedMonth = today.slice(0, 7);
 const openedYears = new Set(), openedMonths = new Set(), saveErrors = new Set();
-let queue = Promise.resolve(), revision = 0, pending = 0;
+let queue = Promise.resolve(), revision = 0, pending = 0, appliedSearch = '';
 const current = () => notes.find(note => note.id === selected);
+const reviewNeeded = new Set(), reviewed = new Set();
+function touchNote(note) { note.updated = new Date().toISOString(); reviewNeeded.add(note.id); reviewed.delete(note.id); }
 const fold = value => value.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const dateLabel = day => new Date(day + 'T12:00:00').toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
 const money = value => new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 2 }).format(value);
@@ -27,7 +29,7 @@ function queueSave(target, value, writer) {
 }
 const persistNotes = () => queueSave('notes', notes, data => window.notesAPI.save(data));
 const persistArchive = () => queueSave('archive', archiveData(), data => window.notesAPI.saveArchive(data));
-function clearSearch() { $('search').value = ''; $('clear').hidden = true; }
+function clearSearch() { $('search').value = ''; appliedSearch = ''; $('clear').hidden = true; }
 function renderPayment(note = current()) {
   const input = $('note-paid'); input.disabled = !note;
   const state = note ? Items.paymentState(note.items, note.paid) : { paid: false, partial: false, paidCount: 0, total: 0 };
@@ -47,16 +49,16 @@ for (const status of NoteStatuses.all) {
   const text = document.createElement('span'); text.textContent = status.label; label.append(input, text); $('note-status-options').append(label);
   input.onchange = () => {
     const note = current();
-    if (!note || !allowNavigation()) { renderWorkflowStatus(); return; }
-    note.workflowStatus = status.id; note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
+    if (!note || !validInputs()) { renderWorkflowStatus(); return; }
+    note.workflowStatus = status.id; touchNote(note); persistNotes(); renderList(); metadata();
   };
 }
 $('note-status-options').append($('note-paid-wrap'));
 $('note-paid').onchange = () => {
   const note = current();
-  if (!note || !allowNavigation()) { renderPayment(note); return; }
+  if (!note || !validInputs()) { renderPayment(note); return; }
   note.items = Items.setAllPaid(note.items, $('note-paid').checked); note.paid = $('note-paid').checked;
-  Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); renderItems(note); metadata();
+  Items.syncLegacy(note); touchNote(note); persistNotes(); renderItems(note); metadata();
 };
 function renderBrandOptions() {
   const names = new Set(Vehicles.brands);
@@ -80,7 +82,7 @@ function renderVehicles(note) {
         try {
           if (!input.validity.valid) throw new Error('Ellenőrizd az alvázszámot vagy az autómárkát.');
           const next = note.vehicles.map(entry => entry.id === vehicle.id ? { ...entry, [field]: input.value } : entry); Vehicles.validate(next);
-          note.vehicles = next; Vehicles.sync(note); note.updated = new Date().toISOString(); invalidInputs.delete(input); input.removeAttribute('aria-invalid'); $('vehicle-error').textContent = '';
+          note.vehicles = next; Vehicles.sync(note); touchNote(note); invalidInputs.delete(input); input.removeAttribute('aria-invalid'); $('vehicle-error').textContent = '';
           persistNotes(); renderList(); metadata();
         } catch (error) { input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('vehicle-error').textContent = error.message; }
       }
@@ -91,17 +93,17 @@ function renderVehicles(note) {
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'remove-vehicle'; remove.textContent = '×'; remove.setAttribute('aria-label', (index + 1) + '. jármű törlése');
     remove.onclick = () => {
       const ownInvalid = [...row.querySelectorAll('input')].filter(input => invalidInputs.has(input)); for (const input of ownInvalid) invalidInputs.delete(input);
-      if (!allowNavigation()) { for (const input of ownInvalid) invalidInputs.add(input); return; }
-      note.vehicles = note.vehicles.filter(entry => entry.id !== vehicle.id); Vehicles.sync(note); note.updated = new Date().toISOString(); persistNotes(); renderVehicles(note); renderList(); metadata();
+      if (!validInputs()) { for (const input of ownInvalid) invalidInputs.add(input); return; }
+      note.vehicles = note.vehicles.filter(entry => entry.id !== vehicle.id); Vehicles.sync(note); touchNote(note); persistNotes(); renderVehicles(note); renderList(); metadata();
     };
     row.append(remove); $('vehicles-list').append(row);
   });
 }
 $('add-vehicle').onclick = () => {
-  const note = current(); if (!note || !allowNavigation()) return;
+  const note = current(); if (!note || !validInputs()) return;
   const next = [...note.vehicles, Vehicles.blank(crypto.randomUUID())];
   try { Vehicles.validate(next); } catch (error) { $('vehicle-error').textContent = error.message; return; }
-  note.vehicles = next; Vehicles.sync(note); note.updated = new Date().toISOString(); persistNotes(); renderVehicles(note); metadata(); $('vehicles-list').lastElementChild.querySelector('input').focus();
+  note.vehicles = next; Vehicles.sync(note); touchNote(note); persistNotes(); renderVehicles(note); metadata(); $('vehicles-list').lastElementChild.querySelector('input').focus();
 };
 function setDayContext(day) {
   selectedDay = day; selectedMonth = day.slice(0, 7); activeYear = Number(day.slice(0, 4));
@@ -109,7 +111,7 @@ function setDayContext(day) {
 }
 function visibleNotes() {
   const query = fold($('search').value.trim());
-  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + Vehicles.searchText(note) + ' ' + note.vin + ' ' + NoteStatuses.get(note).label + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
+  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + (note.reminders || []).map(reminder => reminder.text).join(' ') + ' ' + Vehicles.searchText(note) + ' ' + note.vin + ' ' + NoteStatuses.get(note).label + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
     .sort((a, b) => b.day.localeCompare(a.day) || a.created.localeCompare(b.created));
 }
 function openDay(day) {
@@ -184,7 +186,7 @@ function renderList() {
     const title = document.createElement('strong'); title.textContent = note.title || 'Új név';
     const preview = document.createElement('small'); preview.textContent = query ? note.day : note.items.map(item => item.partNumber).filter(Boolean).join(' · ') || note.oil || note.vin || 'Adatok kitöltése…';
     const caption = document.createElement('span'); caption.className = 'note-status-caption'; caption.textContent = '● ' + workflowStatus.label;
-    button.append(title, preview, caption); button.onclick = () => { if (!allowNavigation()) return; selected = note.id; setDayContext(note.day); render(); }; $('list').append(button);
+    button.append(title, preview, caption); button.onclick = () => { if (!validInputs() || (selected !== note.id && !allowNavigation())) return; selected = note.id; setDayContext(note.day); render(); }; $('list').append(button);
   }
   if (!visible.length) {
     const empty = document.createElement('p'); empty.className = 'list-empty';
@@ -199,6 +201,7 @@ function metadata() {
   $('words').textContent = note.body.length + ' karakter';
 }
 function render() {
+  window.RemindersUI?.render();
   renderFolders(); renderList();
   const note = current();
   renderWorkflowStatus();
@@ -214,11 +217,20 @@ function render() {
   }
   if (note) { for (const field of fields) $(field).value = note[field]; renderVehicles(note); renderItems(note); metadata(); }
 }
-function allowNavigation() {
+function validInputs() {
   for (const input of invalidInputs) if (!input.isConnected) invalidInputs.delete(input);
   const input = invalidInputs.values().next().value;
   if (!input) return true;
   input.focus(); input.reportValidity(); return false;
+}
+function allowNavigation() { return validInputs() && reviewNote(current()); }
+function reviewNote(note) {
+  if (!note) return true;
+  const pendingReminders = (note.reminders || []).filter(reminder => !reminder.done).map(reminder => reminder.text);
+  if (!reviewNeeded.has(note.id) && (!pendingReminders.length || reviewed.has(note.id))) return true;
+  const accepted = window.notesAPI.confirmNoteExit({ title: note.title || 'Új név', pending: pendingReminders });
+  if (accepted !== true) return false;
+  reviewNeeded.delete(note.id); reviewed.add(note.id); return true;
 }
 function renderTotals(note) {
   const result = Items.totals(note.items);
@@ -244,11 +256,11 @@ function renderItems(note) {
     let priceDriver = item.priceMode === 'manual' || (item.priceMode === 'legacy' && item.discountedPrice !== '') ? 'manual' : 'auto';
     const orderControl = window.ItemOrderUI.create(item, (index + 1) + '. sor', checked => {
       try {
-        Object.assign(item, Items.withOrder(item, checked)); Items.syncLegacy(note); note.updated = new Date().toISOString();
+        Object.assign(item, Items.withOrder(item, checked)); Items.syncLegacy(note); touchNote(note);
         persistNotes(); renderList(); metadata();
       } catch (error) { $('item-error').textContent = error.message; }
     }, checked => {
-      try { Object.assign(item, Items.withPaid(item, checked)); Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); metadata(); }
+      try { Object.assign(item, Items.withPaid(item, checked)); Items.syncLegacy(note); touchNote(note); persistNotes(); metadata(); }
       catch (error) { $('item-error').textContent = error.message; }
     });
     const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice', 'Kedvezményes ár', 'number'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
@@ -283,7 +295,7 @@ function renderItems(note) {
           if (field === 'supplier') input.value = item.supplier;
           $('item-error').textContent = invalidInputs.size ? 'Javítsd a megjelölt mezőt a továbblépéshez.' : '';
           orderControl.refresh();
-          Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
+          Items.syncLegacy(note); touchNote(note); persistNotes(); renderList(); metadata();
         } catch (error) {
           input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('item-error').textContent = error.message;
         }
@@ -295,19 +307,19 @@ function renderItems(note) {
     remove.className = 'remove-item'; remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', (index + 1) + '. cikkszámsor törlése');
     remove.onclick = () => {
       for (const input of row.querySelectorAll('input')) invalidInputs.delete(input);
-      if (!allowNavigation()) return;
-      note.items = note.items.filter(entry => entry.id !== item.id); Items.syncLegacy(note); note.updated = new Date().toISOString(); persistNotes(); renderItems(note); renderList(); metadata();
+      if (!validInputs()) return;
+      note.items = note.items.filter(entry => entry.id !== item.id); Items.syncLegacy(note); touchNote(note); persistNotes(); renderItems(note); renderList(); metadata();
     };
     actions.append(remove); row.append(actions); $('items-body').append(row);
   });
 }
 $('add-item').onclick = () => {
-  const note = current(); if (!note || !allowNavigation()) return;
-  note.items.push(Items.blank(crypto.randomUUID())); note.updated = new Date().toISOString(); persistNotes(); renderItems(note); metadata();
+  const note = current(); if (!note || !validInputs()) return;
+  note.items.push(Items.blank(crypto.randomUUID())); touchNote(note); persistNotes(); renderItems(note); metadata();
   $('items-body').lastElementChild.querySelector('input').focus();
 };
 function showDayDialog(month = selectedMonth) {
-  if (!loaded || !allowNavigation()) return;
+  if (!loaded || !validInputs()) return;
   $('day-value').value = month ? (today.startsWith(month + '-') ? today : month + '-01') : (activeYear === Number(today.slice(0, 4)) ? today : activeYear + '-01-01');
   $('day-dialog').showModal(); $('day-value').focus();
 }
@@ -324,7 +336,7 @@ $('day-form').onsubmit = event => {
   $('day-dialog').close(); openDay(day);
 };
 $('add-year').onclick = () => {
-  if (!loaded || !allowNavigation()) return;
+  if (!loaded || !validInputs()) return;
   $('year-error').textContent = ''; $('year-value').value = String(Math.max(...years) + 1); $('year-dialog').showModal(); $('year-value').focus();
 };
 $('year-cancel').onclick = () => $('year-dialog').close();
@@ -333,6 +345,7 @@ $('year-form').onsubmit = event => {
   const year = Number($('year-value').value);
   if (!Number.isInteger(year) || year < 1900 || year > 9999) { $('year-error').textContent = '1900 és 9999 közötti évet adj meg.'; return; }
   if (years.includes(year)) { $('year-error').textContent = 'Ez az év már szerepel a mappák között.'; return; }
+  if (!allowNavigation()) return;
   years.push(year); years.sort((a, b) => a - b); openedYears.add(year); openedMonths.add(year + '-01');
   activeYear = year; selectedMonth = year + '-01'; selectedDay = null; selected = null; clearSearch();
   persistArchive(); $('year-dialog').close(); render();
@@ -340,8 +353,8 @@ $('year-form').onsubmit = event => {
 $('new').onclick = () => {
   if (!loaded || !selectedDay || !allowNavigation()) return;
   clearSearch(); const now = new Date().toISOString();
-  const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, paid: false, vehicles: [Vehicles.blank(crypto.randomUUID())], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
-  notes.push(note); selected = note.id;
+  const note = { id: crypto.randomUUID(), title: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [Vehicles.blank(crypto.randomUUID())], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
+  notes.push(note); touchNote(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }
   persistNotes(); render(); $('title').focus();
@@ -349,11 +362,13 @@ $('new').onclick = () => {
 for (const field of fields) $(field).addEventListener('input', () => {
   const note = current(); if (!note) return;
   if (!$(field).validity.valid) { $('status').textContent = 'Az ár nem lehet negatív, legfeljebb két tizedest adj meg.'; return; }
-  note[field] = $(field).value; note.updated = new Date().toISOString(); persistNotes(); renderList(); metadata();
+  note[field] = $(field).value; touchNote(note); persistNotes(); renderList(); metadata();
 });
 $('search').oninput = () => {
-  if (!allowNavigation()) return;
+  if (!validInputs()) { $('search').value = appliedSearch; return; }
   const visible = visibleNotes();
+  if (!visible.some(note => note.id === selected) && !allowNavigation()) { $('search').value = appliedSearch; return; }
+  appliedSearch = $('search').value;
   if (!visible.some(note => note.id === selected)) selected = visible[0]?.id ?? null;
   if (current()) setDayContext(current().day); render();
 };
@@ -367,7 +382,7 @@ $('export').onclick = async () => {
   catch { $('status').textContent = 'Nem sikerült a biztonsági mentés.'; }
 };
 window.addEventListener('beforeunload', event => {
-  if (invalidInputs.size) { event.preventDefault(); event.returnValue = false; allowNavigation(); }
+  if (!validInputs() || ![current(), ...notes.filter(note => note.id !== selected && reviewNeeded.has(note.id))].every(reviewNote)) { event.preventDefault(); event.returnValue = false; }
   else if (pending || saveErrors.size) { event.preventDefault(); event.returnValue = false; queue.then(() => { if (!pending && !saveErrors.size) window.close(); }); }
 });
 function loadData(preferredNoteId) {
@@ -384,6 +399,20 @@ return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then
 });
 }
 loadData();
+window.ReminderContext = () => ({ loaded, notes, note: current() });
+window.ReminderChange = (noteId, transform) => {
+  if (!loaded || !validInputs()) return false;
+  if (window.WorkOrdersUI && !window.WorkOrdersUI.canLeave()) return false;
+  const note = notes.find(note => note.id === noteId); if (!note) return false;
+  const rows = transform(JSON.parse(JSON.stringify(note.reminders || [])));
+  window.NoteReminders.validate(rows); note.reminders = rows; touchNote(note);
+  persistNotes(); renderList(); window.RemindersUI?.render(); if (current()?.id === noteId) metadata(); return true;
+};
+window.ReminderOpenNote = id => {
+  if (!allowNavigation() || (window.WorkOrdersUI && !window.WorkOrdersUI.showNotes())) return false;
+  const note = notes.find(note => note.id === id); if (!note) return false;
+  selected = id; clearSearch(); setDayContext(note.day); render(); return true;
+};
 window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowNavigation });
 window.NotesRefresh = id => { clearSearch(); return loadData(id); };
 window.NotesFlush = async () => {
