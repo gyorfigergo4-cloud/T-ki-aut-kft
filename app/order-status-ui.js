@@ -17,7 +17,7 @@
    if (paidInput) { paidInput.checked = item.paid === true; paidInput.disabled = !item.paid && !root.LineItems.isActive(item); }
    input.disabled = !status.ordered && !item.partNumber.trim() && !item.description?.trim();
    label.title = input.disabled ? 'Előbb add meg a cikkszámot vagy a megnevezést.' : 'Jelöld, ha ezt a tételt már megrendelted.';
-   text.textContent = status.ordered ? 'Megrendelve' : 'Nincs jelölve'; cell.classList.toggle('is-ordered', status.ordered);
+   text.textContent = status.ordered ? 'Megrendelve' : 'Nincs megrendelve'; cell.classList.toggle('is-ordered', status.ordered);
    time.hidden = !status.ordered;
    if (status.orderedAt) {
     time.dateTime = status.orderedAt; time.textContent = new Intl.DateTimeFormat('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(status.orderedAt));

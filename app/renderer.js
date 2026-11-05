@@ -136,7 +136,7 @@ function setDayContext(day) {
 function visibleNotes() {
   const query = fold($('search').value.trim());
   return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + (note.reminders || []).map(reminder => reminder.text).join(' ') + ' ' + Vehicles.searchText(note) + ' ' + note.vin + ' ' + NoteStatuses.get(note).label + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
-    .sort((a, b) => b.day.localeCompare(a.day) || a.created.localeCompare(b.created));
+    .sort((a, b) => b.day.localeCompare(a.day));
 }
 function openDay(day) { return navigate(() => {
   clearSearch(); setDayContext(day);
@@ -387,7 +387,7 @@ $('new').onclick = () => {
   clearSearch(); const now = new Date().toISOString();
   const note = { id: crypto.randomUUID(), title: '', phone: '', body: '', vin: '', part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [Vehicles.blank(crypto.randomUUID())], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
   note.activeVehicleId = note.vehicles[0].id; note.items[0].vehicleId = note.activeVehicleId;
-  notes.push(note); touchNote(note); selected = note.id;
+  notes.unshift(note); touchNote(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }
   persistNotes(); render(); $('title').focus();

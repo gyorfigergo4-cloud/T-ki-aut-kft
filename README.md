@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Jegyzetek: névsorrend és cikkszámok igazítása · 1.9.2
+
+A rendelési pipa kikapcsolt felirata **Nincs megrendelve** a jegyzetekben és a munkalapokon is. A napi névsorban a legújabban létrehozott név jelenik meg elöl, és az új név a mentett listába is az elejére kerül, a korábbi nevek mentett sorrendjét megtartva. Ez a gépek órájának eltérésétől is független. Régi jegyzet szerkesztése nem változtatja meg a létrehozási időt és a névsorrendet. A cikkszám, teli ár, kedvezmény, kedvezményes ár, darabszám és beszállító mező azonos magasságban, egy vonalban indul; az autóválasztó külön, a cikkszám alatt marad. A mezők igazítása a jelölőnégyzetek méretét nem változtatja meg.
+
+Ellenőrzés: `npm test`; új név első helyen és újranyitás után, régi jegyzet szerkesztése, rendelési pipa oda-vissza. Valódi Electronban `node scripts/verify-notes-layout.cjs` aktív képernyővel (Linuxon `DISPLAY` szükséges) méri a hat mező felső pozíciójának és magasságának egyezését 1760 és 1100 képpont széles ablaknál. A próba szintetikus adatokkal dolgozik, az eredeti tételek változatlanságát is ellenőrzi.
+
 ## Görgetés nélkül megnyíló autóbuborékok · 1.9.1
 
 A névbuborék középre nyíló ablakban mutatja az ügyfél autóit. Egy autóbuborékra kattintva külön felugró adatlapban látszik a teljes autóleírás, alvázszám és rendszám, a módosítás és törlés gombjával. Az autólistában keresés és hatos lapozás helyettesíti a hosszú görgetést. Bezáráskor megmarad a háttérlista görgetési helye; az Escape először csak az autó adatlapját zárja be, az ügyfél autói nyitva maradnak. A négygépes megosztás és a külön helyi jegyzetek tárolása változatlan.
