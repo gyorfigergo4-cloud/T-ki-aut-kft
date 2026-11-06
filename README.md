@@ -2,6 +2,10 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Autó törlése utáni kiválasztás · 1.12.2
+
+A törölt autó üres tételsorai nem hoznak létre hozzárendelés nélküli buborékot. A kiválasztás az előző megmaradt autóra áll vissza (első autó törlésekor az első megmaradtra). A kitöltött sorok adatai és jelölései a hozzárendelés nélküli listában megmaradnak. Korábbi üres hozzárendelés nélküli kiválasztás betöltéskor az első autóra vált, ha nincs ott kitöltött tétel. A kézi és óránkénti mentés változatlan.
+
 ## Kiválasztott autó adatmezői · 1.12.1
 
 A jegyzetekben minden felső autóbuborék megmarad; az alvázszám és márka mezői közül csak a kiválasztott autó sora látható. A többi autó adatai a memóriában és mentésben változatlanul megmaradnak. Új autó hozzáadásakor annak sora nyílik meg; törlés után a következő kiválasztott autóé. A hozzárendelés nélküli tételeknél nincs kiválasztott alvázszámsor. A kézi/óránkénti mentés és a hálózati autónyilvántartó változatlan.

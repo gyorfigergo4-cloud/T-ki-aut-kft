@@ -93,7 +93,7 @@ $('note-paid').onchange = () => {
 function renderVehicleTabs(note) {
   $('vehicle-tabs').replaceChildren();
   const choices = note.vehicles.map((vehicle, index) => ({ id: vehicle.id, text: Vehicles.label(vehicle, index) }));
-  if (!note.vehicles.length || note.activeVehicleId === '' || note.items.some(item => item.vehicleId === '')) choices.push({ id: '', text: 'Hozzárendelés nélkül' });
+  if (!note.vehicles.length || note.activeVehicleId === '' || note.items.some(item => item.vehicleId === '' && Items.isActive(item))) choices.push({ id: '', text: 'Hozzárendelés nélkül' });
   for (const choice of choices) {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'vehicle-tab'; button.dataset.vehicleId = choice.id;
     button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', String(note.activeVehicleId === choice.id));

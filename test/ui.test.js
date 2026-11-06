@@ -385,7 +385,7 @@ test('autóbuborék váltáskor csak a kiválasztott alvázszám látszik; új a
  assert.equal(ui.$('vehicle-tabs').children.length,3);assert.equal(shown().length,1);assert.equal(shown()[0].querySelector('input').value,'HYUNDAI-VIN');
  for(const [id,vin] of [['s','SUZUKI-VIN'],['o','OPEL-VIN'],['h','HYUNDAI-VIN']]){select(id);assert.equal(shown().length,1);assert.equal(shown()[0].dataset.vehicleId,id);assert.equal(shown()[0].querySelector('input').value,vin);assert.equal(ui.$('vehicle-tabs').children.length,3);}
  ui.$('add-vehicle').click();assert.equal(shown().length,1);assert.equal(shown()[0],ui.$('vehicles-list').lastElementChild);
- shown()[0].querySelector('.remove-vehicle').click();assert.equal(shown().length,0);assert.equal(ui.$('vehicle-tabs').children.length,4);assert.equal(ui.$('vehicle-tabs').querySelector('[aria-selected=true]').dataset.vehicleId,'');
+ shown()[0].querySelector('.remove-vehicle').click();assert.equal(shown().length,1);assert.equal(ui.$('vehicle-tabs').children.length,3);assert.equal(ui.$('vehicle-tabs').querySelector('[aria-selected=true]').dataset.vehicleId,'h');assert.equal(ui.$('vehicle-error').textContent,'');
  select('o');await ui.dom.window.NotesFlush();ui.dom.window.close();ui=await openUI(saved);
  assert.equal([...ui.$('vehicles-list').children].filter(row=>!row.hidden)[0].dataset.vehicleId,'o');assert.deepEqual(saved.notes[0].vehicles.map(v=>v.vin),['SUZUKI-VIN','OPEL-VIN','HYUNDAI-VIN']);assert.equal(saved.notes[0].body,'Saját jegyzet');ui.dom.window.close();
 });

@@ -1,4 +1,5 @@
 (function (root) {
+ const Items = typeof module !== 'undefined' ? require('./items') : root.LineItems;
  const brands = typeof module !== 'undefined' ? require('./car-brands') : root.CarBrands;
  const key = value => value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('hu').replace(/[^a-z0-9]/g, '');
  const known = new Map(brands.map(brand => [key(brand), brand]).filter(([code]) => code));
@@ -33,15 +34,17 @@
    result.items = note.items.map(item => ({ ...item, vehicleId: item.vehicleId === undefined ? (vehicles.length === 1 ? vehicles[0].id : '') : item.vehicleId }));
    result.activeVehicleId = note.activeVehicleId ?? (result.items.some(item => item.vehicleId === '') ? '' : vehicles[0]?.id || '');
   }
+  if (vehicles.length && result.activeVehicleId === '' && !(result.items || []).some(item => item.vehicleId === '' && Items.isActive(item))) result.activeVehicleId = vehicles[0].id;
   validateAssignments(result); return result;
  }
  function itemsFor(note, id = note.activeVehicleId) { return note.items.filter(item => (item.vehicleId || '') === (id || '')); }
  function label(vehicle, index = 0) { return [vehicle.brand.trim(), vehicle.vin.trim()].filter(Boolean).join(' · ') || (index + 1) + '. autó – alvázszám megadása'; }
  function remove(note, id) {
-  const moved = note.items.filter(item => item.vehicleId === id).length;
-  note.items = note.items.map(item => item.vehicleId === id ? { ...item, vehicleId: '' } : item);
+  const index = note.vehicles.findIndex(vehicle => vehicle.id === id);
+  const moved = note.items.filter(item => item.vehicleId === id && Items.isActive(item)).length;
+  note.items = note.items.filter(item => item.vehicleId !== id || Items.isActive(item)).map(item => item.vehicleId === id ? { ...item, vehicleId: '' } : item);
   note.vehicles = note.vehicles.filter(vehicle => vehicle.id !== id);
-  if (note.activeVehicleId === id) note.activeVehicleId = moved ? '' : note.vehicles[0]?.id || '';
+  if (note.activeVehicleId === id) note.activeVehicleId = note.vehicles[Math.max(0, index - 1)]?.id || '';
   sync(note); validateAssignments(note); return moved;
  }
  function selectedNote(note) {

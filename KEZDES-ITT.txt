@@ -1,3 +1,7 @@
+ÚJ · 1.12.2: alvázszám törlése után az előző megmaradt autó nyílik meg.
+Az üres Hozzárendelés nélkül buborék eltűnik. A kitöltött cikkszámok
+megmaradnak; csak valódi hozzárendelés nélküli tételeknél van külön buborék.
+
 ÚJ · 1.12.1: a felső autóbuborékok megmaradnak, alattuk csak a kiválasztott
 autó alvázszáma és márkája látszik. Másik autóhoz kattints a buborékjára.
 Az elrejtett autók adatai megmaradnak. A kézi/óránkénti mentés változatlan.

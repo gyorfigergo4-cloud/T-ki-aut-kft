@@ -17,11 +17,18 @@ test('azonos cikkszám két autón külön mennyiséggel, árral, rendelési és
  const snapshot=Vehicles.selectedNote(data);assert.equal(snapshot.vehicles.length,1);assert.equal(snapshot.vin,'Javított alvázszám');assert.equal(snapshot.vehicle,'BMW');assert.equal(snapshot.items.length,1);assert.equal(snapshot.items[0].id,'two');assert.equal(snapshot.phone,data.phone);
 });
 test('autó törlésekor a tételek és jelölések megmaradnak a hozzárendelés nélküli listában',()=>{
- const data=Vehicles.normalize(note());data.items[0].vehicleId='car-a';data.items[1].vehicleId='car-b';data.activeVehicleId='car-a';const before={...data.items[0]};assert.equal(Vehicles.remove(data,'car-a'),1);assert.equal(data.activeVehicleId,'');assert.equal(data.vehicles.length,1);assert.deepEqual(Vehicles.itemsFor(data)[0],{...before,vehicleId:''});assert.equal(data.items[1].vehicleId,'car-b');assert.equal(data.vin,vinB);assert.equal(Vehicles.normalize(data).items[0].vehicleId,'');
+ const data=Vehicles.normalize(note());data.items[0].vehicleId='car-a';data.items[1].vehicleId='car-b';data.activeVehicleId='car-a';const before={...data.items[0]};assert.equal(Vehicles.remove(data,'car-a'),1);assert.equal(data.activeVehicleId,'car-b');assert.equal(data.vehicles.length,1);assert.deepEqual(Vehicles.itemsFor(data,'')[0],{...before,vehicleId:''});assert.equal(data.items[1].vehicleId,'car-b');assert.equal(data.vin,vinB);assert.equal(Vehicles.normalize(data).items[0].vehicleId,'');
 });
 test('hozzárendelés és kiválasztott autó mentése, érvénytelen hivatkozás nem írja felül a fájlt',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'toki-vehicle-items-'));
  try{const file=path.join(dir,'notes.json'),data=Vehicles.normalize(note());data.items[0].vehicleId='car-a';data.items[1].vehicleId='car-b';data.activeVehicleId='car-b';store.write(file,[data]);assert.deepEqual(store.read(file),[data]);const before=fs.readFileSync(file);
  for(const bad of [{...data,activeVehicleId:'missing'},{...data,items:[{...data.items[0],vehicleId:'missing'}]},{...data,items:[{...data.items[0],vehicleId:12}]}]){assert.throws(()=>store.write(file,[bad]));assert.ok(before.equals(fs.readFileSync(file)));}
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('üres törölt autó nem hagy közös sort; előző autó és régi üres kiválasztás helyreáll',()=>{
+ const data=Vehicles.normalize(note());data.items=[{...Items.blank('blank'),vehicleId:'car-b'}];data.activeVehicleId='car-b';
+ assert.equal(Vehicles.remove(data,'car-b'),0);assert.equal(data.activeVehicleId,'car-a');assert.equal(data.items.length,0);assert.equal(data.vin,vinA);
+ const old=Vehicles.normalize({...data,activeVehicleId:'',items:[{...Items.blank('orphan'),vehicleId:''}]});assert.equal(old.activeVehicleId,'car-a');
+ assert.equal(Vehicles.remove(old,'car-a'),0);assert.equal(old.activeVehicleId,'');assert.equal(old.vehicles.length,0);
 });
