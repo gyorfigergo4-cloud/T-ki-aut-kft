@@ -326,3 +326,8 @@ body:has(#garage-person-dialog[open]) #garage-view { overflow:hidden; }
 
 .notes-search-pages { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;color:var(--muted);font-size:11px; }
 .notes-search-pages button { padding:6px 10px;font-size:11px; }
+/* Payment and arrival are independent checks on the same line. */
+.item-checks { display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px; }
+.item-checks .item-paid-toggle,.item-checks .item-arrived-toggle { margin-top:0; }
+.item-arrived-toggle { font-size:10px;white-space:nowrap; }
+#items-table .col-order { width:19%; } #items-table .col-supplier { width:12%; }

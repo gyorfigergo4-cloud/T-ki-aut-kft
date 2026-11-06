@@ -1,0 +1,22 @@
+{
+  "scenario": "6000 synthetic notes; 20 separately scheduled input events, requested spacing 80 ms; final persisted text verified",
+  "before": {
+    "pacedEvents": 20,
+    "requestedIntervalMs": 80,
+    "totalMs": 2703.800000000745,
+    "maxHeartbeatGapMs": 100.90000000037253,
+    "maxInputHandlerMs": 2.200000001117587,
+    "saves": 20,
+    "records": 120000
+  },
+  "after": {
+    "pacedEvents": 20,
+    "requestedIntervalMs": 80,
+    "totalMs": 1646.4000000003725,
+    "maxHeartbeatGapMs": 21.800000000745058,
+    "maxInputHandlerMs": 0.40000000037252903,
+    "saves": 20,
+    "records": 20
+  },
+  "limits": "Linux Electron timings; JavaScript heartbeat gap is not graphics FPS. User hardware and data can differ. No customer data used."
+}

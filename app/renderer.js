@@ -10,9 +10,11 @@ let notes = [], years = [], days = [], loaded = false, selected = null, selected
 let activeYear = Number(today.slice(0, 4)), selectedMonth = today.slice(0, 7);
 const openedYears = new Set(), openedMonths = new Set(), saveErrors = new Set();
 let queue = Promise.resolve(), revision = 0, pending = 0, appliedSearch = '', drainingSaves = false, folderSignature = null, brandOptionsDirty = true, searchPage = 0;
+const dirtyNotes = new Map(), deletedNotes = new Map(); let noteChangeVersion = 0;
 const stagedSaves = new Map(), searchCache = new WeakMap(), SEARCH_PAGE_SIZE = 80;
 const current = () => notes.find(note => note.id === selected);
-function touchNote(note) { note.updated = new Date().toISOString(); searchCache.delete(note); }
+function markNoteChanged(note) { dirtyNotes.set(note.id, { note, version: ++noteChangeVersion }); deletedNotes.delete(note.id); }
+function touchNote(note) { note.updated = new Date().toISOString(); searchCache.delete(note); markNoteChanged(note); }
 const fold = value => value.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const dateLabel = day => new Date(day + 'T12:00:00').toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
 const money = value => new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 2 }).format(value);
@@ -38,7 +40,18 @@ async function drainSaves() {
     }
   } finally { drainingSaves = false; }
 }
-const persistNotes = () => queueSave('notes', notes, data => window.notesAPI.save(data));
+async function writeNoteChanges() {
+  const changed = new Map(dirtyNotes), removed = new Map(deletedNotes);
+  if (window.notesAPI.saveNoteChanges) {
+    const upserts = notes.filter(n=>changed.has(n.id));
+    const payload = { upserts, removed:[...removed.keys()] };
+    const snapshot = typeof structuredClone==='function' ? structuredClone(payload) : JSON.parse(JSON.stringify(payload));
+    await window.notesAPI.saveNoteChanges(snapshot);
+  } else { await window.notesAPI.save(JSON.parse(JSON.stringify(notes))); }
+  for(const [id,state] of changed) if(dirtyNotes.get(id)?.version===state.version) dirtyNotes.delete(id);
+  for(const [id,version] of removed) if(deletedNotes.get(id)===version) deletedNotes.delete(id);
+}
+const persistNotes = () => queueSave('notes', null, writeNoteChanges);
 const persistArchive = () => queueSave('archive', archiveData(), data => window.notesAPI.saveArchive(data));
 function clearSearch() { searchPage = 0; $('search').value = ''; appliedSearch = ''; $('clear').hidden = true; }
 function renderPayment(note = current()) {
@@ -91,7 +104,7 @@ function renderVehicleTabs(note) {
 }
 function selectVehicle(note, id) {
   if (!validInputs()) return false;
-  if (note.activeVehicleId !== id) { note.activeVehicleId = id; persistNotes(); }
+  if (note.activeVehicleId !== id) { note.activeVehicleId = id; markNoteChanged(note); persistNotes(); }
   renderVehicleTabs(note); renderItems(note); metadata(); return true;
 }
 function renderBrandOptions() {
@@ -238,10 +251,10 @@ function renderList() {
 }
 function changeSearchPage(delta) { return navigate(() => { const visible = visibleNotes(); searchPage = Math.max(0,Math.min(Math.ceil(visible.length/SEARCH_PAGE_SIZE)-1,searchPage+delta)); selected = visible[searchPage*SEARCH_PAGE_SIZE]?.id ?? null; if (current()) setDayContext(current().day); render(); }); }
 $('notes-search-prev').onclick = () => changeSearchPage(-1); $('notes-search-next').onclick = () => changeSearchPage(1);
-function metadata() {
+function metadata(updateTotals = true) {
   const note = current(); if (!note) return;
   $('date').textContent = 'Rögzítve: ' + new Date(note.created).toLocaleString('hu-HU') + ' · Módosítva: ' + new Date(note.updated).toLocaleString('hu-HU');
-  renderTotals(note);
+  if(updateTotals) renderTotals(note);
   $('words').textContent = note.body.length + ' karakter';
 }
 function render() {
@@ -259,7 +272,7 @@ function render() {
     $('import-path').textContent = note.source.path || '';
     $('import-original').textContent = note.source.originalText || '';
   }
-  if (note && $('search').value.trim()) { const id = Vehicles.findSelection(note, $('search').value); if (id !== undefined && note.activeVehicleId !== id) { note.activeVehicleId = id; persistNotes(); } }
+  if (note && $('search').value.trim()) { const id = Vehicles.findSelection(note, $('search').value); if (id !== undefined && note.activeVehicleId !== id) { note.activeVehicleId = id; markNoteChanged(note); persistNotes(); } }
   if (note) { for (const field of fields) $(field).value = note[field]; renderVehicles(note); renderItems(note); metadata(); }
 }
 function validInputs() {
@@ -303,6 +316,9 @@ function renderItems(note) {
     }, checked => {
       try { Object.assign(item, Items.withPaid(item, checked)); Items.syncLegacy(note); touchNote(note); persistNotes(); metadata(); }
       catch (error) { $('item-error').textContent = error.message; }
+    }, checked => {
+      try { Object.assign(item,Items.withArrival(item,checked)); touchNote(note); persistNotes(); metadata(false); }
+      catch(error) { $('item-error').textContent=error.message; }
     });
     const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice', 'Kedvezményes ár', 'number'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
     for (const [field, label, type] of columns) {
@@ -419,7 +435,9 @@ $('new').onclick = () => {
 for (const field of fields) $(field).addEventListener('input', () => {
   const note = current(); if (!note) return;
   if (!$(field).validity.valid) { $('status').textContent = 'Az ár nem lehet negatív, legfeljebb két tizedest adj meg.'; return; }
-  note[field] = $(field).value; touchNote(note); persistNotes(); renderList(); metadata();
+  note[field] = $(field).value; touchNote(note); persistNotes();
+  if($('search').value.trim())renderList();else if(field==='title'||field==='oil'){const card=[...$('list').children].find(c=>c.dataset.note===note.id);if(card){card.querySelector('strong').textContent=note.title||'Új név';card.querySelector('small').textContent=note.items.map(i=>i.partNumber).filter(Boolean).join(' · ')||note.oil||note.vin||'Adatok kitöltése…';}}
+  metadata(false);
 });
 $('search').oninput = () => {
   if (!validInputs()) { $('search').value = appliedSearch; return; }
@@ -434,7 +452,7 @@ $('search').oninput = () => {
 };
 $('clear').onclick = () => navigate(() => { clearSearch(); selected = notes.find(note => note.day === selectedDay)?.id ?? null; render(); });
 $('delete').onclick = () => $('confirm').showModal(); $('cancel').onclick = () => $('confirm').close();
-$('remove').onclick = () => { brandOptionsDirty = true; invalidInputs.clear(); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
+$('remove').onclick = () => { brandOptionsDirty = true; invalidInputs.clear(); dirtyNotes.delete(selected); deletedNotes.set(selected,++noteChangeVersion); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
 $('export').onclick = async () => {
   if (!loaded) return;
   if (window.WorkOrdersUI) { try { await window.WorkOrdersUI.flush(); } catch { return; } }

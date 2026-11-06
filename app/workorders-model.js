@@ -39,7 +39,7 @@
   if(active.some(i=>Items.cents(i.discountedPrice)>Items.cents(i.fullPrice)))throw new Error('A kedvezményes ár nem lehet magasabb a teli árnál.');
   const safe=redactor(doc.items);
   // Only this whitelist crosses the boundary into the print document. Never
-  // pass partNumber, source, legacyLine, supplier, ordered, orderedAt, paid or internalNote to the view.
+  // pass partNumber, source, legacyLine, supplier, ordered, orderedAt, paid, arrived or internalNote to the view.
   return {title:doc.kind==='quote'?'Árajánlat':'Munkalap',number:doc.number,day:doc.day,validUntil:doc.validUntil,customer:safe(doc.customer),phone:safe(doc.phone),vin:safe(doc.vin),vehicle:safe(doc.vehicle),plate:safe(doc.plate),note:safe(doc.publicNote),items:active.map(i=>({description:safe(i.description||'Alkatrész'),fullPrice:i.fullPrice,discountPercent:i.discountPercent||'0',discountedPrice:i.discountedPrice,quantity:i.quantity,total:Items.totals([i]).discountedPrice})),totals:Items.totals(active)};
  }
  const api={validate,blank,activeItems,printable};

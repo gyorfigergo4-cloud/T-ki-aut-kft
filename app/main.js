@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const store = require('./store');
+const notePatches = require('./note-patches');
 const { createService: createGarageService } = require('./garage-service');
 const archiveStore = require('./archive-store');
 const initialImport = require('./initial-import');
@@ -22,6 +23,7 @@ app.on('second-instance', () => {
 });
 app.whenReady().then(async () => {
   const file = path.join(app.getPath('userData'), 'notes.json');
+  let lastNotesCount = 0;
   const garageService = createGarageService(app.getPath('userData'));
   await garageService.start();
   ipcMain.handle('load-garage', () => garageService.load());
@@ -57,8 +59,13 @@ app.whenReady().then(async () => {
   }
   ipcMain.handle('load-archive', () => { prepareInitialData(); return archiveStore.read(archiveFile); });
   ipcMain.handle('save-archive', (_, archive) => archiveStore.write(archiveFile, archive));
-  ipcMain.handle('load', () => { prepareInitialData(); return store.read(file); });
-  ipcMain.handle('save', (_, notes) => store.write(file, notes));
+  ipcMain.handle('load', () => { prepareInitialData(); const notes=store.read(file); lastNotesCount=notes.length; return notes; });
+  ipcMain.handle('save', (_, notes) => { store.write(file, notes); lastNotesCount=notes.length; });
+  ipcMain.handle('save-note-changes', (_, patch) => {
+    prepareInitialData();
+    if(lastNotesCount>0&&!syncFs.existsSync(file))throw new Error('A megnyitott jegyzetfájl eltűnt. Ne zárd be a programot; készíts biztonsági mentést.');
+    const notes=notePatches.apply(store.read(file),patch);store.write(file,notes);lastNotesCount=notes.length;
+  });
   ipcMain.handle('import-folder', async () => {
     try {
       const result = await dialog.showOpenDialog(win, { title: 'Válaszd ki a TXT-jegyzetek teljes mappáját (év- és hónapmappákkal)', properties: ['openDirectory'] });

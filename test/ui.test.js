@@ -13,6 +13,7 @@ async function openUI(saved, options = {}) {
   window.notesAPI = {
     load: async () => copy(saved.notes), loadArchive: async () => copy(saved.archive),
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
+    ...(options.patches?{saveNoteChanges:async patch=>{saved.notes=require('../app/note-patches').apply(copy(saved.notes),copy(patch));}}:{}),
     export: async () => true, onAppCloseRequested: callback => { closeRequest = callback; }, completeAppClose: response => closeResults.push(copy(response)), appCloseReady: () => {}
   };
   for (const script of ['items.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
@@ -338,5 +339,19 @@ test('nagy keresési lista lapozható, minden találat elérhető, szerkesztés 
  const saved={notes:Array.from({length:185},(_,i)=>({id:'n'+i,title:'Minta ügyfél '+i,body:'Közös keresőszó',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'})),archive:{years:[2026],days:['2026-11-06']}};const ui=await openUI(saved);try{
  ui.input('search','Közös keresőszó');assert.equal(ui.cards().length,80);assert.match(ui.$('day-description').textContent,/185 találat/);assert.equal(ui.$('notes-search-pages').hidden,false);const seen=new Set(ui.cards().map(c=>c.dataset.note));ui.$('notes-search-next').click();ui.cards().forEach(c=>seen.add(c.dataset.note));ui.$('notes-search-next').click();ui.cards().forEach(c=>seen.add(c.dataset.note));assert.equal(seen.size,185);assert.equal(ui.cards().length,25);assert.equal(ui.$('notes-search-next').disabled,true);
  ui.input('search','Minta ügyfél 184');assert.equal(ui.cards().length,1);ui.input('title','Új egyedi név');await tick();assert.equal(ui.cards().length,0);ui.input('search','Új egyedi név');assert.equal(ui.cards().length,1);assert.equal(ui.cards()[0].dataset.note,'n184');ui.$('clear').click();assert.equal(ui.$('notes-search-pages').hidden,true);
+ }finally{ui.dom.window.close();}
+});
+test('kis jegyzetmódosítások mentése: új név, kiválasztott autó, pipák és törlés újranyitás után',async()=>{
+ const saved={notes:[{id:'keep',title:'Megmarad',body:'Érintetlen',updated:'2026-11-06T08:00:00Z',day:'2026-11-06'}],archive:{years:[2026],days:['2026-11-06']}};let ui=await openUI(saved,{patches:true});try{
+ ui.$('new').click();ui.input('title','Új ügyfél');const part=ui.$('items-body').querySelector('[data-field=partNumber]');part.value='TEST-1';part.dispatchEvent(new ui.dom.window.Event('input'));ui.$('items-body').querySelector('[data-field=arrived]').click();await ui.dom.window.NotesFlush();
+ const id=saved.notes[0].id;assert.equal(saved.notes[0].items[0].arrived,true);assert.equal(saved.notes[0].items[0].paid,false);assert.equal(saved.notes[0].items[0].ordered,false);assert.equal(saved.notes.find(n=>n.id==='keep').body,'Érintetlen');
+ ui.dom.window.close();ui=await openUI(saved,{patches:true});assert.equal(ui.$('items-body').querySelector('[data-field=arrived]').checked,true);const p=ui.$('items-body').querySelector('[data-field=partNumber]');p.value='TEST-2';p.dispatchEvent(new ui.dom.window.Event('input'));assert.equal(ui.$('items-body').querySelector('[data-field=arrived]').checked,false);await ui.dom.window.NotesFlush();assert.equal(saved.notes[0].items[0].arrived,false);
+ ui.$('delete').click();ui.$('remove').click();await ui.dom.window.NotesFlush();assert.equal(saved.notes.some(n=>n.id===id),false);assert.equal(saved.notes.length,1);assert.equal(saved.notes[0].body,'Érintetlen');
+ }finally{ui.dom.window.close();}
+});
+test('részleges mentési hiba után minden függő módosítás újrapróbálható, más jegyzet nem vész el',async()=>{
+ const saved={notes:[{id:'a',title:'A',body:'Régi A',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'},{id:'b',title:'B',body:'Régi B',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'}],archive:{years:[2026],days:['2026-11-06']}};const ui=await openUI(saved,{patches:true});try{
+ ui.dom.window.notesAPI.saveNoteChanges=async()=>{throw Error('disk');};ui.input('body','Új A');await assert.rejects(ui.dom.window.NotesFlush(),/mentése nem sikerült/);assert.equal(saved.notes[0].body,'Régi A');
+ let payload;ui.dom.window.notesAPI.saveNoteChanges=async p=>{payload=copy(p);saved.notes=require('../app/note-patches').apply(saved.notes,copy(p));};ui.$('list').querySelector('[data-note=b]').click();ui.input('body','Új B');await ui.dom.window.NotesFlush();assert.equal(payload.upserts.length,2);assert.equal(saved.notes.find(n=>n.id==='a').body,'Új A');assert.equal(saved.notes.find(n=>n.id==='b').body,'Új B');
  }finally{ui.dom.window.close();}
 });

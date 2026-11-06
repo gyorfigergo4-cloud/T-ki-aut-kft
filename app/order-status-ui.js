@@ -1,5 +1,5 @@
 (function (root) {
- function create(item, rowLabel, onToggle, onPaidToggle) {
+ function create(item, rowLabel, onToggle, onPaidToggle, onArrivalToggle) {
   const cell = document.createElement('td'); cell.className = 'item-order-cell';
   const label = document.createElement('label'); label.className = 'item-order-toggle';
   const input = document.createElement('input'); input.type = 'checkbox'; input.dataset.field = 'ordered'; input.setAttribute('aria-label', 'Megrendelve – ' + rowLabel);
@@ -12,8 +12,17 @@
    const paidText = document.createElement('span'); paidText.textContent = 'Fizetve'; paidLabel.append(paidInput, paidText); cell.append(paidLabel);
    paidInput.onchange = () => { onPaidToggle(paidInput.checked); refresh(); };
   }
+  let arrivedInput;
+  if(onArrivalToggle){
+   const arrivedLabel=document.createElement('label');arrivedLabel.className='payment-toggle item-arrived-toggle';
+   arrivedInput=document.createElement('input');arrivedInput.type='checkbox';arrivedInput.dataset.field='arrived';arrivedInput.setAttribute('aria-label','Megérkezett – '+rowLabel);
+   const arrivedText=document.createElement('span');arrivedText.textContent='Megérkezett';arrivedLabel.append(arrivedInput,arrivedText);cell.append(arrivedLabel);
+   arrivedInput.onchange=()=>{onArrivalToggle(arrivedInput.checked);refresh();};
+  }
+  if(arrivedInput&&paidInput){const checks=document.createElement('div');checks.className='item-checks';checks.append(paidInput.parentElement,arrivedInput.parentElement);cell.append(checks);}
   function refresh() {
    const status = root.LineItems.order(item); input.checked = status.ordered;
+   if(arrivedInput){arrivedInput.checked=item.arrived===true;arrivedInput.disabled=!item.arrived&&!root.LineItems.isActive(item);}
    if (paidInput) { paidInput.checked = item.paid === true; paidInput.disabled = !item.paid && !root.LineItems.isActive(item); }
    input.disabled = !status.ordered && !item.partNumber.trim() && !item.description?.trim();
    label.title = input.disabled ? 'Előbb add meg a cikkszámot vagy a megnevezést.' : 'Jelöld, ha ezt a tételt már megrendelted.';

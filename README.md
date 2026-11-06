@@ -2,6 +2,18 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Élő gépelés gyorsítása és Megérkezett pipa · 1.11.0
+
+A korábbi, kötegelt beviteli próba mellett most külön időzített leütésekkel is mérünk. A gépelés során a felület már **csak a módosított jegyzeteket és a törölt azonosítókat** adja át a helyi mentési végpontnak, nem a több ezer jegyzetből álló teljes adatállományt. A főfolyamat a legfrissebb helyi fájlba egyesíti a változásokat, megőrizve a többi jegyzetet, az új nevek első helyét és a törléseket. Az adatfájl formátuma, helye, az atomi fájlcsere és a korábbi biztonsági másolatok megmaradnak. Függő mentés közben keletkezett újabb változatot nem törlünk a várólistáról; hibás mentés után a módosítások újrapróbálhatók. Bezáráskor továbbra is megvárjuk a teljes sort.
+
+Név, telefon, olaj és megjegyzés gépelése nem építi újra feleslegesen a teljes napi névsort és nem számolja újra az árakat, ha azokat a mező nem érinti. A kereső gyorsítótára az érintett jegyzet módosításakor továbbra is érvénytelenedik. A `save-note-changes` kizárólag helyi Electron IPC, a hálózati autónyilvántartóhoz sem adatot, sem új végpontot nem ad.
+
+A Jegyzetek cikkszámsoraiban a **Fizetve mellett külön Megérkezett pipa** van. Ez nem jelöli fizetettnek vagy megrendeltnek a tételt, és más pipák sem állítják át. A jelölés tételenként mentődik, újranyitáskor és biztonsági mentésben megmarad. Más cikkszámra váltáskor a korábbi érkezési jelölés is törlődik; ár vagy darabszám javítása megtartja. Régi tételeknél alapból nincs bepipálva. Az opcionális `arrived` mezőt típusellenőrzés védi, a nyomtatási/PDF-adatok mezőlistájába nem kerül bele.
+
+Valódi Electronban a `node scripts/benchmark-paced-typing.cjs` 6000 szintetikus jegyzet mellett 20 leütést küld külön, 80 ms-os időközökkel, és megvárja az utolsó állapot lemezre írását. A kiadott 1.10.1-hez képest azonos környezetben a próba 2704 ms-ról 1646 ms-ra csökkent (az előírt beviteli idő önmagában 1600 ms). A felületi 16 ms-os ellenőrző időzítő legnagyobb kihagyása 101 ms-ról 22 ms-ra csökkent. 120 000 jegyzetrekord helyett 20 ment át az IPC-n. Ezek Linux/Electron tesztmérések, nem minden gépre garantált értékek, és az időzítő nem grafikus FPS-mérés. A próba az utolsó karaktert és az összes többi jegyzet szövegének sértetlenségét is ellenőrzi. Az előző változatot opcionális forráskönyvtár-paraméterrel lehet összehasonlítani. Mérési adatok: [downloads/folyamatos-gepeles-meres.json](downloads/folyamatos-gepeles-meres.json).
+
+A `node scripts/verify-arrival.cjs` tényleges ablakban ellenőrzi a pipák függetlenségét, egymás melletti helyét, a részleges mentést, újranyitást és cikkszámcsere utáni törlést. Az ébresztős és négygépes próbák a részleges mentési útvonallal is futnak. A személyes jegyzetek és munkalapok továbbra is gépenként külön maradnak.
+
 ## Gyorsabb gépelés és keresés · 1.10.1
 
 A jegyzetek mentési sora az ugyanahhoz az adatfájlhoz várakozó módosítások közül a legfrissebbet írja ki, a már folyamatban lévő mentés megvárása után. A felület nem készít teljes JSON-másolatot minden leütésnél: pillanatfelvétel csak a tényleges kiírás előtt készül, natív másolással. Nincs mesterséges mentési késleltetés. A bezárás, az importálás és az ébresztő kezelése továbbra is megvárja a teljes mentési sort, és hibánál a program nem hagyja jóvá a bezárást. A fájlformátum, a helyi adatkönyvtár, az atomi fájlcsere és a biztonsági másolatok megmaradtak.

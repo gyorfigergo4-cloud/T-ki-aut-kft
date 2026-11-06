@@ -37,3 +37,8 @@ test('munkalap mindkét járművet átveszi, fizetési pipák és cikkszámok ne
  const html=print.html(doc);for(const secret of ['DEMO-HIDDEN-ONE','DEMO-HIDDEN-TWO','Fizetve','"paid"'])assert.ok(!html.includes(secret),secret);assert.ok(html.includes(vin1));assert.ok(html.includes(vin2));assert.ok(html.includes('Volkswagen / BMW'));
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'paid-docs-'));try{const file=path.join(dir,'workorders.json');workStore.write(file,[doc]);assert.equal(workStore.read(file)[0].paid,true);assert.equal(workStore.read(file)[0].items[0].paid,true);}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('Megérkezett jelölés független a fizetéstől és rendeléstől; új cikkszámnál törlődik',()=>{
+ const Items=require('../app/items'),item={...Items.blank('arrival'),partNumber:'A-1'};const arrived=Items.withArrival(item,true);
+ assert.equal(arrived.arrived,true);assert.equal(arrived.paid,false);assert.equal(arrived.ordered,false);assert.equal(Items.withPaid(arrived,true).arrived,true);assert.equal(Items.withOrder(arrived,true).arrived,true);assert.equal(Items.edit(arrived,{quantity:'2'}).arrived,true);assert.equal(Items.edit(arrived,{partNumber:'B-2'}).arrived,false);assert.throws(()=>Items.validate([{...item,arrived:'igen'}]));assert.throws(()=>Items.withArrival(Items.blank('empty'),true));
+ const Model=require('../app/workorders-model'),doc=Model.blank('d','2026-11-06',[],'i');doc.customer='Ügyfél';doc.items=[{...arrived,description:'Alkatrész',fullPrice:'100',discountedPrice:'100'}];assert.equal(JSON.stringify(Model.printable(doc)).includes('arrived'),false);
+});
