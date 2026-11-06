@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Kézi és óránkénti mentés · 1.12.0
+
+A jegyzetek és munkalapok szerkesztése csak a memóriában jelöli a módosításokat; gépelés és lapváltás nem írja ki őket. A fejléc **Mentés · Ctrl+S** gombja, a Ctrl+S, az óránkénti időzítő és a jóváhagyott normál bezárás menti a legutolsó állapotot. A tiszta állapot óránként sem indít fölösleges kiírást. Sikertelen mentés újrapróbálható, hiba esetén a bezárás nem engedélyezett. Váratlan leálláskor akár egyórányi nem mentett munka elveszhet: fontos javítás után használj kézi mentést.
+
+Az emlékeztető szerkesztőjének Mentés gombja, a Kész/Szundi és az adatcserét megelőző explicit mentések továbbra is azonnal rögzítenek. A közös autónyilvántartó írási és frissítési útvonala változatlan. A privát jegyzetek és munkalapok fájlja, a felhasználói adatkönyvtár neve és a hálózati elkülönítés változatlan.
+
+A felületi tesztek külön ellenőrzik a mentés nélküli, külön eseményekben történő gépelést, a lapváltást, a gombot, Ctrl+S-t, a valódi 3 600 000 ms-os időzítő callbackjét, a tiszta óránkénti ciklust és a bezáráskori utolsó karaktert. A `scripts/verify-manual-save.cjs` valódi Electron ablakban ellenőrzi a lemez változatlanságát gépelés közben, a kézi mentést és az újranyitást.
+
 ## Élő gépelés gyorsítása és Megérkezett pipa · 1.11.0
 
 A korábbi, kötegelt beviteli próba mellett most külön időzített leütésekkel is mérünk. A gépelés során a felület már **csak a módosított jegyzeteket és a törölt azonosítókat** adja át a helyi mentési végpontnak, nem a több ezer jegyzetből álló teljes adatállományt. A főfolyamat a legfrissebb helyi fájlba egyesíti a változásokat, megőrizve a többi jegyzetet, az új nevek első helyét és a törléseket. Az adatfájl formátuma, helye, az atomi fájlcsere és a korábbi biztonsági másolatok megmaradnak. Függő mentés közben keletkezett újabb változatot nem törlünk a várólistáról; hibás mentés után a módosítások újrapróbálhatók. Bezáráskor továbbra is megvárjuk a teljes sort.
@@ -74,7 +82,7 @@ Valódi Electron-folyamatban ellenőrizve: régi egy- és többautós jegyzetek,
 
 ## Telefonszám és egyetlen záró ellenőrzés az 1.7-es verzióban
 
-Minden jegyzetben a Név mellett külön **Telefonszám** mező van. A megadott szöveget formázással együtt, névenként automatikusan menti; újranyitáskor megmarad és a globális keresőben is kereshető. A régebbi jegyzeteknél alapból üres. A **Munkalap készítése** a telefonszámot is átmásolja a munkalap Telefon mezőjébe.
+Minden jegyzetben a Név mellett külön **Telefonszám** mező van. A megadott szöveget formázással együtt, névenként a kézi vagy óránkénti mentés rögzíti; újranyitáskor megmarad és a globális keresőben is kereshető. A régebbi jegyzeteknél alapból üres. A **Munkalap készítése** a telefonszámot is átmásolja a munkalap Telefon mezőjébe.
 
 Az **„Biztosan minden tételt felírtál?”** kérdés kizárólag a program bezárásakor, egyszer, közös ablakban jelenik meg. Név-, nap-, mappa- és fülváltáskor, kereséskor vagy új jegyzet létrehozásakor nem kérdez. A záró ablak az összes jegyzet nyitott emlékeztetőit együtt mutatja, névvel. A Vissza és Escape megszakítja a bezárást; az Igen után megvárja az összes mentést. A piros Emlékeztetők gomb és a Töki Autó arculat megmarad.
 
@@ -90,13 +98,13 @@ A natív bezárási folyamat valódi Linux Electron 45.2.2 futtatókörnyezetben
 
 ## Kilépési ellenőrzés és emlékeztetők az 1.6-os verzióban
 
-Az 1.6-os verzió még a szerkesztett jegyzetek közötti váltáskor is rákérdezett. Az 1.7-es verzióban ez kizárólag a program bezárásakor jelenik meg: **Biztosan minden tételt felírtál?** Az **Igen, minden felírva** továbblép, a **Vissza a jegyzethez** megszakítja a bezárást. Enter és Escape alapértelmezésben a visszatérést választja. A záró ellenőrzés a teljes munkamenetre vonatkozik. A mentés továbbra is automatikus, a kérdés jóváhagyása a mentés befejezését nem kerüli meg.
+Az 1.6-os verzió még a szerkesztett jegyzetek közötti váltáskor is rákérdezett. Az 1.7-es verzióban ez kizárólag a program bezárásakor jelenik meg: **Biztosan minden tételt felírtál?** Az **Igen, minden felírva** továbblép, a **Vissza a jegyzethez** megszakítja a bezárást. Enter és Escape alapértelmezésben a visszatérést választja. A záró ellenőrzés a teljes munkamenetre vonatkozik. A mentés kézzel, óránként és normál bezáráskor történik; a kérdés jóváhagyása a mentés befejezését nem kerüli meg.
 
 Minden névhez több saját teendő vehető fel az **Emlékeztetők** részen, gyors szövegekkel (például **Felhívni az ügyfelet**) és külön **Kész** pipával. A szöveg szerkeszthető, a teendő törölhető. A bal oldali gomb az összes nyitott vagy kész teendőt megmutatja, és a kapcsolódó jegyzet megnyitható belőle. A nyitott teendők a kilépési ellenőrzésben is megjelennek, korábban mentett jegyzetnél is. A jóváhagyás nem jelöli készre őket; a pipát kézzel kell beállítani. A teendők a helyi JSON-tárolóban és a biztonsági mentésben megmaradnak; ügyfélnyomtatásba nem kerülnek.
 
 ## Fizetési pipák és több jármű az 1.5-ös verzióban
 
-Minden kitöltött tételnek külön **Fizetve** pipája van. A Bejegyzés adatai mellett, a Megrendelve alatt lévő közös pipa az összes kitöltött tételt egyszerre jelöli vagy törli; részleges fizetésnél köztes állapotot mutat. Üres tétellista mellett az egész bejegyzés fizetése önállóan jelölhető. A fizetés nem változtatja meg a névkártyák színét és nem állít rendelési állapotot. A munkalapokon is van soronkénti és közös pipa. Más cikkszám beírása törli az adott sor korábbi fizetési jelölését. A jelölések automatikusan mentődnek, ügyfélnyomtatásba és PDF-be nem kerülnek.
+Minden kitöltött tételnek külön **Fizetve** pipája van. A Bejegyzés adatai mellett, a Megrendelve alatt lévő közös pipa az összes kitöltött tételt egyszerre jelöli vagy törli; részleges fizetésnél köztes állapotot mutat. Üres tétellista mellett az egész bejegyzés fizetése önállóan jelölhető. A fizetés nem változtatja meg a névkártyák színét és nem állít rendelési állapotot. A munkalapokon is van soronkénti és közös pipa. Más cikkszám beírása törli az adott sor korábbi fizetési jelölését. A jelöléseket a kézi vagy óránkénti mentés rögzíti, ügyfélnyomtatásba és PDF-be nem kerülnek.
 
 Egy jegyzethez több alvázszám és soronként külön autómárka adható. Az **Alvázszám hozzáadása** gomb új sort vesz fel; a sor végén törölhető. A korábbi alvázszámok és eredeti forrásszövegek megmaradnak, az explicit törölt járművek újranyitáskor sem térnek vissza. A kereső minden jármű alvázszámát és márkáját figyeli. A 433 márkát tartalmazó, offline használható lista saját márkanévvel kiegészíthető. A névjegyzék forrását és licencét az [adatforrás megjelölése](app/assets/car-brands-NOTICE.txt) tartalmazza; gyártói emblémákat nem használunk. Az 1.8-as verziótól a **Munkalap készítése** a kiválasztott autót és annak tételeit viszi át.
 
@@ -146,7 +154,7 @@ Legfeljebb 20 MB-os fájl, 50 000 sor és 256 oszlop támogatott. A ZIP-tartalom
 
 ### Munkalapok / árajánlatok
 
-Külön fülön szerkeszthetők és kereshetők, automatikus mentéssel a `%APPDATA%\jegyzetfuzet\workorders.json` fájlba. Sorszámot kapnak, típusuk árajánlat vagy munkalap lehet. Mezők: ügyfélnév, telefon, alvázszám, rendszám, jármű, dátum és opcionális érvényesség. A napi jegyzetből a **Munkalap készítése** gombbal is indítható új dokumentum. Az árak és a darabszám ugyanúgy számolódnak, mint a cikkszámtáblázatban.
+Külön fülön szerkeszthetők és kereshetők, kézi vagy óránkénti mentéssel a `%APPDATA%\jegyzetfuzet\workorders.json` fájlba. Sorszámot kapnak, típusuk árajánlat vagy munkalap lehet. Mezők: ügyfélnév, telefon, alvázszám, rendszám, jármű, dátum és opcionális érvényesség. A napi jegyzetből a **Munkalap készítése** gombbal is indítható új dokumentum. Az árak és a darabszám ugyanúgy számolódnak, mint a cikkszámtáblázatban.
 
 **A cikkszám nem kerül a nyomtatási dokumentumba.** A nyomtatás külön, engedélyezett mezőkből összeállított dokumentumot használ; a cikkszám, beszállító, eredeti forrássor és belső megjegyzés át sem kerül annak adatai közé. Az ügyfélnek a külön **Megnevezés** mező látszik, üres megnevezésnél „Alkatrész”. A megadott cikkszámokat a szabad szöveges mezőkből is eltávolítja. A nyomtatás előnézettel, natív nyomtatási ablakkal és PDF-mentéssel kérhető. A Ctrl+P erre a biztonságos útvonalra irányít, a fő szerkesztő közvetlen nyomtatását külön CSS-védelem is megakadályozza.
 

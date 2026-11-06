@@ -1,3 +1,14 @@
+ÚJ · 1.12.0: KÉZI ÉS ÓRÁNKÉNTI MENTÉS
+Gépelés közben a jegyzetek és munkalapok nem indítanak lemezre mentést.
+Mentés: fent a Mentés gombbal vagy Ctrl+S billentyűvel.
+A módosításokat óránként és normál bezáráskor is elmenti.
+Áramszünet vagy váratlan leállás esetén akár egyórányi nem mentett munka
+elveszhet. Fontos módosítás után használd a Ctrl+S billentyűt!
+Az emlékeztető Mentés, Kész és Szundi gombja továbbra is rögtön ment.
+Az import, biztonsági mentés és nyomtatás előtti mentés is megmarad.
+A négygépes közös autónyilvántartó továbbra is külön, azonnal frissül;
+a saját jegyzetek és munkalapok továbbra sem kerülnek át a többi gépre.
+
 ÚJ: a gépelés már csak a módosított jegyzet adatait adja át mentésre.
 A cikkszámoknál a Fizetve mellett külön Megérkezett pipa található.
 A pipák függetlenek, új cikkszámnál a korábbi jelölések törlődnek.
@@ -14,11 +25,11 @@ bezárás alatt lejárt teendő a következő indításkor megjelenik.
 
 ÚJ: névbuborék → autóbuborék → középen megnyíló adatlap, lefelé görgetés nélkül.
 
-ÚJ: KÖZÖS AUTÓNYILVÁNTARTÓ (1.11.0)
+ÚJ: KÖZÖS AUTÓNYILVÁNTARTÓ (1.12.0)
 A jegyzetek és munkalapok továbbra is gépenként külön maradnak.
 A központ és a másik három gép beállítását a HALOZAT-BEALLITAS.txt írja le.
 
-TÖKI AUTÓ KFT. – JEGYZETEK ÉS AUTÓNYILVÁNTARTÓ 1.11.0
+TÖKI AUTÓ KFT. – JEGYZETEK ÉS AUTÓNYILVÁNTARTÓ 1.12.0
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
@@ -32,7 +43,7 @@ A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.
    amelyben az évszámok és hónapok vannak.
 
 A jegyzeteid helyben töltődnek be. Az eredeti fájlok megmaradnak.
-A teljes mappát csak egyszer kell betöltened. A program automatikusan ment.
+A teljes mappát csak egyszer kell betöltened. Mentés: Mentés gomb / Ctrl+S, óránként és normál bezáráskor.
 Később az asztali TokiAuto - Jegyzetek parancsikonnal is indíthatod.
 A downloads mappa részeit nem kell külön megnyitnod.
 
@@ -66,7 +77,7 @@ asztali ikonját külön is frissíti a TokiAuto-Ikon-Frissites.cmd indításáv
 
 MEGRENDELVE JELÖLÉS
 A tételek Rendelés oszlopában pipáld ki, amit már megrendeltél.
-A sor zöld jelölést és időpontot kap; az app automatikusan menti.
+A sor zöld jelölést és időpontot kap; a kézi vagy óránkénti mentés rögzíti.
 A jelölés visszavonható. Más cikkszámra váltás törli a korábbi jelölést.
 A régi Rendelve szövegeknél Korábbi jelölés látszik, időpont nélkül.
 A belső rendelésjelölés az ügyfél nyomtatásán és PDF-jében nem szerepel.
@@ -74,7 +85,7 @@ A belső rendelésjelölés az ügyfél nyomtatásán és PDF-jében nem szerepe
 SZÍNES BEJEGYZÉSEK
 A Bejegyzés adatai mellett válassz állapotot:
 Megrendelve – zöld, Ajánlat – kék, Félbehagyott – piros, Felírva – citromsárga.
-A felső névkártya színe változik, a választás automatikusan mentődik.
+A felső névkártya színe változik, a választást a kézi vagy óránkénti mentés rögzíti.
 
 ÍRHATÓ KEDVEZMÉNYES ÁR
 A kedvezményes ár mezőbe közvetlenül is írhatsz összeget.
@@ -117,7 +128,7 @@ A nyitott teendőket a kilépési kérdésben is mutatja.
 A bal oldali Emlékeztetők gomb az összes név teendőit összegyűjti.
 A Kész pipával jelölheted az elvégzett teendőt; a szövegre kattintva szerkesztheted.
 A kilépési jóváhagyás nem pipálja automatikusan készre a teendőket.
-A mentés automatikus, a teendők újranyitáskor is megmaradnak.
+A mentett teendők újranyitáskor is megmaradnak.
 
 JAVÍTOTT KILÉPÉS ÉS TÖKI AUTÓS KÉRDÉSABLAK
 A kilépési ellenőrzés saját fekete–zöld, Töki Autó logós ablakot kapott.
@@ -137,7 +148,7 @@ Egy névhez több autó tartozhat, mindegyik saját cikkszámokkal.
 A Járművek részen kattints az autó alvázszámos gombjára vagy alvázszámmezőjére.
 A táblázat az adott autó cikkszámait, árait, darabszámait és pipáit mutatja.
 Az új cikkszám a kiválasztott autóhoz kerül. Új autó üres saját sorral indul.
-A hozzárendelés és az utoljára kiválasztott autó automatikusan mentődik.
+A hozzárendelés és az utoljára kiválasztott autó kézi vagy óránkénti mentéssel rögzül.
 A kereső a találatnak megfelelő autó tételeit nyitja meg.
 
 RÉGI TÉTELEK ÉS ÁTSOROLÁS

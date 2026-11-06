@@ -2,11 +2,17 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { JSDOM } = require('jsdom');
-const tick = () => new Promise(resolve => setImmediate(resolve));
+// Legacy persistence assertions use an explicit save checkpoint. Hourly tests opt out.
+const uiWindows = new Map();
+const tick = async (flush = true) => {
+ if(flush)for(const [w,options]of uiWindows){if(!w.document){uiWindows.delete(w);continue;}if(!options.manualOnly&&w.NotesFlushForClose)void w.NotesFlushForClose().catch(()=>{});}
+ await new Promise(resolve=>setImmediate(resolve));
+};
 const copy = value => JSON.parse(JSON.stringify(value));
 async function openUI(saved, options = {}) {
   const dom = new JSDOM(fs.readFileSync('app/index.html', 'utf8'), { runScripts: 'outside-only', url: 'https://notes.local' });
-  const { window } = dom;
+  const { window } = dom; uiWindows.set(window,options);
+  if(options.clock){const interval=window.setInterval.bind(window);window.setInterval=(fn,ms)=>{if(ms===3600000){options.clock.hourly=fn;options.clock.interval=ms;}return interval(fn,ms);};}
   let closeRequest; const closeResults = [];
   window.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
   window.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new window.Event('close')); };
@@ -353,5 +359,19 @@ test('részleges mentési hiba után minden függő módosítás újrapróbálha
  const saved={notes:[{id:'a',title:'A',body:'Régi A',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'},{id:'b',title:'B',body:'Régi B',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'}],archive:{years:[2026],days:['2026-11-06']}};const ui=await openUI(saved,{patches:true});try{
  ui.dom.window.notesAPI.saveNoteChanges=async()=>{throw Error('disk');};ui.input('body','Új A');await assert.rejects(ui.dom.window.NotesFlush(),/mentése nem sikerült/);assert.equal(saved.notes[0].body,'Régi A');
  let payload;ui.dom.window.notesAPI.saveNoteChanges=async p=>{payload=copy(p);saved.notes=require('../app/note-patches').apply(saved.notes,copy(p));};ui.$('list').querySelector('[data-note=b]').click();ui.input('body','Új B');await ui.dom.window.NotesFlush();assert.equal(payload.upserts.length,2);assert.equal(saved.notes.find(n=>n.id==='a').body,'Új A');assert.equal(saved.notes.find(n=>n.id==='b').body,'Új B');
+ }finally{ui.dom.window.close();}
+});
+test('gépelés és lapváltás nem ment; Mentés gomb és Ctrl+S a legutolsó állapotot rögzíti',async()=>{
+ const saved={notes:[{id:'n',title:'Ügyfél',body:'Eredeti szöveg',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'}],archive:{years:[2026],days:['2026-11-06']}};const ui=await openUI(saved,{manualOnly:true,patches:true});try{
+ for(let i=0;i<20;i++){ui.input('body','Új szöveg '+i);await tick(false);}assert.equal(saved.notes[0].body,'Eredeti szöveg');assert.match(ui.$('status').textContent,/Nem mentett/);
+ ui.$('save-notes').click();await tick(false);assert.equal(saved.notes[0].body,'Új szöveg 19');
+ ui.input('body','Ctrl S mentés');ui.dom.window.dispatchEvent(new ui.dom.window.KeyboardEvent('keydown',{key:'s',ctrlKey:true,cancelable:true}));await tick(false);assert.equal(saved.notes[0].body,'Ctrl S mentés');
+ }finally{ui.dom.window.close();}
+});
+test('az óránkénti időzítő csak a módosításokat menti; bezáráskor az utolsó betű is megmarad',async()=>{
+ const saved={notes:[{id:'n',title:'Ügyfél',body:'Eredeti',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'}],archive:{years:[2026],days:['2026-11-06']}},clock={};const ui=await openUI(saved,{manualOnly:true,patches:true,clock});try{
+ assert.equal(clock.interval,3600000);let writes=0;const save=ui.dom.window.notesAPI.saveNoteChanges;ui.dom.window.notesAPI.saveNoteChanges=async p=>{writes++;await save(p);};
+ clock.hourly();await tick(false);assert.equal(writes,0);ui.input('body','Óránként mentett');await tick(false);assert.equal(writes,0);clock.hourly();await tick(false);assert.equal(writes,1);assert.equal(saved.notes[0].body,'Óránként mentett');clock.hourly();await tick(false);assert.equal(writes,1);
+ ui.input('body','Bezárás előtti utolsó betű');await tick(false);assert.equal(writes,1);await ui.requestClose('hourly-close');assert.equal(saved.notes[0].body,'Bezárás előtti utolsó betű');assert.equal(ui.closeResults.at(-1).approved,true);
  }finally{ui.dom.window.close();}
 });

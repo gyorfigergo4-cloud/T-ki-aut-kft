@@ -331,3 +331,5 @@ body:has(#garage-person-dialog[open]) #garage-view { overflow:hidden; }
 .item-checks .item-paid-toggle,.item-checks .item-arrived-toggle { margin-top:0; }
 .item-arrived-toggle { font-size:10px;white-space:nowrap; }
 #items-table .col-order { width:19%; } #items-table .col-supplier { width:12%; }
+#save-notes,#save-workorders { white-space:nowrap; }
+@media(max-width:1100px){.topbar:has(.reminder-alarm-banner:not([hidden])){flex-wrap:wrap;}.topbar:has(.reminder-alarm-banner:not([hidden])) .reminder-alarm-slot{order:3;flex-basis:100%;}}

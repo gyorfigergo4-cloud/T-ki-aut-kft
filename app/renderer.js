@@ -20,12 +20,17 @@ const dateLabel = day => new Date(day + 'T12:00:00').toLocaleDateString('hu-HU',
 const money = value => new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 2 }).format(value);
 const archiveData = () => ({ years: [...years], days: [...days] });
 // Keep only the newest pending snapshot per file while a save is running.
-// No artificial delay: the first write starts in the next microtask.
+// Typing only marks data as unsaved. Disk writes require manual/hourly/close flush.
 function queueSave(target, value, writer) {
   if (!stagedSaves.has(target)) pending++;
   stagedSaves.set(target, { value, writer, version: ++revision });
-  $('status').textContent = 'Mentés…';
-  if (!drainingSaves) { drainingSaves = true; queue = queue.catch(() => {}).then(drainSaves); }
+  $('status').textContent = 'Nem mentett módosítások · Ctrl+S';
+}
+function flushSaveQueue() {
+  if(saveErrors.has('notes')&&!stagedSaves.has('notes'))persistNotes();
+  if(saveErrors.has('archive')&&!stagedSaves.has('archive'))persistArchive();
+  if(stagedSaves.size&&!drainingSaves){drainingSaves=true;$('status').textContent='Mentés…';queue=queue.catch(()=>{}).then(drainSaves);}
+  return queue;
 }
 async function drainSaves() {
   try {
@@ -455,7 +460,7 @@ $('delete').onclick = () => $('confirm').showModal(); $('cancel').onclick = () =
 $('remove').onclick = () => { brandOptionsDirty = true; invalidInputs.clear(); dirtyNotes.delete(selected); deletedNotes.set(selected,++noteChangeVersion); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
 $('export').onclick = async () => {
   if (!loaded) return;
-  if (window.WorkOrdersUI) { try { await window.WorkOrdersUI.flush(); } catch { return; } }
+  try { await window.NotesFlush(); if(window.WorkOrdersUI)await window.WorkOrdersUI.flush(); } catch { return; }
   try { if (await window.notesAPI.export(notes, archiveData())) $('status').textContent = '✓ Biztonsági mentés elkészült'; }
   catch { $('status').textContent = 'Nem sikerült a biztonsági mentés.'; }
 };
@@ -469,7 +474,7 @@ window.NotesPrepareClose = async () => {
   return await window.NoteReviewUI.confirm({ title: 'Kilépés előtti ellenőrzés', pending: pendingReminders }) === true;
 };
 window.NotesFlushForClose = async () => {
-  await queue;
+  await flushSaveQueue();
   if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült.');
 };
 function loadData(preferredNoteId) {
@@ -479,7 +484,7 @@ return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then
   const preferred = notes.find(note => note.id === preferredNoteId);
   const initialDay = preferred?.day || (days.includes(today) ? today : [...days].sort().at(-1) ?? today);
   setDayContext(initialDay); selected = preferred?.id || notes.find(note => note.day === initialDay)?.id || null;
-  $('status').textContent = '✓ Minden változás mentve'; render(); return true;
+  $('status').textContent = '✓ Betöltve · kézi / óránkénti mentés'; render(); return true;
 }).catch(() => {
   $('status').textContent = 'A mentett adatok nem olvashatók. Az eredeti fájlok megmaradtak.';
   for (const id of ['new', 'add-year', 'add-day']) $(id).disabled = true;
@@ -505,9 +510,21 @@ window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowN
 window.NotesRefresh = id => { clearSearch(); return loadData(id); };
 window.NotesFlush = async () => {
  if (!loaded) throw new Error('A jegyzetek még nem töltődtek be.');
- await queue;
+ await flushSaveQueue();
  if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült. Beolvasás előtt ellenőrizd a lemez szabad helyét.');
 };
+
+async function saveLocalWork() {
+  if(!validInputs()||(window.WorkOrdersUI&&!window.WorkOrdersUI.canLeave()))return false;
+  try { await window.NotesFlush(); if(window.WorkOrdersUI)await window.WorkOrdersUI.flush(); return true; }
+  catch { return false; }
+}
+$('save-notes').onclick=saveLocalWork;
+window.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();void saveLocalWork();}});
+const hourlySaveTimer=setInterval(()=>{void saveLocalWork();},60*60*1000);
+window.addEventListener('pagehide',()=>clearInterval(hourlySaveTimer));
+window.SaveLocalWork=saveLocalWork;
+
 window.NoteForWorkOrder = () => afterCheck(allowNavigation(), () => current() ? Vehicles.selectedNote(current()) : null);
 window.addEventListener('excel-imported', async event => {
  if (event.detail.target === 'notes') { await loadData(event.detail.noteId); $('status').textContent = event.detail.message; }

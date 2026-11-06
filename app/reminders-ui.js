@@ -67,7 +67,7 @@
   $('reminder-preset').onchange = () => { if ($('reminder-preset').value) $('reminder-text').value = $('reminder-preset').value; };
   $('reminder-cancel').onclick = finishEdit;
   $('reminder-edit').addEventListener('cancel', event => { event.preventDefault(); finishEdit(); });
-  $('reminder-form').onsubmit = event => {
+  $('reminder-form').onsubmit = async event => {
     event.preventDefault(); $('reminder-edit-error').textContent = '';
     try {
       const text = $('reminder-text').value.trim();
@@ -81,6 +81,7 @@
         Model.validate([reminder]); return previous ? rows.map(r => r.id === previous.id ? reminder : r) : [...rows, reminder];
       });
       if (!changed) throw new Error('Előbb javítsd a jegyzet megjelölt mezőjét, majd mentsd az emlékeztetőt.');
+      await window.NotesFlush();
       finishEdit();
     } catch (error) { $('reminder-edit-error').textContent = error.message; }
   };

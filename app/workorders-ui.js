@@ -1,12 +1,20 @@
 (function(){
  const $=id=>document.getElementById(id),Model=window.WorkOrderModel,Items=window.LineItems;
- let docs=[],selected=null,loaded=false,tab='notes',queue=Promise.resolve(),pending=0,revision=0,saveError=false;
+ let docs=[],selected=null,loaded=false,tab='notes',queue=Promise.resolve(),pending=0,revision=0,saveError=false,dirty=false;
  const invalid=new Set();const current=()=>docs.find(d=>d.id===selected);
  const fold=s=>s.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
  const day=()=>window.NotesArchive.localDay(new Date());
  function canLeave(){for(const el of invalid)if(!el.isConnected)invalid.delete(el);const el=invalid.values().next().value;if(el){el.focus();el.reportValidity();return false;}return true;}
- function persist(){const doc=current();if(doc)doc.paid=Items.paymentState(doc.items,doc.paid).paid;Model.validate(docs);const snapshot=JSON.parse(JSON.stringify(docs)),version=++revision;pending++;$('wo-status').textContent='Mentés…';queue=queue.catch(()=>{}).then(()=>window.notesAPI.saveWorkorders(snapshot)).then(()=>{saveError=false;if(version===revision)$('wo-status').textContent='✓ Munkalap mentve';}).catch(()=>{saveError=true;$('wo-status').textContent='A munkalap mentése nem sikerült. Ellenőrizd a lemez szabad helyét.';}).finally(()=>{pending--;});}
- async function flush(){await ready;await queue;if(saveError)throw new Error('A munkalap mentése nem sikerült.');}
+ function persist(){const doc=current();if(doc)doc.paid=Items.paymentState(doc.items,doc.paid).paid;Model.validate(docs);revision++;dirty=true;$('wo-status').textContent='Nem mentett módosítások · Ctrl+S';}
+ async function flush(){
+  await ready;
+  if(dirty&&pending===0){
+   const snapshot=JSON.parse(JSON.stringify(docs)),version=revision;pending++;$('wo-status').textContent='Mentés…';
+   queue=queue.catch(()=>{}).then(()=>window.notesAPI.saveWorkorders(snapshot)).then(()=>{saveError=false;if(version===revision){dirty=false;$('wo-status').textContent='✓ Munkalap mentve';}}).catch(()=>{saveError=true;$('wo-status').textContent='A munkalap mentése nem sikerült. Próbáld újra a Mentés gombbal.';}).finally(()=>{pending--;});
+  }
+  await queue;if(saveError)throw new Error('A munkalap mentése nem sikerült.');if(dirty)return flush();
+ }
+ $('save-workorders').onclick=()=>window.SaveLocalWork();
  async function showTab(next){
   if(next===tab)return true;
   if(tab==='notes'&&window.NotesImportContext&&!await window.NotesImportContext().canLeave())return false;
@@ -105,5 +113,5 @@
  const ready=(async()=>{try{const data=window.notesAPI.loadWorkorders?await window.notesAPI.loadWorkorders():[];Model.validate(data);docs=data;loaded=true;selected=docs[0]?.id||null;$('wo-status').textContent='✓ Munkalapok betöltve';render();}catch{$('wo-status').textContent='A mentett munkalapok nem olvashatók. Az eredeti fájl megmaradt.';$('wo-new').disabled=true;}})();
  window.WorkOrdersUI={ready,flush,canLeave,getContext:()=>({tab,doc:current()?JSON.parse(JSON.stringify(current())):null}),showGarage:()=>showTab('garage'),showNotes:()=>showTab('notes'),showWorkorders:()=>showTab('workorders')};
  window.addEventListener('excel-imported',async event=>{if(event.detail.target==='workorder'){try{await reload(event.detail.workorderId);await showTab('workorders');$('wo-status').textContent=event.detail.message;}catch{$('wo-error').textContent='A munkalap újratöltése nem sikerült.';}}});
- window.addEventListener('beforeunload',event=>{if(invalid.size||pending||saveError){event.preventDefault();event.returnValue='';}});
+ window.addEventListener('beforeunload',event=>{if(invalid.size||pending||saveError||dirty){event.preventDefault();event.returnValue='';}});
 })();
