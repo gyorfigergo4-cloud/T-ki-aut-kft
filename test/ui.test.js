@@ -67,12 +67,12 @@ test('év/hónap/nap mappák, napi több név, visszakeresés és újranyitás',
   await tick(); ui.dom.window.close();
   ui = await openUI(saved);
   assert.ok(ui.$('folders').querySelector('[data-year="2027"]'));
-  ui.$('folders').querySelector('[data-year="2027"]').click();
-  ui.$('folders').querySelector('[data-month="2027-01"]').click();
+  const year2027=ui.$('folders').querySelector('[data-year="2027"]');if(year2027.getAttribute('aria-expanded')!=='true')year2027.click();
+  const january2027=ui.$('folders').querySelector('[data-month="2027-01"]');if(january2027.getAttribute('aria-expanded')!=='true')january2027.click();
   assert.ok(ui.$('folders').querySelector('[data-day="2027-01-05"]'));
   ui.$('folders').querySelector('[data-day="2027-01-05"]').click();
   assert.equal(ui.cards().length, 0);
-  ui.newDay('2026-11-04'); assert.equal(ui.cards().length, 2);
+  ui.newDay('2026-11-04'); assert.equal(ui.cards().length, 2);ui.$('list').querySelector('[data-note="'+firstId+'"]').click();
   ui.input('title', 'Kovács Péter frissítve'); await tick();
   assert.equal(saved.notes.find(note => note.id === firstId).day, '2026-11-04');
   assert.equal(saved.notes.find(note => note.id === 'old').body, 'Korábbi egyeztetés');
@@ -304,4 +304,26 @@ test('új név a nap névsorának elejére kerül és újranyitás után ott mar
 });
 test('a rendelésjelölő kikapcsolva Nincs megrendelve, bekapcsolva Megrendelve feliratú',async()=>{
  const saved={notes:[],archive:{years:[2026],days:['2026-11-05']}};const ui=await openUI(saved);try{ui.$('new').click();const part=ui.$('items-body').querySelector('[data-field=partNumber]');part.value='TEST-123';part.dispatchEvent(new ui.dom.window.Event('input'));let cell=ui.$('items-body').querySelector('.item-order-cell');assert.equal(cell.querySelector('.item-order-toggle span').textContent,'Nincs megrendelve');cell.querySelector('[data-field=ordered]').click();await tick();assert.equal(cell.querySelector('.item-order-toggle span').textContent,'Megrendelve');cell.querySelector('[data-field=ordered]').click();await tick();assert.equal(cell.querySelector('.item-order-toggle span').textContent,'Nincs megrendelve');assert.equal(saved.notes[0].items[0].ordered,false);}finally{ui.dom.window.close();}
+});
+
+test('ébresztő beállítása, felső jelzés, 5 perc szundi, újranyitás és kész jelölés',async()=>{
+ const saved={notes:[{id:'n',title:'Ébresztős ügyfél',body:'Megmaradó jegyzet',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'}],archive:{years:[2026],days:['2026-11-06']}};
+ let ui=await openUI(saved);try{
+ let now=Date.parse('2026-11-06T12:00:00.000Z');ui.dom.window.Date.now=()=>now;
+ ui.$('reminder-add').click();ui.input('reminder-text','Felhívni az ügyfelet');ui.$('reminder-alarm-enabled').checked=true;ui.$('reminder-alarm-enabled').dispatchEvent(new ui.dom.window.Event('change'));
+ ui.$('reminder-alarm-time').value=ui.dom.window.NoteReminders.localInput(new Date(now+60000).toISOString());ui.submit('reminder-form');await tick();
+ assert.equal(saved.notes[0].reminders[0].dueAt,new Date(now+60000).toISOString());ui.dom.window.RemindersUI.renderAlarm();assert.equal(ui.$('reminder-alarm-banner').hidden,true);
+ now+=60000;ui.dom.window.RemindersUI.renderAlarm();assert.equal(ui.$('reminder-alarm-banner').hidden,false);assert.match(ui.$('reminder-alarm-owner').textContent,/Ébresztős ügyfél/);assert.equal(ui.$('reminder-alarm-text').textContent,'Felhívni az ügyfelet');
+ ui.$('reminder-alarm-snooze').click();await tick();assert.equal(Date.parse(saved.notes[0].reminders[0].snoozedUntil),now+300000);assert.equal(ui.$('reminder-alarm-banner').hidden,true);
+ const before=now;ui.dom.window.close();ui=await openUI(saved);ui.dom.window.Date.now=()=>before+300000;ui.dom.window.RemindersUI.renderAlarm();assert.equal(ui.$('reminder-alarm-banner').hidden,false);
+ ui.$('reminder-alarm-done').click();await tick();assert.equal(saved.notes[0].reminders[0].done,true);assert.equal(ui.$('reminder-alarm-banner').hidden,true);assert.equal(saved.notes[0].body,'Megmaradó jegyzet');
+ }finally{ui.dom.window.close();}
+});
+test('több lejárt ébresztő lapozható, csak a kiválasztott lesz kész; szövegjavítás nem törli a szundit',async()=>{
+ const make=(id,title)=>({id,title,body:'Saját '+id,day:'2026-11-06',updated:'2026-11-06T08:00:00Z',reminders:[{id:'r'+id,text:'Hívás '+title,done:false,createdAt:'2026-11-06T08:00:00.000Z',dueAt:'2026-11-06T09:00:00.000Z',snoozedUntil:'2026-11-06T09:05:00.000Z'}]});
+ const saved={notes:[make('a','Anna'),make('b','Béla')],archive:{years:[2026],days:['2026-11-06']}};const ui=await openUI(saved);try{
+ ui.dom.window.Date.now=()=>Date.parse('2026-11-06T10:00:00Z');ui.dom.window.RemindersUI.renderAlarm();assert.equal(ui.$('reminder-alarm-count').textContent,'1/2');ui.$('reminder-alarm-next').click();assert.match(ui.$('reminder-alarm-owner').textContent,/Béla/);ui.$('reminder-alarm-done').click();await tick();assert.equal(saved.notes.find(n=>n.id==='b').reminders[0].done,true);assert.equal(saved.notes.find(n=>n.id==='a').reminders[0].done,false);
+ ui.$('note-reminders').querySelector('.reminder-text').click();ui.input('reminder-text','Javított szöveg');ui.submit('reminder-form');await tick();assert.equal(saved.notes.find(n=>n.id==='a').reminders[0].snoozedUntil,'2026-11-06T09:05:00.000Z');
+ ui.$('note-reminders').querySelector('.reminder-text').click();ui.$('reminder-alarm-enabled').checked=false;ui.$('reminder-alarm-enabled').dispatchEvent(new ui.dom.window.Event('change'));ui.submit('reminder-form');await tick();assert.equal('dueAt' in saved.notes.find(n=>n.id==='a').reminders[0],false);assert.equal('snoozedUntil' in saved.notes.find(n=>n.id==='a').reminders[0],false);assert.equal(ui.$('reminder-alarm-banner').hidden,true);
+ }finally{ui.dom.window.close();}
 });

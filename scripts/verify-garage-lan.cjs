@@ -17,7 +17,7 @@ async function main(){
   await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Startup timeout PC '+i)),15000);child.on('message',m=>{if(m.ready){clearTimeout(timer);resolve();}if(m.startupError){clearTimeout(timer);reject(Error(m.startupError));}});child.once('exit',code=>reject(Error('Early exit PC '+i+': '+code)));});
  }
  const form=async(child,mode,code)=>js(child,`
-  document.getElementById('garage-network-open').click();await new Promise(r=>setTimeout(r,120));
+  await WorkOrdersUI.showGarage();document.getElementById('garage-network-open').click();await new Promise(r=>setTimeout(r,120));
   const $=id=>document.getElementById(id);$('garage-network-mode').value=${JSON.stringify(mode)};$('garage-network-mode').dispatchEvent(new Event('change'));$('garage-network-port').value=${port};$('garage-network-host').value='127.0.0.1';$('garage-network-token').value=${JSON.stringify(code||'')};$('garage-network-form').requestSubmit();
   for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,100));if($('garage-network-result').textContent.startsWith('✓'))break;if($('garage-network-error').textContent)throw Error($('garage-network-error').textContent);}
   if(!$('garage-network-result').textContent.startsWith('✓'))throw Error('Configuration timeout');$('garage-network-cancel').click();await new Promise(r=>setTimeout(r,150));return notesAPI.garageNetworkStatus();`);

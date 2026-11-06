@@ -1,4 +1,4 @@
-TÖKI AUTÓ – KÖZÖS AUTÓNYILVÁNTARTÓ (1.9.2)
+TÖKI AUTÓ – KÖZÖS AUTÓNYILVÁNTARTÓ (1.10.0)
 
 FONTOS: csak az autónyilvántartó lesz közös.
 A jegyzetek, a napi bejegyzések, az autónkénti cikkszámok és a munkalapok
@@ -81,3 +81,8 @@ AUTÓBUBORÉKOK
 Kattints a névbuborékra, majd az autóbuborékra. Az adatlap középen nyílik meg,
 alvázszámmal, rendszámmal és az autó adataival. Sok autónál a Következő/Előző
 gombot használd. Az Escape visszalép az autólistára, a Bezárás vissza a nevekhez.
+
+EMLÉKEZTETŐK ÉS ÉBRESZTŐK
+A saját jegyzetekkel együtt ezek is gépenként külön maradnak, nem közösek.
+Indításkor a Jegyzetek nyílik meg; a központi autónyilvántartó szolgáltatása
+a háttérben ettől függetlenül elindul a korábban elmentett beállítás szerint.

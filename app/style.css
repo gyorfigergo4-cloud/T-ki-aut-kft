@@ -309,3 +309,17 @@ body:has(#garage-person-dialog[open]) #garage-view { overflow:hidden; }
 
 /* Keep the six item-entry controls on one horizontal line above the car selector. */
 #items-table input:not([type=checkbox]) { height:36px;line-height:16px; }
+/* Local reminder alarm in the header, independent of the shared car registry. */
+.reminder-alarm-slot { flex:1;min-width:0; }
+.reminder-alarm-banner { display:flex;align-items:center;gap:8px;min-height:54px;padding:7px 10px;border-radius:9px;border:2px solid #d01f32;background:#ffe0e3;color:#8f1020;animation:reminder-alarm-pulse 1.3s ease-in-out infinite; }
+.reminder-alarm-message { flex:1;min-width:0;display:grid;gap:4px; }
+.reminder-alarm-message strong { font-size:10px;letter-spacing:.6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.reminder-alarm-message span { font-size:12px;font-weight:650;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.reminder-alarm-banner > button { padding:8px;font-size:11px;background:white;border-color:#df9ca5;color:#8f1020;white-space:nowrap; }
+#reminder-alarm-pager { display:flex;gap:4px;align-items:center;font-size:10px; }
+#reminder-alarm-pager button { padding:5px 7px;color:#8f1020; }
+#reminder-edit .reminder-alarm-toggle { flex-direction:row;align-items:center;gap:8px; }
+#reminder-alarm-enabled { width:17px!important;height:17px;margin:0; }
+@keyframes reminder-alarm-pulse { 0%,100%{background:#ffe0e3;border-color:#d01f32;box-shadow:0 0 0 0 #d01f3222;}50%{background:#ff9da9;border-color:#b50c20;box-shadow:0 0 0 3px #d01f3222;} }
+@media(prefers-reduced-motion:reduce){.reminder-alarm-banner{animation:none;background:#ffc4cc;}}
+@media(max-width:1250px){body:has(.reminder-alarm-banner:not([hidden])) #status{display:none;}.reminder-alarm-banner{gap:5px;padding:6px;}.reminder-alarm-banner>button{font-size:10px;padding:7px 5px;}}

@@ -168,5 +168,4 @@
   }catch(error){$('garage-network-error').textContent=error.message;$('garage-network-result').textContent='';}
   finally{for(const control of $('garage-network-form').querySelectorAll('input,select,button'))control.disabled=false;setBusy(false);await refresh(true);}
  };
- window.WorkOrdersUI?.showGarage();
 })();

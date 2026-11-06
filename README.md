@@ -2,6 +2,16 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Jegyzetek kezdőlap és saját ébresztők · 1.10.0
+
+Indításkor a **Jegyzetek** felület nyílik meg, az autónyilvántartó a saját füléről továbbra is elérhető. Az emlékeztető szerkesztőjében az **Időzített ébresztő** pipával pontos helyi dátum és idő adható meg. Az esedékes, nem kész emlékeztető a felső fejléc közepén pirosan villog, az ügyfél nevével és a teendő szövegével. A **Kész** gomb készre jelöli; a **Szundi · 5 perc** a megnyomástól számított pontosan 300 000 ezredmásodperccel halasztja. Több esedékes teendő lapozható. A jelzés a Jegyzetek, Munkalapok és Autónyilvántartó fülön is látható.
+
+Az időpont és a szundi kizárólag az adott gép helyi `notes.json` fájljában, az emlékeztető opcionális `dueAt` és `snoozedUntil` ISO-időpontjaiban tárolódik. A régi, időpont nélküli teendők változatlanul használhatók. Szövegjavítás megőrzi a szundit; az időpont módosítása vagy az ébresztő kikapcsolása törli a korábbi szundit. A készre jelölt teendő nem riaszt újra. A közös autónyilvántartó adatfájljai és hálózati protokollja változatlan.
+
+Az ébresztő a **futó programban** jelez, a háttérben futó ablak időzítését sem lassítjuk le, és az esedékesség a tálca ablakjelzését is bekapcsolja. Kikapcsolt/alvó gépen vagy bezárt alkalmazásban nincs háttérszolgáltatás: az elmaradt ébresztő ébredéskor vagy a program következő indításakor megjelenik. Az ellenőrzés másodpercenként történik. A piros animáció csökkentett mozgást kérő rendszerbeállítás mellett folyamatos piros kiemelésre vált.
+
+Ellenőrzés: modell- és felülettesztek pontos határidőre, az ötperces szundira, kész jelölésre, több jelzésre, szerkesztésre, kikapcsolásra és helyi tárolásra. `node scripts/verify-reminder-alarms.cjs` valós Electronban ellenőrzi a Jegyzetek kezdőlapot, valóban lejáró időpontot, a felső sávot mindhárom fülön, a szundi mentését és újraindítását, a kész jelölés tartósságát és az egyéb adatfájlok változatlanságát. Az 5 perc leteltét az újraindítási próbában vezérelt órával szimulálja. Linuxon aktív `DISPLAY` szükséges. A négygépes megosztás integrációs próbája továbbra is külön futtatható.
+
 ## Jegyzetek: névsorrend és cikkszámok igazítása · 1.9.2
 
 A rendelési pipa kikapcsolt felirata **Nincs megrendelve** a jegyzetekben és a munkalapokon is. A napi névsorban a legújabban létrehozott név jelenik meg elöl, és az új név a mentett listába is az elejére kerül, a korábbi nevek mentett sorrendjét megtartva. Ez a gépek órájának eltérésétől is független. Régi jegyzet szerkesztése nem változtatja meg a létrehozási időt és a névsorrendet. A cikkszám, teli ár, kedvezmény, kedvezményes ár, darabszám és beszállító mező azonos magasságban, egy vonalban indul; az autóválasztó külön, a cikkszám alatt marad. A mezők igazítása a jelölőnégyzetek méretét nem változtatja meg.

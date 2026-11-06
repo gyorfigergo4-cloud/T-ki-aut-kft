@@ -1,7 +1,7 @@
 (function () {
   const $ = id => document.getElementById(id), Model = window.NoteReminders;
   const context = () => window.ReminderContext();
-  let editingNoteId = null, editingId = null, returnFilter = null;
+  let editingNoteId = null, editingId = null, returnFilter = null, alarmIndex = 0, alarmSignature = '', dueEntries = [];
   function change(noteId, transform) {
     try { return window.ReminderChange(noteId, transform); }
     catch (error) { $('reminders-error').textContent = error.message; return false; }
@@ -14,6 +14,7 @@
     $('reminder-edit-title').textContent = reminder ? 'Emlékeztető szerkesztése' : 'Új emlékeztető';
     $('reminder-customer').textContent = note.title || 'Új név';
     $('reminder-text').value = reminder?.text || ''; $('reminder-preset').value = '';
+    $('reminder-alarm-enabled').checked = !!reminder?.dueAt; $('reminder-alarm-time').value = Model.localInput(reminder?.dueAt); syncTimeInput();
     $('reminder-edit-error').textContent = ''; $('reminder-edit').showModal(); $('reminder-text').focus();
   }
   function finishEdit() {
@@ -29,7 +30,7 @@
     checkbox.onchange = () => { if (!change(entry.noteId, rows => rows.map(r => r.id === reminder.id ? { ...r, done: checkbox.checked } : r))) render(); };
     const content = document.createElement('div'); content.className = 'reminder-content';
     const text = document.createElement('button'); text.type = 'button'; text.className = 'reminder-text'; text.textContent = reminder.text; text.title = 'Emlékeztető szerkesztése'; text.onclick = () => edit(entry.noteId, reminder);
-    const detail = document.createElement('small'); detail.textContent = (global ? entry.title + (entry.day ? ' · ' + entry.day : '') + ' · ' : '') + (reminder.done ? 'Kész' : 'Nyitott teendő'); content.append(text, detail);
+    const detail = document.createElement('small'); detail.textContent = (global ? entry.title + (entry.day ? ' · ' + entry.day : '') + ' · ' : '') + (reminder.done ? 'Kész' : 'Nyitott teendő') + (reminder.dueAt ? ' · '+(reminder.snoozedUntil ? 'Szundi: ' : 'Ébresztő: ')+new Date(Model.alarmTime(reminder)).toLocaleString('hu-HU') : ''); content.append(text, detail);
     const actions = document.createElement('div'); actions.className = 'reminder-actions';
     if (global) {
       const go = document.createElement('button'); go.type = 'button'; go.textContent = 'Jegyzet megnyitása';
@@ -38,7 +39,10 @@
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'reminder-remove'; remove.textContent = '×'; remove.setAttribute('aria-label', 'Emlékeztető törlése: ' + reminder.text); remove.onclick = () => change(entry.noteId, rows => rows.filter(r => r.id !== reminder.id)); actions.append(remove);
     item.append(label, content, actions); return item;
   }
+  function syncTimeInput() { const enabled = $('reminder-alarm-enabled').checked; $('reminder-alarm-time-wrap').hidden = !enabled; $('reminder-alarm-time').disabled = !enabled; $('reminder-alarm-time').required = enabled; }
+  $('reminder-alarm-enabled').onchange = syncTimeInput;
   function render() {
+    renderAlarm();
     const data = context(), entries = Model.entries(data.notes), pending = entries.filter(entry => !entry.reminder.done);
     $('reminders-open').disabled = !data.loaded; $('reminders-count').textContent = String(pending.length);
     $('reminders-open').title = pending.length + ' nyitott emlékeztető';
@@ -70,12 +74,51 @@
       const changed = window.ReminderChange(editingNoteId, rows => {
         const previous = rows.find(r => r.id === editingId);
         const reminder = previous ? { ...previous, text } : { id: crypto.randomUUID(), text, done: false, createdAt: new Date().toISOString() };
+        if ($('reminder-alarm-enabled').checked) {
+          const dueAt = Model.parseLocal($('reminder-alarm-time').value);
+          if (dueAt !== previous?.dueAt) delete reminder.snoozedUntil; reminder.dueAt = dueAt;
+        } else { delete reminder.dueAt; delete reminder.snoozedUntil; }
         Model.validate([reminder]); return previous ? rows.map(r => r.id === previous.id ? reminder : r) : [...rows, reminder];
       });
       if (!changed) throw new Error('Előbb javítsd a jegyzet megjelölt mezőjét, majd mentsd az emlékeztetőt.');
       finishEdit();
     } catch (error) { $('reminder-edit-error').textContent = error.message; }
   };
-  window.RemindersUI = { render };
+  function syncAlarmSlot() {
+    const slot = document.querySelector('main:not([hidden]) .reminder-alarm-slot');
+    if (slot && $('reminder-alarm-banner').parentElement !== slot) slot.append($('reminder-alarm-banner'));
+  }
+  function renderAlarm(now = Date.now()) {
+    syncAlarmSlot();
+    const data = context(); dueEntries = data.loaded ? Model.due(data.notes, now) : [];
+    alarmIndex = Math.min(alarmIndex, Math.max(0, dueEntries.length-1));
+    const signature = JSON.stringify([dueEntries.map(e=>[e.noteId,e.title,e.reminder.id,e.reminder.text,Model.alarmTime(e.reminder)]),alarmIndex]);
+    if (signature === alarmSignature) return; alarmSignature = signature;
+    const banner = $('reminder-alarm-banner'); banner.hidden = !dueEntries.length;
+    window.notesAPI.notifyReminderAlarm?.(dueEntries.length > 0);
+    if (!dueEntries.length) return;
+    const entry = dueEntries[alarmIndex];
+    $('reminder-alarm-owner').textContent = 'ÉBRESZTŐ · '+entry.title;
+    $('reminder-alarm-text').textContent = entry.reminder.text;
+    $('reminder-alarm-text').title = entry.title+' · '+entry.reminder.text+' · '+new Date(Model.alarmTime(entry.reminder)).toLocaleString('hu-HU');
+    $('reminder-alarm-pager').hidden = dueEntries.length < 2; $('reminder-alarm-count').textContent = (alarmIndex+1)+'/'+dueEntries.length;
+  }
+  async function actOnAlarm(kind) {
+    if (document.body.inert) return;
+    const entry = dueEntries[alarmIndex]; if (!entry) return;
+    const changed = change(entry.noteId, rows => rows.map(r => r.id !== entry.reminder.id ? r : kind === 'done' ? { ...r, done: true } : Model.snooze(r)));
+    if (!changed) { window.NoteReviewUI.showError('Előbb javítsd a jegyzet megjelölt mezőjét. Az ébresztő addig aktív marad.'); return; }
+    try { await window.NotesFlush?.(); }
+    catch { window.NoteReviewUI.showError('Az ébresztő jelölésének mentése nem sikerült. A programot hagyd nyitva, és a mentési hiba elhárítása után próbáld újra.'); }
+  }
+  $('reminder-alarm-done').onclick = () => actOnAlarm('done');
+  $('reminder-alarm-snooze').onclick = () => actOnAlarm('snooze');
+  $('reminder-alarm-prev').onclick = () => { alarmIndex = (alarmIndex+dueEntries.length-1)%Math.max(1,dueEntries.length); renderAlarm(); };
+  $('reminder-alarm-next').onclick = () => { alarmIndex = (alarmIndex+1)%Math.max(1,dueEntries.length); renderAlarm(); };
+  const timer = setInterval(() => renderAlarm(), 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAlarm(); });
+  window.addEventListener('focus', () => renderAlarm());
+  window.addEventListener('pagehide', () => clearInterval(timer));
+  window.RemindersUI = { render, renderAlarm, syncAlarmSlot };
   render();
 })();
