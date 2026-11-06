@@ -1,0 +1,32 @@
+{
+  "scenario": "6000 synthetic local notes, 16 consecutive input events in one JS turn, complete save awaited; four unique full-text queries and one broad query",
+  "before": {
+    "notes": 6000,
+    "typingBlockedMs": 555.5,
+    "saveTotalMs": 2946,
+    "exactSearchMs": [
+      66.59999999962747,
+      73.09999999962747,
+      63.80000000074506,
+      62.79999999888241
+    ],
+    "broadSearchMs": 96.39999999850988,
+    "broadCards": 6000,
+    "saves": 16
+  },
+  "after": {
+    "notes": 6000,
+    "typingBlockedMs": 9,
+    "saveTotalMs": 249.2999999988824,
+    "exactSearchMs": [
+      37.40000000037253,
+      18,
+      14.699999999254942,
+      15.900000000372529
+    ],
+    "broadSearchMs": 4.599999999627471,
+    "broadCards": 80,
+    "saves": 1
+  },
+  "limits": "Linux Electron test environment; user-PC timings may differ. Broad results are fully available through pages of 80 instead of creating all cards at once."
+}

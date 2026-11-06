@@ -9,26 +9,38 @@ const today = localDay(new Date());
 let notes = [], years = [], days = [], loaded = false, selected = null, selectedDay = today;
 let activeYear = Number(today.slice(0, 4)), selectedMonth = today.slice(0, 7);
 const openedYears = new Set(), openedMonths = new Set(), saveErrors = new Set();
-let queue = Promise.resolve(), revision = 0, pending = 0, appliedSearch = '';
+let queue = Promise.resolve(), revision = 0, pending = 0, appliedSearch = '', drainingSaves = false, folderSignature = null, brandOptionsDirty = true, searchPage = 0;
+const stagedSaves = new Map(), searchCache = new WeakMap(), SEARCH_PAGE_SIZE = 80;
 const current = () => notes.find(note => note.id === selected);
-function touchNote(note) { note.updated = new Date().toISOString(); }
+function touchNote(note) { note.updated = new Date().toISOString(); searchCache.delete(note); }
 const fold = value => value.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const dateLabel = day => new Date(day + 'T12:00:00').toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
 const money = value => new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 2 }).format(value);
 const archiveData = () => ({ years: [...years], days: [...days] });
+// Keep only the newest pending snapshot per file while a save is running.
+// No artificial delay: the first write starts in the next microtask.
 function queueSave(target, value, writer) {
-  const snapshot = JSON.parse(JSON.stringify(value)), version = ++revision;
-  pending++; $('status').textContent = 'Mentés…';
-  queue = queue.catch(() => {}).then(() => writer(snapshot)).then(() => {
-    saveErrors.delete(target);
-    if (version === revision) $('status').textContent = saveErrors.size ? 'A mentés nem sikerült. Készíts biztonsági mentést!' : '✓ Minden változás mentve';
-  }).catch(() => {
-    saveErrors.add(target); $('status').textContent = 'A mentés nem sikerült. Készíts biztonsági mentést!';
-  }).finally(() => { pending--; });
+  if (!stagedSaves.has(target)) pending++;
+  stagedSaves.set(target, { value, writer, version: ++revision });
+  $('status').textContent = 'Mentés…';
+  if (!drainingSaves) { drainingSaves = true; queue = queue.catch(() => {}).then(drainSaves); }
+}
+async function drainSaves() {
+  try {
+    while (stagedSaves.size) {
+      const [target, job] = stagedSaves.entries().next().value; stagedSaves.delete(target);
+      try {
+        const snapshot = typeof structuredClone === 'function' ? structuredClone(job.value) : JSON.parse(JSON.stringify(job.value));
+        await job.writer(snapshot); saveErrors.delete(target);
+        if (job.version === revision) $('status').textContent = saveErrors.size ? 'A mentés nem sikerült. Készíts biztonsági mentést!' : '✓ Minden változás mentve';
+      } catch { saveErrors.add(target); $('status').textContent = 'A mentés nem sikerült. Készíts biztonsági mentést!'; }
+      finally { pending--; }
+    }
+  } finally { drainingSaves = false; }
 }
 const persistNotes = () => queueSave('notes', notes, data => window.notesAPI.save(data));
 const persistArchive = () => queueSave('archive', archiveData(), data => window.notesAPI.saveArchive(data));
-function clearSearch() { $('search').value = ''; appliedSearch = ''; $('clear').hidden = true; }
+function clearSearch() { searchPage = 0; $('search').value = ''; appliedSearch = ''; $('clear').hidden = true; }
 function renderPayment(note = current()) {
   const input = $('note-paid'); input.disabled = !note;
   const state = note ? Items.paymentState(note.items, note.paid) : { paid: false, partial: false, paidCount: 0, total: 0 };
@@ -83,6 +95,7 @@ function selectVehicle(note, id) {
   renderVehicleTabs(note); renderItems(note); metadata(); return true;
 }
 function renderBrandOptions() {
+  if (!brandOptionsDirty) return; brandOptionsDirty = false;
   const names = new Set(Vehicles.brands);
   for (const note of notes) for (const row of Vehicles.get(note)) if (row.brand.trim()) names.add(row.brand.trim());
   $('car-brands').replaceChildren();
@@ -110,14 +123,14 @@ function renderVehicles(note) {
       }
       input.onfocus = () => { if (note.activeVehicleId !== vehicle.id) selectVehicle(note, vehicle.id); };
       input.oninput = save;
-      if (field === 'brand') input.onchange = () => { input.value = Vehicles.normalizeBrand(input.value); save(); renderBrandOptions(); };
+      if (field === 'brand') input.onchange = () => { brandOptionsDirty = true; input.value = Vehicles.normalizeBrand(input.value); save(); renderBrandOptions(); };
       label.append(input); row.append(label);
     }
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'remove-vehicle'; remove.textContent = '×'; remove.setAttribute('aria-label', (index + 1) + '. jármű törlése');
     remove.onclick = () => {
       const ownInvalid = [...row.querySelectorAll('input')].filter(input => invalidInputs.has(input)); for (const input of ownInvalid) invalidInputs.delete(input);
       if (!validInputs()) { for (const input of ownInvalid) invalidInputs.add(input); return; }
-      const moved = Vehicles.remove(note, vehicle.id); touchNote(note); persistNotes(); renderVehicles(note); renderItems(note); renderList(); metadata(); if (moved) $('vehicle-error').textContent = 'A tételek megmaradtak a Hozzárendelés nélkül listában.';
+      brandOptionsDirty = true; const moved = Vehicles.remove(note, vehicle.id); touchNote(note); persistNotes(); renderVehicles(note); renderItems(note); renderList(); metadata(); if (moved) $('vehicle-error').textContent = 'A tételek megmaradtak a Hozzárendelés nélkül listában.';
     };
     row.append(remove); $('vehicles-list').append(row);
   });
@@ -133,10 +146,13 @@ function setDayContext(day) {
   selectedDay = day; selectedMonth = day.slice(0, 7); activeYear = Number(day.slice(0, 4));
   openedYears.add(activeYear); openedMonths.add(selectedMonth);
 }
+function searchableText(note) {
+  if (!searchCache.has(note)) searchCache.set(note, fold(fields.map(field => note[field]).join(' ') + ' ' + (note.reminders || []).map(r => r.text).join(' ') + ' ' + Vehicles.searchText(note) + ' ' + note.vin + ' ' + NoteStatuses.get(note).label + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')));
+  return searchCache.get(note);
+}
 function visibleNotes() {
   const query = fold($('search').value.trim());
-  return notes.filter(note => query ? fold(fields.map(field => note[field]).join(' ') + ' ' + (note.reminders || []).map(reminder => reminder.text).join(' ') + ' ' + Vehicles.searchText(note) + ' ' + note.vin + ' ' + NoteStatuses.get(note).label + ' ' + note.day + ' ' + note.part + ' ' + note.items.map(item => [item.partNumber, item.description || '', item.supplier, item.fullPrice, item.discountPercent, item.discountedPrice, item.quantity, Items.order(item).ordered ? 'megrendelve rendelve' : '', Items.order(item).orderedAt].join(' ')).join(' ')).includes(query) : note.day === selectedDay)
-    .sort((a, b) => b.day.localeCompare(a.day));
+  return notes.filter(note => query ? searchableText(note).includes(query) : note.day === selectedDay).sort((a,b) => b.day.localeCompare(a.day));
 }
 function openDay(day) { return navigate(() => {
   clearSearch(); setDayContext(day);
@@ -155,10 +171,13 @@ function folderButton(label, type, badge, expanded) {
   return button;
 }
 function renderFolders() {
+  const signature = JSON.stringify([years,days,[...openedYears],[...openedMonths],activeYear,selectedMonth,selectedDay,notes.length]);
+  if (signature === folderSignature) return; folderSignature = signature;
+  const counts = new Map(); for (const note of notes) for (const key of [note.day,note.day.slice(0,7),note.day.slice(0,4)]) counts.set(key,(counts.get(key)||0)+1);
   const root = $('folders'); root.replaceChildren();
   for (const year of years) {
     const yearKey = String(year), open = openedYears.has(year);
-    const yearButton = folderButton(yearKey, 'year', notes.filter(note => note.day.startsWith(yearKey + '-')).length, open);
+    const yearButton = folderButton(yearKey, 'year', counts.get(yearKey) || 0, open);
     yearButton.dataset.year = yearKey;
     yearButton.onclick = () => navigate(() => {
       open ? openedYears.delete(year) : openedYears.add(year);
@@ -169,7 +188,7 @@ function renderFolders() {
     const monthGroup = document.createElement('div'); monthGroup.className = 'months';
     months.forEach((month, index) => {
       const key = yearKey + '-' + String(index + 1).padStart(2, '0'), expanded = openedMonths.has(key);
-      const monthButton = folderButton(month, 'month', notes.filter(note => note.day.startsWith(key + '-')).length, expanded);
+      const monthButton = folderButton(month, 'month', counts.get(key) || 0, expanded);
       monthButton.dataset.month = key;
       if (key === selectedMonth) monthButton.classList.add('current');
       monthButton.onclick = () => navigate(() => {
@@ -180,7 +199,7 @@ function renderFolders() {
       if (!expanded) return;
       const dayGroup = document.createElement('div'); dayGroup.className = 'days';
       for (const day of days.filter(day => day.startsWith(key + '-')).sort()) {
-        const dayButton = folderButton(new Date(day + 'T12:00:00').toLocaleDateString('hu-HU', { day: '2-digit', weekday: 'long' }), 'day', notes.filter(note => note.day === day).length);
+        const dayButton = folderButton(new Date(day + 'T12:00:00').toLocaleDateString('hu-HU', { day: '2-digit', weekday: 'long' }), 'day', counts.get(day) || 0);
         dayButton.dataset.day = day; dayButton.setAttribute('aria-current', String(day === selectedDay));
         if (day === selectedDay) dayButton.classList.add('active');
         dayButton.onclick = () => openDay(day); dayGroup.append(dayButton);
@@ -201,7 +220,9 @@ function renderList() {
   $('day-description').textContent = query ? visible.length + ' találat · keresés minden évben' : selectedDay ? visible.length + ' név / bejegyzés ezen a napon' : 'Válassz egy napot a mappákból, vagy adj hozzá egy újat.';
   $('new').disabled = !loaded || !selectedDay;
   $('list').replaceChildren();
-  for (const note of visible) {
+  const pages = query ? Math.max(1,Math.ceil(visible.length/SEARCH_PAGE_SIZE)) : 1; searchPage = Math.min(searchPage,pages-1);
+  $('notes-search-pages').hidden = !query || pages===1; $('notes-search-page').textContent = (searchPage+1)+' / '+pages+'. oldal'; $('notes-search-prev').disabled = searchPage===0; $('notes-search-next').disabled = searchPage>=pages-1;
+  for (const note of query ? visible.slice(searchPage*SEARCH_PAGE_SIZE,(searchPage+1)*SEARCH_PAGE_SIZE) : visible) {
     const button = document.createElement('button'); button.className = 'note' + (note.id === selected ? ' active' : ''); button.dataset.note = note.id;
     const workflowStatus = NoteStatuses.get(note); button.dataset.workflowStatus = workflowStatus.id;
     const title = document.createElement('strong'); title.textContent = note.title || 'Új név';
@@ -215,6 +236,8 @@ function renderList() {
     $('list').append(empty);
   }
 }
+function changeSearchPage(delta) { return navigate(() => { const visible = visibleNotes(); searchPage = Math.max(0,Math.min(Math.ceil(visible.length/SEARCH_PAGE_SIZE)-1,searchPage+delta)); selected = visible[searchPage*SEARCH_PAGE_SIZE]?.id ?? null; if (current()) setDayContext(current().day); render(); }); }
+$('notes-search-prev').onclick = () => changeSearchPage(-1); $('notes-search-next').onclick = () => changeSearchPage(1);
 function metadata() {
   const note = current(); if (!note) return;
   $('date').textContent = 'Rögzítve: ' + new Date(note.created).toLocaleString('hu-HU') + ' · Módosítva: ' + new Date(note.updated).toLocaleString('hu-HU');
@@ -404,14 +427,14 @@ $('search').oninput = () => {
   const move = !visible.some(note => note.id === selected);
   if (move) $('search').value = appliedSearch;
   return afterCheck(move ? allowNavigation() : true, () => {
-    $('search').value = query; appliedSearch = query;
+    $('search').value = query; appliedSearch = query; searchPage = move ? 0 : Math.max(0,Math.floor(visible.findIndex(n=>n.id===selected)/SEARCH_PAGE_SIZE));
     if (move) selected = visible[0]?.id ?? null;
     if (current()) setDayContext(current().day); render();
   });
 };
 $('clear').onclick = () => navigate(() => { clearSearch(); selected = notes.find(note => note.day === selectedDay)?.id ?? null; render(); });
 $('delete').onclick = () => $('confirm').showModal(); $('cancel').onclick = () => $('confirm').close();
-$('remove').onclick = () => { invalidInputs.clear(); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
+$('remove').onclick = () => { brandOptionsDirty = true; invalidInputs.clear(); notes = notes.filter(note => note.id !== selected); selected = visibleNotes()[0]?.id ?? null; if (current()) setDayContext(current().day); $('confirm').close(); persistArchive(); persistNotes(); render(); };
 $('export').onclick = async () => {
   if (!loaded) return;
   if (window.WorkOrdersUI) { try { await window.WorkOrdersUI.flush(); } catch { return; } }
@@ -433,6 +456,7 @@ window.NotesFlushForClose = async () => {
 };
 function loadData(preferredNoteId) {
 return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data, archive]) => {
+  folderSignature = null; brandOptionsDirty = true;
   ({ notes, years, days } = normalize(data, archive)); loaded = true;
   const preferred = notes.find(note => note.id === preferredNoteId);
   const initialDay = preferred?.day || (days.includes(today) ? today : [...days].sort().at(-1) ?? today);

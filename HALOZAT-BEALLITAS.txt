@@ -1,4 +1,4 @@
-TÖKI AUTÓ – KÖZÖS AUTÓNYILVÁNTARTÓ (1.10.0)
+TÖKI AUTÓ – KÖZÖS AUTÓNYILVÁNTARTÓ (1.10.1)
 
 FONTOS: csak az autónyilvántartó lesz közös.
 A jegyzetek, a napi bejegyzések, az autónkénti cikkszámok és a munkalapok

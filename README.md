@@ -2,6 +2,18 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Gyorsabb gépelés és keresés · 1.10.1
+
+A jegyzetek mentési sora az ugyanahhoz az adatfájlhoz várakozó módosítások közül a legfrissebbet írja ki, a már folyamatban lévő mentés megvárása után. A felület nem készít teljes JSON-másolatot minden leütésnél: pillanatfelvétel csak a tényleges kiírás előtt készül, natív másolással. Nincs mesterséges mentési késleltetés. A bezárás, az importálás és az ébresztő kezelése továbbra is megvárja a teljes mentési sort, és hibánál a program nem hagyja jóvá a bezárást. A fájlformátum, a helyi adatkönyvtár, az atomi fájlcsere és a biztonsági másolatok megmaradtak.
+
+A kereső a már feldolgozott jegyzetek ékezetfüggetlen keresőszövegét újrahasználja; egy jegyzet módosítása csak annak gyorsítótárát érvényteleníti. A mappaszámlálók egy menetben készülnek, az ugyanazt mutató mappafát nem építjük újra minden keresőleütésnél. A márkalista csak szükség esetén épül újra. Nagy keresési találati listánál egyszerre 80 kártya jelenik meg, **Előző/Következő találatok** gombbal; minden találat megmarad és elérhető. A napi névsor működése változatlan.
+
+A helyi tároló a régi tétellista előtti migrációs mentés szükségességét nem ellenőrzi minden alkalommal teljes fájlbeolvasással. A megjegyzett állapotot az aktuális fájl azonosítója, mérete és módosítási ideje védi; kívülről visszaállított fájlnál újra ellenőrzi, kell-e migrációs biztonsági mentés. A tárolandó adatokat továbbra is minden mentéskor validálja.
+
+A `node scripts/benchmark-notes.cjs` szintetikus 6000 jegyzeten futtatható aktív képernyővel. A mért próba 16 gyors beviteli eseményt egy JavaScript-körben ad át, majd megvárja az összes mentést. Azonos tesztkörnyezetben a felületet közvetlenül foglaló szakasz 555,5 ms-ról 9 ms-ra, a teljes próba mentéssel 2946 ms-ról 249,3 ms-ra csökkent; 16 teljes kiírás helyett 1 történt. A négy egyedi keresés ideje 63–73 ms-ról 15–37 ms-ra, a soktalálatos keresés 96,4 ms-ról 4,6 ms-ra csökkent. Ezek tesztértékek, nem minden gépre garantált sebességek. A mérési adatok: [downloads/sebessegmeres.json](downloads/sebessegmeres.json).
+
+A funkciótesztek külön ellenőrzik a folyamatban lévő és az utolsó mentési állapot sértetlenségét, a bezárás várakozását, a hibakezelést, a kereső frissülését szerkesztés után, az összes lapozott találat elérhetőségét, valamint a kívülről visszaállított régi jegyzet migrációs másolatát. A jegyzetek és ébresztők továbbra is gépenként külön maradnak, csak az autónyilvántartó közös.
+
 ## Jegyzetek kezdőlap és saját ébresztők · 1.10.0
 
 Indításkor a **Jegyzetek** felület nyílik meg, az autónyilvántartó a saját füléről továbbra is elérhető. Az emlékeztető szerkesztőjében az **Időzített ébresztő** pipával pontos helyi dátum és idő adható meg. Az esedékes, nem kész emlékeztető a felső fejléc közepén pirosan villog, az ügyfél nevével és a teendő szövegével. A **Kész** gomb készre jelöli; a **Szundi · 5 perc** a megnyomástól számított pontosan 300 000 ezredmásodperccel halasztja. Több esedékes teendő lapozható. A jelzés a Jegyzetek, Munkalapok és Autónyilvántartó fülön is látható.

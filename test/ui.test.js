@@ -327,3 +327,16 @@ test('több lejárt ébresztő lapozható, csak a kiválasztott lesz kész; szö
  ui.$('note-reminders').querySelector('.reminder-text').click();ui.$('reminder-alarm-enabled').checked=false;ui.$('reminder-alarm-enabled').dispatchEvent(new ui.dom.window.Event('change'));ui.submit('reminder-form');await tick();assert.equal('dueAt' in saved.notes.find(n=>n.id==='a').reminders[0],false);assert.equal('snoozedUntil' in saved.notes.find(n=>n.id==='a').reminders[0],false);assert.equal(ui.$('reminder-alarm-banner').hidden,true);
  }finally{ui.dom.window.close();}
 });
+test('gyors gépelés mentése összevonható, de a folyamatban lévő és a legutolsó állapot is sértetlen',async()=>{
+ const saved={notes:[{id:'n',title:'Ügyfél',body:'Eredeti',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'}],archive:{years:[2026],days:['2026-11-06']}};const ui=await openUI(saved);try{
+ let writes=0,release;const received=[];ui.dom.window.notesAPI.save=async rows=>{writes++;received.push(copy(rows));if(writes===1)await new Promise(r=>{release=r;});saved.notes=copy(rows);};
+ for(let i=0;i<20;i++)ui.input('body','Gépelés '+i);await tick();assert.equal(writes,1);assert.equal(received[0][0].body,'Gépelés 19');
+ for(let i=20;i<40;i++)ui.input('body','Gépelés '+i);await tick();assert.equal(writes,1);assert.equal(received[0][0].body,'Gépelés 19');let flushed=false;const waiting=ui.dom.window.NotesFlushForClose().then(()=>{flushed=true;});await tick();assert.equal(flushed,false);release();await waiting;assert.equal(writes,2);assert.equal(saved.notes[0].body,'Gépelés 39');assert.equal(received[1][0].body,'Gépelés 39');
+ }finally{ui.dom.window.close();}
+});
+test('nagy keresési lista lapozható, minden találat elérhető, szerkesztés után a kereső nem ad régi eredményt',async()=>{
+ const saved={notes:Array.from({length:185},(_,i)=>({id:'n'+i,title:'Minta ügyfél '+i,body:'Közös keresőszó',day:'2026-11-06',updated:'2026-11-06T08:00:00Z'})),archive:{years:[2026],days:['2026-11-06']}};const ui=await openUI(saved);try{
+ ui.input('search','Közös keresőszó');assert.equal(ui.cards().length,80);assert.match(ui.$('day-description').textContent,/185 találat/);assert.equal(ui.$('notes-search-pages').hidden,false);const seen=new Set(ui.cards().map(c=>c.dataset.note));ui.$('notes-search-next').click();ui.cards().forEach(c=>seen.add(c.dataset.note));ui.$('notes-search-next').click();ui.cards().forEach(c=>seen.add(c.dataset.note));assert.equal(seen.size,185);assert.equal(ui.cards().length,25);assert.equal(ui.$('notes-search-next').disabled,true);
+ ui.input('search','Minta ügyfél 184');assert.equal(ui.cards().length,1);ui.input('title','Új egyedi név');await tick();assert.equal(ui.cards().length,0);ui.input('search','Új egyedi név');assert.equal(ui.cards().length,1);assert.equal(ui.cards()[0].dataset.note,'n184');ui.$('clear').click();assert.equal(ui.$('notes-search-pages').hidden,true);
+ }finally{ui.dom.window.close();}
+});

@@ -1,3 +1,6 @@
+ÚJ: gyorsabb gépelés és keresés nagy jegyzetállománynál. Sok keresési találatnál
+az Előző/Következő találatok gombbal lapozhatsz. Minden adat megmarad.
+
 ÚJ: indításkor Jegyzetek. Az emlékeztetők pontos időre állíthatók,
 a felső piros jelzés Kész vagy Szundi (5 perc) gombbal kezelhető.
 Az ébresztők gépenként külön maradnak. A programnak futnia kell a jelzéshez;
@@ -7,11 +10,11 @@ bezárás alatt lejárt teendő a következő indításkor megjelenik.
 
 ÚJ: névbuborék → autóbuborék → középen megnyíló adatlap, lefelé görgetés nélkül.
 
-ÚJ: KÖZÖS AUTÓNYILVÁNTARTÓ (1.10.0)
+ÚJ: KÖZÖS AUTÓNYILVÁNTARTÓ (1.10.1)
 A jegyzetek és munkalapok továbbra is gépenként külön maradnak.
 A központ és a másik három gép beállítását a HALOZAT-BEALLITAS.txt írja le.
 
-TÖKI AUTÓ KFT. – JEGYZETEK ÉS AUTÓNYILVÁNTARTÓ 1.10.0
+TÖKI AUTÓ KFT. – JEGYZETEK ÉS AUTÓNYILVÁNTARTÓ 1.10.1
 
 FRISSÍTÉS ESETÉN: előbb zárd be a régi TokiAuto appot.
 A meglévő jegyzeteid megmaradnak, újra betölteni őket nem kell.

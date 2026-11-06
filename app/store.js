@@ -5,6 +5,10 @@ const lineItems = require('./items');
 const noteStatuses = require('./note-status');
 const vehicles = require('./vehicles');
 const reminders = require('./reminders');
+const migrationCache = new Map();
+function stamp(file) { const s=fs.statSync(file); return s.ino+':'+s.size+':'+s.mtimeMs; }
+function rememberMigration(file, notes) { migrationCache.set(path.resolve(file), { stamp:stamp(file), legacy:notes.some(n=>n.items===undefined) }); }
+function hasLegacyItems(file) { const known=migrationCache.get(path.resolve(file)); return known && known.stamp===stamp(file) ? known.legacy : read(file).some(n=>n.items===undefined); }
 function validate(notes) {
   if (!Array.isArray(notes) || notes.some(n => !n || typeof n.id !== 'string' || typeof n.title !== 'string' || typeof n.body !== 'string' || typeof n.updated !== 'string')) throw new Error('Sérült jegyzetadatok');
   for (const note of notes) {
@@ -28,18 +32,18 @@ function validate(notes) {
 }
 function read(file) {
   if (!fs.existsSync(file)) return [];
-  return validate(JSON.parse(fs.readFileSync(file, 'utf8')));
+  const notes=validate(JSON.parse(fs.readFileSync(file, 'utf8')));rememberMigration(file,notes);return notes;
 }
 function write(file, notes) {
   validate(notes);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const migrationBackup = file + '.before-items-v1.json';
-  if (fs.existsSync(file) && !fs.existsSync(migrationBackup) && notes.some(note => Array.isArray(note.items)) && read(file).some(note => note.items === undefined)) {
+  if (fs.existsSync(file) && !fs.existsSync(migrationBackup) && notes.some(note => Array.isArray(note.items)) && hasLegacyItems(file)) {
     fs.copyFileSync(file, migrationBackup, fs.constants.COPYFILE_EXCL);
   }
   const temp = file + '.tmp';
   fs.writeFileSync(temp, JSON.stringify(notes), 'utf8');
   if (fs.existsSync(file)) fs.copyFileSync(file, file + '.bak');
-  fs.renameSync(temp, file);
+  fs.renameSync(temp, file);rememberMigration(file,notes);
 }
 module.exports = { read, write, validate };

@@ -323,3 +323,6 @@ body:has(#garage-person-dialog[open]) #garage-view { overflow:hidden; }
 @keyframes reminder-alarm-pulse { 0%,100%{background:#ffe0e3;border-color:#d01f32;box-shadow:0 0 0 0 #d01f3222;}50%{background:#ff9da9;border-color:#b50c20;box-shadow:0 0 0 3px #d01f3222;} }
 @media(prefers-reduced-motion:reduce){.reminder-alarm-banner{animation:none;background:#ffc4cc;}}
 @media(max-width:1250px){body:has(.reminder-alarm-banner:not([hidden])) #status{display:none;}.reminder-alarm-banner{gap:5px;padding:6px;}.reminder-alarm-banner>button{font-size:10px;padding:7px 5px;}}
+
+.notes-search-pages { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;color:var(--muted);font-size:11px; }
+.notes-search-pages button { padding:6px 10px;font-size:11px; }

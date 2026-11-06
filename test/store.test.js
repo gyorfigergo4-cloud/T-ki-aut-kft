@@ -32,3 +32,9 @@ test('a telefonszám formázással együtt megmarad, hibás típus nem írja fel
  try{const file=path.join(dir,'notes.json'),note={id:'phone',title:'Minta ügyfél',body:'Eredeti szöveg',updated:'2026-11-05T08:00:00Z',phone:'+36 30 123 4567 / 12'};store.write(file,[note]);assert.deepEqual(store.read(file),[note]);const before=fs.readFileSync(file);assert.throws(()=>store.write(file,[{...note,phone:123}]));assert.ok(before.equals(fs.readFileSync(file)));}
  finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('a gyors migrációellenőrzés külső visszaállítás után is megőrzi a régi jegyzet mentését',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'toki-migration-cache-')),file=path.join(dir,'notes.json');
+ try{const modern=[{id:'n',title:'Mai',body:'',updated:'2026-11-06T08:00:00Z',items:[]}];store.write(file,modern);store.read(file);store.write(file,modern);assert.equal(fs.existsSync(file+'.before-items-v1.json'),false);
+ const old=[{id:'n',title:'Visszaállított régi jegyzet',body:'Megőrzendő eredeti szöveg',updated:'2024-01-01T08:00:00Z'}];const bytes=JSON.stringify(old);fs.writeFileSync(file,bytes);store.write(file,modern);assert.equal(fs.readFileSync(file+'.before-items-v1.json','utf8'),bytes);assert.deepEqual(store.read(file),modern);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

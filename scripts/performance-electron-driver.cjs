@@ -1,0 +1,4 @@
+const {app,ipcMain}=require('electron');const root=require('node:path').resolve(__dirname,'..');let win,saves=0;app.setPath('userData',process.env.TOKI_GUI_DATA);
+const handle=ipcMain.handle.bind(ipcMain);ipcMain.handle=(name,fn)=>handle(name,(...args)=>{if(name==='save')saves++;return fn(...args);});
+app.on('browser-window-created',(_,w)=>{win=w;w.webContents.once('did-finish-load',async()=>{try{await w.webContents.executeJavaScript('GarageUI.ready');process.send({ready:true});}catch(e){process.send({error:e.message});}});});
+process.on('message',async m=>{try{if(m.action==='exit'){app.exit(0);return;}if(m.action==='stats'){process.send({id:m.id,result:{saves}});return;}const result=await win.webContents.executeJavaScript(m.script);process.send({id:m.id,result});}catch(e){process.send({id:m.id,error:e.message});}});require(root+'/app/main.js');
