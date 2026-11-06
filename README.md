@@ -2,6 +2,10 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Kiválasztott autó adatmezői · 1.12.1
+
+A jegyzetekben minden felső autóbuborék megmarad; az alvázszám és márka mezői közül csak a kiválasztott autó sora látható. A többi autó adatai a memóriában és mentésben változatlanul megmaradnak. Új autó hozzáadásakor annak sora nyílik meg; törlés után a következő kiválasztott autóé. A hozzárendelés nélküli tételeknél nincs kiválasztott alvázszámsor. A kézi/óránkénti mentés és a hálózati autónyilvántartó változatlan.
+
 ## Kézi és óránkénti mentés · 1.12.0
 
 A jegyzetek és munkalapok szerkesztése csak a memóriában jelöli a módosításokat; gépelés és lapváltás nem írja ki őket. A fejléc **Mentés · Ctrl+S** gombja, a Ctrl+S, az óránkénti időzítő és a jóváhagyott normál bezárás menti a legutolsó állapotot. A tiszta állapot óránként sem indít fölösleges kiírást. Sikertelen mentés újrapróbálható, hiba esetén a bezárás nem engedélyezett. Váratlan leálláskor akár egyórányi nem mentett munka elveszhet: fontos javítás után használj kézi mentést.

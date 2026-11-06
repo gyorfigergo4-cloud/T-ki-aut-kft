@@ -1,3 +1,7 @@
+ÚJ · 1.12.1: a felső autóbuborékok megmaradnak, alattuk csak a kiválasztott
+autó alvázszáma és márkája látszik. Másik autóhoz kattints a buborékjára.
+Az elrejtett autók adatai megmaradnak. A kézi/óránkénti mentés változatlan.
+
 ÚJ · 1.12.0: KÉZI ÉS ÓRÁNKÉNTI MENTÉS
 Gépelés közben a jegyzetek és munkalapok nem indítanak lemezre mentést.
 Mentés: fent a Mentés gombbal vagy Ctrl+S billentyűvel.

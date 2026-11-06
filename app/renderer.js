@@ -101,7 +101,10 @@ function renderVehicleTabs(note) {
     const count = document.createElement('small'); count.textContent = Vehicles.itemsFor(note, choice.id).filter(Items.isActive).length + ' tétel';
     button.append(name, count); button.onclick = () => selectVehicle(note, choice.id); $('vehicle-tabs').append(button);
   }
-  for (const row of $('vehicles-list').children) row.classList.toggle('is-selected', row.dataset.vehicleId === note.activeVehicleId);
+  for (const row of $('vehicles-list').children) {
+    const selected = row.dataset.vehicleId === note.activeVehicleId;
+    row.hidden = !selected; row.classList.toggle('is-selected', selected);
+  }
   const vehicle = note.vehicles.find(row => row.id === note.activeVehicleId);
   $('vehicle-items-context').textContent = vehicle ? 'Kiválasztott autó: ' + Vehicles.label(vehicle, note.vehicles.indexOf(vehicle)) : 'Hozzárendelés nélküli tételek – a sor Autó mezőjében választhatsz alvázszámot.';
   $('note-to-wo').textContent = vehicle ? 'Munkalap – kiválasztott autó' : 'Munkalap – közös tételek';

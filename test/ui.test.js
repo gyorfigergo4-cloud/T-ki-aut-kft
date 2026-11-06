@@ -375,3 +375,17 @@ test('az óránkénti időzítő csak a módosításokat menti; bezáráskor az 
  ui.input('body','Bezárás előtti utolsó betű');await tick(false);assert.equal(writes,1);await ui.requestClose('hourly-close');assert.equal(saved.notes[0].body,'Bezárás előtti utolsó betű');assert.equal(ui.closeResults.at(-1).approved,true);
  }finally{ui.dom.window.close();}
 });
+
+
+test('autóbuborék váltáskor csak a kiválasztott alvázszám látszik; új autó, törlés és újranyitás megőrzi a többit',async()=>{
+ const saved={notes:[{id:'n',title:'Minta ügyfél',body:'Saját jegyzet',day:'2026-11-06',updated:'2026-11-06T08:00:00Z',vehicles:[{id:'s',vin:'SUZUKI-VIN',brand:'Suzuki'},{id:'o',vin:'OPEL-VIN',brand:'Opel'},{id:'h',vin:'HYUNDAI-VIN',brand:'Hyundai'}],activeVehicleId:'h',items:[]}],archive:{years:[2026],days:['2026-11-06']}};
+ let ui=await openUI(saved);
+ const shown=()=>[...ui.$('vehicles-list').children].filter(row=>!row.hidden);
+ const select=id=>ui.$('vehicle-tabs').querySelector('[data-vehicle-id="'+id+'"]').click();
+ assert.equal(ui.$('vehicle-tabs').children.length,3);assert.equal(shown().length,1);assert.equal(shown()[0].querySelector('input').value,'HYUNDAI-VIN');
+ for(const [id,vin] of [['s','SUZUKI-VIN'],['o','OPEL-VIN'],['h','HYUNDAI-VIN']]){select(id);assert.equal(shown().length,1);assert.equal(shown()[0].dataset.vehicleId,id);assert.equal(shown()[0].querySelector('input').value,vin);assert.equal(ui.$('vehicle-tabs').children.length,3);}
+ ui.$('add-vehicle').click();assert.equal(shown().length,1);assert.equal(shown()[0],ui.$('vehicles-list').lastElementChild);
+ shown()[0].querySelector('.remove-vehicle').click();assert.equal(shown().length,0);assert.equal(ui.$('vehicle-tabs').children.length,4);assert.equal(ui.$('vehicle-tabs').querySelector('[aria-selected=true]').dataset.vehicleId,'');
+ select('o');await ui.dom.window.NotesFlush();ui.dom.window.close();ui=await openUI(saved);
+ assert.equal([...ui.$('vehicles-list').children].filter(row=>!row.hidden)[0].dataset.vehicleId,'o');assert.deepEqual(saved.notes[0].vehicles.map(v=>v.vin),['SUZUKI-VIN','OPEL-VIN','HYUNDAI-VIN']);assert.equal(saved.notes[0].body,'Saját jegyzet');ui.dom.window.close();
+});
