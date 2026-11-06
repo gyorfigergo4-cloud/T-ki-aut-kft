@@ -1,13 +1,13 @@
 {
   "product": "TokiAuto",
-  "version": "1.12.2",
-  "sha256": "35322367ca762970c76c8cee4b456d24d4e035d2514ad6f4be860f177e082e3d",
-  "exeSha256": "2e63bef87045c738cdef8ccd65d3419b9e0e602b5602025c4fda9fcc5bf0e25e",
+  "version": "1.13.0",
+  "sha256": "4eb03cae17830b49d66ef17b1e4a9a58db2d7c2c6b73163bce23827b221ba73a",
+  "exeSha256": "754a45fa75c05f5b2d9f69c8593fbd1eaa9bb0aaec83c3a25ac4c05edb75def4",
   "parts": [
     {
       "file": "TokiAuto.part01",
       "size": 41943040,
-      "sha256": "1f39ce2587c6378e44a0fca55f4e7837d4b7fbc2b82c01496aed9b0ab4310347"
+      "sha256": "9f1096be12143f773d2b9ce02624e774721b10c987e5438fe62befbce08f588e"
     },
     {
       "file": "TokiAuto.part02",
@@ -17,12 +17,12 @@
     {
       "file": "TokiAuto.part03",
       "size": 41943040,
-      "sha256": "deddae7f4eb89c02679dea792d77f2329dc6d77048273c09e6a7db035ecea9db"
+      "sha256": "5c0e659d676015a59fd98d945ac003b99b7fcc25331f924072668b59050684d1"
     },
     {
       "file": "TokiAuto.part04",
-      "size": 40573604,
-      "sha256": "53d9ca9499df76c0e09bc368006a2b99278615854fff52635aeed5a5b2b216b2"
+      "size": 40578114,
+      "sha256": "7d06496f2669bdf2f967e9620bd91d2f1b2da4b4fc1f48e1a39caa64c471658a"
     }
   ]
 }

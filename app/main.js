@@ -8,6 +8,7 @@ const archiveStore = require('./archive-store');
 const initialImport = require('./initial-import');
 const folderImport = require('./folder-import');
 const excelImport = require('./excel-import');
+const excelExport = require('./excel-export');
 const workordersStore = require('./workorders-store');
 const workorderPrint = require('./workorder-print');
 const { attach: attachCloseGuard } = require('./window-close');
@@ -152,6 +153,17 @@ app.whenReady().then(async () => {
       return request.action === 'pdf' ? await savePdf(preview, request.doc) : await printNative(preview);
     } catch (error) { return { ok: false, error: error.message }; }
     finally { if (preview && !preview.isDestroyed() && request.action !== 'preview') preview.destroy(); }
+  });
+  ipcMain.handle('export-excel', async (_, request) => {
+    try {
+      if(!request||!['notes','workorders','garage'].includes(request.kind))throw Error('Válassz exportálható adatkört.');
+      prepareInitialData();
+      const data=request.kind==='garage'?(await garageService.load()).people:request.kind==='notes'?store.read(file):workordersStore.read(workordersFile);
+      const selected=excelExport.select(data,request.id);
+      const result=await dialog.showSaveDialog(win,{defaultPath:'TokiAuto-'+({notes:'jegyzetek',workorders:'munkalapok',garage:'autonyilvantarto'}[request.kind])+'.xlsx',filters:[{name:'Excel-munkafüzet',extensions:['xlsx']}]});
+      if(result.canceled)return {canceled:true};
+      await excelExport.write(result.filePath,request.kind,selected);return {ok:true};
+    }catch(error){return {ok:false,error:'Az Excel-mentés nem sikerült. '+error.message};}
   });
   ipcMain.handle('export', async (_, notes, archive) => {
     store.validate(notes);

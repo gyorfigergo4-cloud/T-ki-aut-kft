@@ -389,3 +389,14 @@ test('autóbuborék váltáskor csak a kiválasztott alvázszám látszik; új a
  select('o');await ui.dom.window.NotesFlush();ui.dom.window.close();ui=await openUI(saved);
  assert.equal([...ui.$('vehicles-list').children].filter(row=>!row.hidden)[0].dataset.vehicleId,'o');assert.deepEqual(saved.notes[0].vehicles.map(v=>v.vin),['SUZUKI-VIN','OPEL-VIN','HYUNDAI-VIN']);assert.equal(saved.notes[0].body,'Saját jegyzet');ui.dom.window.close();
 });
+
+test('Felírva pipa és névbuborék figyelmeztetés csak megrendelt, még fel nem írt tételeknél',async()=>{
+ const Items=require('../app/items');const a={...Items.blank('a'),partNumber:'PART-A',vehicleId:'v'},b={...Items.blank('b'),partNumber:'PART-B',vehicleId:'v'};
+ const saved={notes:[{id:'n',title:'Minta',body:'Privát jegyzet',day:'2026-11-06',updated:'2026-11-06T08:00:00Z',vehicles:[{id:'v',vin:'MINTA-VIN',brand:'Suzuki'}],items:[a,b]}],archive:{years:[2026],days:['2026-11-06']}};
+ let ui=await openUI(saved);try{
+ const flag=(id,f)=>ui.$('items-body').querySelector('[data-item-id="'+id+'"] [data-field="'+f+'"]');const warning=()=>ui.$('list').querySelector('.note-recording-warning');
+ assert.equal(warning(),null);flag('a','ordered').click();assert.ok(warning());flag('a','paid').click();assert.ok(warning());flag('a','recorded').click();assert.equal(warning(),null);flag('b','ordered').click();assert.ok(warning());flag('b','recorded').click();assert.equal(warning(),null);flag('a','recorded').click();assert.ok(warning());flag('a','ordered').click();assert.equal(warning(),null);
+ await ui.dom.window.NotesFlush();ui.dom.window.close();ui=await openUI(saved);assert.equal(ui.$('list').querySelector('.note-recording-warning'),null);assert.equal(saved.notes[0].items[1].recorded,true);assert.equal(saved.notes[0].items[0].paid,true);
+ const input=ui.$('items-body').querySelector('[data-item-id="b"] [data-field=partNumber]');input.value='NEW-PART';input.dispatchEvent(new ui.dom.window.Event('input'));await ui.dom.window.NotesFlush();assert.equal(saved.notes[0].items[1].recorded,false);assert.equal(saved.notes[0].items[1].ordered,false);
+ }finally{ui.dom.window.close();}
+});

@@ -2,6 +2,16 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Excel-export és tételenkénti Felírva · 1.13.0
+
+A bal alsó **Mentés Excelbe** gomb saját jegyzeteket, saját munkalapokat vagy közös autónyilvántartót exportál `.xlsx` munkafüzetbe. Saját adatoknál minden vagy a kiválasztott bejegyzés menthető; a kiválasztott jegyzet minden autója és tétele bekerül, a keresőszűrés nem szűkíti az összes adat exportját. Az export előtt a saját módosítások kézi mentése lefut; hibánál nem készül régi adatokat tartalmazó export. A közös lista az aktuális hálózati szolgáltatásból származik, a privát jegyzetek soha nem kerülnek abba a munkafüzetbe.
+
+A munkafüzet külön lapokon tartalmazza a bejegyzéseket, autókat, tételeket és emlékeztetőket; munkalapnál a dokumentumokat és tételeket. Az árak számok, az alvázszám/rendszám/cikkszám szöveg, így a vezető nullák megmaradnak. A felhasználói szöveg képletként vagy hivatkozásként nem értelmeződik. A 32 000 karakternél hosszabb szöveg külön **Hosszú szövegek** lapon, forráslappal, sorszámmal, oszloppal és részszámmal teljes egészében megmarad. A fájl ideiglenes fájlból kerül a kiválasztott célra; hiba esetén a korábbi célfájl megmarad. A JSON biztonsági mentés külön megmaradt. Az Excel belső adatokat, cikkszámokat és jelöléseket is tartalmaz; az ügyfélnyomtatás/PDF mezőlistája változatlan.
+
+A jegyzetek tételsorában a Fizetve mellett **Felírva** pipa található. Az opcionális `recorded` logikai mező gépenként külön mentődik, régi soroknál alapból nincs jelölve. A névbuborék piros felkiáltójele akkor látható, ha bármelyik autó valamelyik kitöltött tétele Megrendelve és nincs Felírva. A tételszintű rendelés számít, a név általános munkafolyamat-státuszától függetlenül. Fizetés és megérkezés nem módosítja. Cikkszám/megnevezés cseréje törli, ár vagy darabszám javítása megtartja. A jelölés bekerül a helyi JSON- és Excel-mentésbe, az ügyfélnyomtatásba nem.
+
+Ellenőrzés: XLSX írás és visszaolvasás, vezető nullák, számcellák, képletként kezdődő szöveg, többautós hozzárendelés, jelölések, hosszú szöveg, célfájl megőrzése hibánál; felületi próba több tétellel, pipaváltás és újranyitás. A `scripts/verify-excel-recorded.cjs` valódi Electron ablakban ellenőrzi a jelzést, az exportfelületet és az IPC-n át létrejövő olvasható XLSX fájlt.
+
 ## Autó törlése utáni kiválasztás · 1.12.2
 
 A törölt autó üres tételsorai nem hoznak létre hozzárendelés nélküli buborékot. A kiválasztás az előző megmaradt autóra áll vissza (első autó törlésekor az első megmaradtra). A kitöltött sorok adatai és jelölései a hozzárendelés nélküli listában megmaradnak. Korábbi üres hozzárendelés nélküli kiválasztás betöltéskor az első autóra vált, ha nincs ott kitöltött tétel. A kézi és óránkénti mentés változatlan.

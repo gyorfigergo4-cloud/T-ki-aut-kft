@@ -38,7 +38,7 @@
   }
   function normalizeSupplier(value) { return /^unitra(?:c)?k$/i.test(value.trim()) ? 'Unitrak' : value; }
   function blank(id) {
-    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '', paid: false, arrived: false };
+    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '', paid: false, arrived: false, recorded: false };
   }
   function legacyOrdered(line) {
     return typeof line === 'string' && /\b(?:megrendelve|rendelve)\s*[.!]?\s*$/iu.test(line) && !/\b(?:nem|nincs|nincsen)\b.*\b(?:megrendelve|rendelve)\b/iu.test(line);
@@ -58,6 +58,8 @@
     const next = { ...item, paid }; validate([next]); return next;
   }
   function withArrival(item, arrived) { if(typeof arrived!=='boolean'||(arrived&&!isActive(item)))throw new Error('Megérkezés jelölése előtt add meg a tétel adatait.');const next={...item,arrived};validate([next]);return next;}
+  function withRecorded(item, recorded) { if(typeof recorded!=='boolean'||(recorded&&!isActive(item)))throw new Error('Felírás jelölése előtt add meg a tétel adatait.');const next={...item,recorded};validate([next]);return next;}
+  function needsRecording(items) { return items.some(item => isActive(item) && order(item).ordered && item.recorded !== true); }
   function setAllPaid(items, paid) {
     if (typeof paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
     const next = items.map(item => isActive(item) ? { ...item, paid } : { ...item }); validate(next); return next;
@@ -82,7 +84,7 @@
       } else { next.priceMode = 'auto'; next.discountedPrice = discounted(next.fullPrice, next.discountPercent); }
     }
     if (identity(next.partNumber) !== identity(item.partNumber) || (!identity(next.partNumber) && identity(next.description) !== identity(item.description))) {
-      next.ordered = false; next.orderedAt = ''; next.paid = false; next.arrived = false;
+      next.ordered = false; next.orderedAt = ''; next.paid = false; next.arrived = false; next.recorded = false;
     }
     return next;
   }
@@ -147,6 +149,7 @@
       if (item.description !== undefined && typeof item.description !== 'string') throw new Error('Érvénytelen tételmegnevezés');
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
       if (item.ordered !== undefined && typeof item.ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
+      if (item.recorded !== undefined && typeof item.recorded !== 'boolean') throw new Error('Érvénytelen felírásjelölés');
       if (item.arrived !== undefined && typeof item.arrived !== 'boolean') throw new Error('Érvénytelen megérkezési jelölés');
       if (item.paid !== undefined && typeof item.paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');
       if (item.vehicleId !== undefined && (typeof item.vehicleId !== 'string' || item.vehicleId.length > 200)) throw new Error('Érvénytelen autó-hozzárendelés');
@@ -196,7 +199,7 @@
     note.discountPrice = result.discountedPriced && !result.missingDiscounted ? result.discountedPrice : '';
     note.paid = paymentState(note.items, note.paid).paid;
   }
-  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, totalsHint, formatMoney, syncLegacy, order, withOrder, edit, orderCounts, isActive, paymentState, withPaid, withArrival, setAllPaid };
+  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, totalsHint, formatMoney, syncLegacy, order, withOrder, edit, orderCounts, isActive, paymentState, withPaid, withArrival, withRecorded, needsRecording, setAllPaid };
   if (typeof module !== 'undefined') module.exports = api;
   else root.LineItems = api;
 })(globalThis);

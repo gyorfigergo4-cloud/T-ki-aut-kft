@@ -1,3 +1,18 @@
+ÚJ · 1.13.0: EXCEL-MENTÉS ÉS FELÍRVA PIPA
+Bal alul: Mentés Excelbe. Válaszd a saját jegyzeteket, saját munkalapokat
+vagy a közös autónyilvántartót. Jegyzetből és munkalapból az összes vagy
+csak a kiválasztott bejegyzés menthető .xlsx fájlba.
+A jegyzetekhez külön lapokon kerülnek az autók, cikkszámok és emlékeztetők.
+Az export előtt a saját adatok legfrissebb módosításait is elmenti.
+A Biztonsági mentés gomb továbbra is teljes JSON-mentést készít.
+
+A jegyzetek cikkszámainál a Fizetve mellett új Felírva pipa van.
+Ha bármelyik tétel Megrendelve, de nincs Felírva, a felső névbuborékon
+piros ! jelenik meg. Minden ilyen tételt ki kell pipálni, hogy eltűnjön.
+A Fizetve vagy Megérkezett jelölés ezt nem helyettesíti. Új cikkszám
+beírásakor az előző tétel Felírva jelölése is törlődik.
+A kézi / óránkénti mentés és a gépenként külön jegyzetek megmaradnak.
+
 ÚJ · 1.12.2: alvázszám törlése után az előző megmaradt autó nyílik meg.
 Az üres Hozzárendelés nélkül buborék eltűnik. A kitöltött cikkszámok
 megmaradnak; csak valódi hozzárendelés nélküli tételeknél van külön buborék.

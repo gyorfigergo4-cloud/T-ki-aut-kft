@@ -1,5 +1,5 @@
 (function (root) {
- function create(item, rowLabel, onToggle, onPaidToggle, onArrivalToggle) {
+ function create(item, rowLabel, onToggle, onPaidToggle, onArrivalToggle, onRecordedToggle) {
   const cell = document.createElement('td'); cell.className = 'item-order-cell';
   const label = document.createElement('label'); label.className = 'item-order-toggle';
   const input = document.createElement('input'); input.type = 'checkbox'; input.dataset.field = 'ordered'; input.setAttribute('aria-label', 'Megrendelve – ' + rowLabel);
@@ -20,7 +20,18 @@
    arrivedInput.onchange=()=>{onArrivalToggle(arrivedInput.checked);refresh();};
   }
   if(arrivedInput&&paidInput){const checks=document.createElement('div');checks.className='item-checks';checks.append(paidInput.parentElement,arrivedInput.parentElement);cell.append(checks);}
+  let recordedInput;
+  if(onRecordedToggle){
+   const recordedLabel=document.createElement('label');recordedLabel.className='payment-toggle item-recorded-toggle';
+   recordedInput=document.createElement('input');recordedInput.type='checkbox';recordedInput.dataset.field='recorded';recordedInput.setAttribute('aria-label','Felírva – '+rowLabel);
+   const recordedText=document.createElement('span');recordedText.textContent='Felírva';recordedLabel.append(recordedInput,recordedText);
+   let checks=cell.querySelector('.item-checks');if(!checks){checks=document.createElement('div');checks.className='item-checks';if(paidInput)checks.append(paidInput.parentElement);cell.append(checks);}
+   if(paidInput)paidInput.parentElement.after(recordedLabel);else checks.append(recordedLabel);
+   recordedInput.onchange=()=>{onRecordedToggle(recordedInput.checked);refresh();};
+  }
   function refresh() {
+   if(recordedInput){recordedInput.checked=item.recorded===true;recordedInput.disabled=!item.recorded&&!root.LineItems.isActive(item);}
+
    const status = root.LineItems.order(item); input.checked = status.ordered;
    if(arrivedInput){arrivedInput.checked=item.arrived===true;arrivedInput.disabled=!item.arrived&&!root.LineItems.isActive(item);}
    if (paidInput) { paidInput.checked = item.paid === true; paidInput.disabled = !item.paid && !root.LineItems.isActive(item); }

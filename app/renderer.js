@@ -247,6 +247,7 @@ function renderList() {
     const button = document.createElement('button'); button.className = 'note' + (note.id === selected ? ' active' : ''); button.dataset.note = note.id;
     const workflowStatus = NoteStatuses.get(note); button.dataset.workflowStatus = workflowStatus.id;
     const title = document.createElement('strong'); title.textContent = note.title || 'Új név';
+    if (Items.needsRecording(note.items)) { const warning=document.createElement('span');warning.className='note-recording-warning';warning.textContent='!';warning.title='Van megrendelt, még fel nem írt tétel.';warning.setAttribute('aria-label',warning.title);button.append(warning); }
     const preview = document.createElement('small'); preview.textContent = query ? note.day : note.items.map(item => item.partNumber).filter(Boolean).join(' · ') || note.oil || note.vin || 'Adatok kitöltése…';
     const caption = document.createElement('span'); caption.className = 'note-status-caption'; caption.textContent = '● ' + workflowStatus.label;
     button.append(title, preview, caption); button.onclick = () => afterCheck(selected === note.id ? validInputs() : allowNavigation(), () => { selected = note.id; setDayContext(note.day); render(); }); $('list').append(button);
@@ -326,6 +327,9 @@ function renderItems(note) {
       catch (error) { $('item-error').textContent = error.message; }
     }, checked => {
       try { Object.assign(item,Items.withArrival(item,checked)); touchNote(note); persistNotes(); metadata(false); }
+      catch(error) { $('item-error').textContent=error.message; }
+    }, checked => {
+      try { Object.assign(item,Items.withRecorded(item,checked));touchNote(note);persistNotes();renderList();metadata(false); }
       catch(error) { $('item-error').textContent=error.message; }
     });
     const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice', 'Kedvezményes ár', 'number'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
@@ -509,6 +513,7 @@ window.ReminderOpenNote = id => navigate(() => afterCheck(window.WorkOrdersUI ? 
   selected = id; clearSearch(); setDayContext(note.day); render(); return true;
 }));
 window.NotesNavigate = navigate;
+window.NotesExportSelection = () => current()?.id || null;
 window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowNavigation });
 window.NotesRefresh = id => { clearSearch(); return loadData(id); };
 window.NotesFlush = async () => {

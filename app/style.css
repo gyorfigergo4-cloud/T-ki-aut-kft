@@ -333,3 +333,7 @@ body:has(#garage-person-dialog[open]) #garage-view { overflow:hidden; }
 #items-table .col-order { width:19%; } #items-table .col-supplier { width:12%; }
 #save-notes,#save-workorders { white-space:nowrap; }
 @media(max-width:1100px){.topbar:has(.reminder-alarm-banner:not([hidden])){flex-wrap:wrap;}.topbar:has(.reminder-alarm-banner:not([hidden])) .reminder-alarm-slot{order:3;flex-basis:100%;}}
+
+.item-checks .item-recorded-toggle{margin-top:0}.note-recording-warning{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:50%;background:#b6281e;color:#fff;font-size:13px;font-weight:800;vertical-align:middle}#export-excel{width:100%;margin-bottom:8px}#excel-export-dialog{max-width:480px}#excel-export-dialog select{width:100%;margin:7px 0 15px}
+
+.note{position:relative}.note:has(.note-recording-warning){padding-right:30px}.note-recording-warning{position:absolute;top:7px;right:7px}
