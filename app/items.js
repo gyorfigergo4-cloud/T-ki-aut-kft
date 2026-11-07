@@ -38,7 +38,7 @@
   }
   function normalizeSupplier(value) { return /^unitra(?:c)?k$/i.test(value.trim()) ? 'Unitrak' : value; }
   function blank(id) {
-    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '', paid: false, arrived: false, recorded: false };
+    return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '', paid: false, arrived: false, recorded: false, fromStock: false, stockProductId: '' };
   }
   function legacyOrdered(line) {
     return typeof line === 'string' && /\b(?:megrendelve|rendelve)\s*[.!]?\s*$/iu.test(line) && !/\b(?:nem|nincs|nincsen)\b.*\b(?:megrendelve|rendelve)\b/iu.test(line);
@@ -84,7 +84,7 @@
       } else { next.priceMode = 'auto'; next.discountedPrice = discounted(next.fullPrice, next.discountPercent); }
     }
     if (identity(next.partNumber) !== identity(item.partNumber) || (!identity(next.partNumber) && identity(next.description) !== identity(item.description))) {
-      next.ordered = false; next.orderedAt = ''; next.paid = false; next.arrived = false; next.recorded = false;
+      next.ordered = false; next.orderedAt = ''; next.paid = false; next.arrived = false; next.recorded = false; next.fromStock = false;next.stockProductId = '';
     }
     return next;
   }
@@ -149,6 +149,9 @@
       if (item.description !== undefined && typeof item.description !== 'string') throw new Error('Érvénytelen tételmegnevezés');
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
       if (item.ordered !== undefined && typeof item.ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
+      if(item.fromStock!==undefined&&typeof item.fromStock!=='boolean')throw new Error('Érvénytelen Raktárról jelölés');
+      if(item.stockProductId!==undefined&&(typeof item.stockProductId!=='string'||item.stockProductId.length>200))throw new Error('Hibás raktári termékhivatkozás');
+      if(item.fromStock===true&&!item.stockProductId)throw new Error('A raktári termék nincs kiválasztva.');
       if (item.recorded !== undefined && typeof item.recorded !== 'boolean') throw new Error('Érvénytelen felírásjelölés');
       if (item.arrived !== undefined && typeof item.arrived !== 'boolean') throw new Error('Érvénytelen megérkezési jelölés');
       if (item.paid !== undefined && typeof item.paid !== 'boolean') throw new Error('Érvénytelen fizetésjelölés');

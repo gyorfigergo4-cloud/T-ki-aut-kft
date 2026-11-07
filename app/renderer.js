@@ -40,7 +40,7 @@ async function drainSaves() {
         const snapshot = typeof structuredClone === 'function' ? structuredClone(job.value) : JSON.parse(JSON.stringify(job.value));
         await job.writer(snapshot); saveErrors.delete(target);
         if (job.version === revision) $('status').textContent = saveErrors.size ? 'A mentés nem sikerült. Készíts biztonsági mentést!' : '✓ Minden változás mentve';
-      } catch { saveErrors.add(target); $('status').textContent = 'A mentés nem sikerült. Készíts biztonsági mentést!'; }
+      } catch(error) { saveErrors.add(target); $('status').textContent = 'A jegyzetek mentése nem sikerült: '+String(error?.message||'A mentés nem sikerült.').replace(/^Error invoking remote method '[^']+': (?:Error: )?/,''); }
       finally { pending--; }
     }
   } finally { drainingSaves = false; }
@@ -331,6 +331,9 @@ function renderItems(note) {
     }, checked => {
       try { Object.assign(item,Items.withRecorded(item,checked));touchNote(note);persistNotes();renderList();metadata(false); }
       catch(error) { $('item-error').textContent=error.message; }
+    }, async checked => {
+      try {if(!validInputs())return;if(checked){const result=await window.notesAPI.inventoryResolve(item.partNumber);if(!result.ok)throw Error(result.error);item.stockProductId=result.product.id;}item.fromStock=checked;touchNote(note);persistNotes();await window.NotesFlush();$('item-error').textContent='';}
+      catch(error){$('item-error').textContent=error.message;}
     });
     const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice', 'Kedvezményes ár', 'number'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
     for (const [field, label, type] of columns) {
@@ -369,6 +372,7 @@ function renderItems(note) {
           input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('item-error').textContent = error.message;
         }
       });
+      if(field==='quantity')input.addEventListener('change',()=>{if(item.fromStock&&validInputs())window.NotesFlush().then(()=>{$('item-error').textContent='';}).catch(e=>{$('item-error').textContent=e.message;});});
       cell.append(input);
       if (field === 'partNumber') {
         const assignment = document.createElement('select'); assignment.className = 'item-vehicle-select'; assignment.dataset.field = 'vehicleId'; assignment.setAttribute('aria-label', 'Autó – ' + (index + 1) + '. cikkszámsor');
@@ -481,17 +485,19 @@ window.NotesPrepareClose = async () => {
   return await window.NoteReviewUI.confirm({ title: 'Kilépés előtti ellenőrzés', pending: pendingReminders }) === true;
 };
 window.NotesFlushForClose = async () => {
-  await flushSaveQueue();
-  if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült.');
+  await window.notesAPI.inventoryRecover?.();
+ await flushSaveQueue();
+  if (saveErrors.size) throw new Error($('status').textContent||'A jegyzetek mentése nem sikerült.');
 };
 function loadData(preferredNoteId) {
-return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(([data, archive]) => {
+return Promise.all([window.notesAPI.load(), window.notesAPI.loadArchive()]).then(async ([data, archive]) => {
   folderSignature = null; brandOptionsDirty = true;
   ({ notes, years, days } = normalize(data, archive)); loaded = true;
   const preferred = notes.find(note => note.id === preferredNoteId);
   const initialDay = preferred?.day || (days.includes(today) ? today : [...days].sort().at(-1) ?? today);
   setDayContext(initialDay); selected = preferred?.id || notes.find(note => note.day === initialDay)?.id || null;
-  $('status').textContent = '✓ Betöltve · kézi / óránkénti mentés'; render(); return true;
+  const stockPending=await window.notesAPI.inventoryPending?.();
+  $('status').textContent = stockPending?'Függő raktárművelet · kapcsolódj a központhoz és nyomj Mentést.':'✓ Betöltve · kézi / óránkénti mentés'; render(); return true;
 }).catch(() => {
   $('status').textContent = 'A mentett adatok nem olvashatók. Az eredeti fájlok megmaradtak.';
   for (const id of ['new', 'add-year', 'add-day']) $(id).disabled = true;
@@ -518,8 +524,9 @@ window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowN
 window.NotesRefresh = id => { clearSearch(); return loadData(id); };
 window.NotesFlush = async () => {
  if (!loaded) throw new Error('A jegyzetek még nem töltődtek be.');
+ await window.notesAPI.inventoryRecover?.();
  await flushSaveQueue();
- if (saveErrors.size) throw new Error('A jegyzetek mentése nem sikerült. Beolvasás előtt ellenőrizd a lemez szabad helyét.');
+ if (saveErrors.size) throw new Error($('status').textContent||'A jegyzetek mentése nem sikerült.');
 };
 
 async function saveLocalWork() {

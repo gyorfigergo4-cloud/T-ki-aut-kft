@@ -1,5 +1,5 @@
 (function (root) {
- function create(item, rowLabel, onToggle, onPaidToggle, onArrivalToggle, onRecordedToggle) {
+ function create(item, rowLabel, onToggle, onPaidToggle, onArrivalToggle, onRecordedToggle, onStockToggle) {
   const cell = document.createElement('td'); cell.className = 'item-order-cell';
   const label = document.createElement('label'); label.className = 'item-order-toggle';
   const input = document.createElement('input'); input.type = 'checkbox'; input.dataset.field = 'ordered'; input.setAttribute('aria-label', 'Megrendelve – ' + rowLabel);
@@ -29,7 +29,11 @@
    if(paidInput)paidInput.parentElement.after(recordedLabel);else checks.append(recordedLabel);
    recordedInput.onchange=()=>{onRecordedToggle(recordedInput.checked);refresh();};
   }
+  let stockInput;
+  if(onStockToggle){const l=document.createElement('label');l.className='payment-toggle item-stock-toggle';stockInput=document.createElement('input');stockInput.type='checkbox';stockInput.dataset.field='fromStock';stockInput.setAttribute('aria-label','Raktárról – '+rowLabel);const t=document.createElement('span');t.textContent='Raktárról';l.append(stockInput,t);(cell.querySelector('.item-checks')||cell).append(l);stockInput.onchange=async()=>{stockInput.disabled=true;try{await onStockToggle(stockInput.checked);}finally{refresh();}};}
   function refresh() {
+   if(stockInput){stockInput.checked=item.fromStock===true;stockInput.disabled=!item.fromStock&&!root.LineItems.isActive(item);stockInput.title='A jelölés és a darabszám mentése a közös készletet módosítja.';}
+
    if(recordedInput){recordedInput.checked=item.recorded===true;recordedInput.disabled=!item.recorded&&!root.LineItems.isActive(item);}
 
    const status = root.LineItems.order(item); input.checked = status.ordered;

@@ -5,7 +5,7 @@ test('a helyi részleges mentés nem ír felül más jegyzetet és eltűnt adatf
  class Window{constructor(){this.webContents={on(){},setWindowOpenHandler(){}};}on(){}setMenuBarVisibility(){}loadFile(){}}
  const electron={app:{requestSingleInstanceLock:()=>true,on(){},whenReady:()=>Promise.resolve(),getPath:()=>data},BrowserWindow:Window,ipcMain:{on(){},handle:(k,v)=>handlers.set(k,v)},dialog:{},Menu:{}};
  try{vm.runInNewContext(fs.readFileSync(main,'utf8'),{require:n=>n==='electron'?electron:actual(n),__dirname:path.dirname(main)},{filename:main});await new Promise(r=>setImmediate(r));handlers.get('load')();
- handlers.get('save-note-changes')(null,{upserts:[{...note('a'),body:'Új A'}],removed:[]});assert.equal(JSON.parse(fs.readFileSync(file))[1].body,'Megmarad b');
+ await handlers.get('save-note-changes')(null,{upserts:[{...note('a'),body:'Új A'}],removed:[]});assert.equal(JSON.parse(fs.readFileSync(file))[1].body,'Megmarad b');
  fs.unlinkSync(file);assert.throws(()=>handlers.get('save-note-changes')(null,{upserts:[note('a')],removed:[]}),/eltűnt/);assert.equal(fs.existsSync(file),false);
  }finally{fs.rmSync(data,{recursive:true,force:true});}
 });

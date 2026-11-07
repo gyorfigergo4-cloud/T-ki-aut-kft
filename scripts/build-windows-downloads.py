@@ -39,7 +39,7 @@ manifest = {'product': 'TokiAuto', 'version': VERSION, 'sha256': checksum.hexdig
 # The outer ZIP uses the original installer and its per-part/full-archive checks.
 OUTPUT = DIST / f'TokiAuto-Kozos-Autonyilvantarto-{VERSION}.zip'
 with zipfile.ZipFile(OUTPUT, 'w', zipfile.ZIP_STORED) as archive:
-    for name in ['TokiAuto-Inditas.cmd', 'HALOZAT-BEALLITAS.txt', 'KEZDES-ITT.txt', 'downloads/package.json']:
+    for name in ['TokiAuto-Inditas.cmd', 'HALOZAT-BEALLITAS.txt', 'KEZDES-ITT.txt', 'RAKTAR-UTMUTATO.txt', 'downloads/package.json']:
         archive.write(ROOT / name, name)
     for part in parts:
         name = 'downloads/' + part['file']

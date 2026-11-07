@@ -6,6 +6,7 @@
     let approved = false;
     try {
       if (window.WorkOrdersUI && !window.WorkOrdersUI.canLeave()) return;
+      if(window.InventoryUI&&!window.InventoryUI.canClose()){window.NoteReviewUI.showError('Várd meg a raktárművelet befejezését.');return;}
       if (window.GarageUI && !window.GarageUI.canClose()) return;
       if (!await window.NotesPrepareClose()) return;
       // Prevent new edits while the final save queues are being flushed.
@@ -14,9 +15,9 @@
       if (window.WorkOrdersUI) await window.WorkOrdersUI.flush();
       if (window.GarageUI) await window.GarageUI.flush();
       approved = true;
-    } catch {
+    } catch(error) {
       document.body.inert = false;
-      window.NoteReviewUI.showError('A mentés nem sikerült, ezért a program nyitva maradt. Ellenőrizd a szabad lemezterületet, majd próbáld újra.');
+      window.NoteReviewUI.showError('A mentés nem sikerült, ezért a program nyitva maradt. Ellenőrizd a szabad lemezterületet, majd próbáld újra. '+(error?.message||''));
     } finally {
       if (!approved) document.body.inert = false;
       window.notesAPI.completeAppClose({ token, approved });

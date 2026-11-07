@@ -1,0 +1,122 @@
+TÖKI AUTÓ · KÖZÖS RAKTÁR ÉS TELEFONOS BEOLVASÁS · 1.14.0
+
+1. A NÉGY GÉP FRISSÍTÉSE
+Zárd be a korábbi alkalmazást, és mind a négy gépen a legfrissebb csomagot
+indítsd. A személyes jegyzetek megmaradnak. A meglévő autónyilvántartó
+központi/csatlakozó beállításai határozzák meg a raktár központját is.
+A főgépen kattints egyszer a Raktár / leltár fülre. Ezután a raktárszolgáltatás
+a későbbi indításokkor magától elindul. A főgépnek bekapcsolva kell lennie,
+és futnia kell a programnak. A többi gépen is nyisd meg a Raktár fület.
+Ha „Helyi próbakészlet” látszik, még nincs közös hálózati beállítás:
+Autónyilvántartó → Kapcsolat beállítása. A korábbi hálózati útmutató segít.
+A helyi próbakészlet nem egyesül automatikusan másik gép próbakészletével.
+
+2. TŰZFAL A FŐGÉPEN
+Az autónyilvántartó megszokott portja változatlan. A raktár annak portja+1,
+a telefonos HTTPS portja+2. Alapbeállításnál: 47831 autólista, 47832 raktár,
+47833 telefon. A főgépen a Windows tűzfalban a két ÚJ TCP port bejövő
+kapcsolatát engedélyezd a helyi hálózatról. A korábbi szabályt ne töröld!
+PowerShell rendszergazdaként, alapértelmezett portokhoz:
+
+New-NetFirewallRule -DisplayName "Toki Auto - raktar" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 47832,47833 -RemoteAddress LocalSubnet -Profile Any
+
+Ha korábban más portot állítottál be az autólistának, a hozzá tartozó +1 és +2
+portokat használd. A telefon címe és kódja a főgép Raktár → Telefonos beolvasás
+ablakában olvasható. A raktárportokat ne továbbítsd az internetre a routeren.
+Ez helyi hálózati használat, nem bárhonnan elérhető internetes szolgáltatás.
+
+3. TERMÉKEK ÉS VONALKÓDOLVASÓ
+Új termék → terméknév, cikkszám, egy vagy több vonalkód. Egy termékhez több
+vonalkód is megadható soronként; ugyanaz a cikkszám/vonalkód másik termékhez
+nem kerülhet. A kódokat szövegként kezeljük, a vezető nullák megmaradnak.
+A termék létrehozása 0 db készletet hoz létre. A vonalkód nem tartalmazza a
+termék nevét: ismeretlen kódnál egyszer neked kell megadnod az adatokat.
+A vonalkódolvasó billentyűzetként működjön, a kód végén Entert küldjön.
+Kattints a Vonalkód / cikkszám mezőbe, állítsd be a darabszámot, és olvasd be.
+Minden sikeres beolvasás új bevételezés, a darabszám hozzáadódik a készlethez.
+Azonos művelet hálózati újraküldése viszont nem adja hozzá még egyszer.
+Ismeretlen kódnál előbb rögzítsd a terméket, utána olvasd be ismét.
+Kereshetsz terméknévre, cikkszámra vagy vonalkódra. Sok termék esetén lapozhatsz.
+Korrekcióval előjeles darabszámváltozást rögzíthetsz, kötelező indoklással.
+Mínuszos készlet nem menthető. Készlet vagy aktív jegyzetkapcsolat mellett
+termék nem törölhető. A terméknév, cikkszám és vonalkódok módosíthatók.
+
+4. RAKTÁRRÓL ELADOTT TÉTEL A JEGYZETBEN
+A jegyzet cikkszáma a raktári termék cikkszámával vagy vonalkódjával egyezzen.
+A cikkszámsor Raktárról pipája mentéskor a teljes sor darabszámát vonja le.
+A pipa megnyomása azonnali kézi mentési művelet, az összes addigi helyi
+jegyzetmódosítást is rögzíti. Sikeres mentést várj meg!
+A Megrendelve, Fizetve, Felírva és Megérkezett pipa önmagában NEM von le.
+Ha raktárról jelölt soron darabszámot javítasz, a mező elhagyásakor a különbözet
+kerül levonásra vagy visszaadásra. A Ctrl+S és a Mentés is rögzíti.
+A Raktárról pipa kivétele visszaadja a korábban levont teljes darabszámot.
+Tétel vagy jegyzet törlése a következő sikeres mentéskor adja vissza.
+Másik cikkszám beírása kiveszi a Raktárról pipát; a következő mentés visszaadja
+a régi terméket. Az új cikkszámhoz külön ismét jelöld a Raktárról pipát.
+Munkalap készítése ugyanabból a jegyzetből nem vonja le még egyszer a készletet;
+a készletkapcsolatot az eredeti jegyzetben kezeld.
+A gépelés normál esetben továbbra sem indít lemezre mentést minden betűnél.
+
+Elégtelen készletnél vagy hálózathibánál a mentés hibaüzenetet ad. Ilyenkor
+a képernyőn látható pipa még nem jelenti a sikeres levonást! Javítsd a mennyiséget,
+vagy vedd ki a pipát, és ments újra. Bizonytalan hálózati válasz után ugyanazt
+a műveletet próbáld újra, ne rögzíts külön ellenkező irányú korrekciót találomra.
+A helyi függő napló helyreállítja a félbeszakadt műveletet, és az újraküldés
+nem duplázza a készletmozgást. Ezeket a naplófájlokat ne töröld kézzel.
+
+5. TELEFON KAMERÁJA
+A telefon Wi-Fi-vel ugyanazon a helyi hálózaton legyen, ahol a főgép van.
+Vendéghálózati eszközelkülönítés esetén nem fogja elérni a főgépet.
+A főgépen Raktár → Telefonos beolvasás három adatot mutat:
+- HTTPS-cím (pl. https://192.168.0.66:47833/)
+- saját helyi tanúsítvány letöltési címe
+- külön telefonos kapcsolódási kód.
+
+A kamerát a mobilböngésző csak biztonságos környezetben engedélyezi. Ezért a
+főgép saját helyi tanúsítványát egyszer telepíteni és megbízhatónak jelölni kell
+a telefonon. Csak a saját főgéped által létrehozott tanúsítványt telepítsd!
+A tanúsítvány címe HTTP-n is letölthető, ez csak nyilvános tanúsítványt ad,
+privát kulcsot vagy raktári hozzáférést nem tartalmaz.
+
+Android: töltsd le a .crt fájlt. Beállítások → Biztonság / Adatvédelem →
+További biztonsági beállítások → Titkosítás és hitelesítő adatok →
+Tanúsítvány telepítése → CA-tanúsítvány. A menüpontok gyártónként eltérhetnek.
+Ezután Chrome-ban nyisd meg a HTTPS-címet, és ellenőrizd, hogy nincs
+biztonsági/tanúsítvány figyelmeztetés. Használj friss Chrome-ot.
+
+iPhone/iPad: töltsd le a tanúsítványt, majd Beállítások → Általános →
+VPN és eszközfelügyelet alatt telepítsd a letöltött profilt. Ezután
+Általános → Infó → Tanúsítvány-megbízhatósági beállítások alatt engedélyezd
+a „Toki Auto helyi raktar CA” teljes megbízhatóságát. Friss Safariban nyisd
+meg a HTTPS-címet. Ha nincs letöltött profil, a fájlt előbb a Fájlok appban
+nyisd meg; az iOS-verziótól függően a telepítési lépések eltérhetnek.
+
+Az alkalmazás saját helyi CA-jának kulcsa kizárólag a főgépen marad. IP-cím
+változásakor indítsd újra a főgépen a programot; az új IP-címhez ugyanaz a CA
+ad új kiszolgálói tanúsítványt. Stabil IP-cím használata kényelmesebb.
+
+Írd be a telefonos kódot, majd Kamera indítása → kameraengedély jóváhagyása.
+Egy beolvasás után a kamera megáll, hogy ugyanazt a címkét ne adja hozzá sokszor.
+Ellenőrizd a terméket, állítsd be a darabszámot, és Hozzáadás a készlethez.
+Ismeretlen kódnál előbb terméknév és cikkszám kell, utána bevételezhetsz.
+Kamera nélkül kézzel is beírhatod a vonalkódot vagy cikkszámot.
+A telefonról bevételezés és új termék felvitele érhető el; eladás a jegyzetben.
+Nincs internetes keresés vagy automatikus külső termékkatalógus.
+Telefonos válaszvesztés után a Függő művelet újrapróbálása ugyanazt az
+azonosítót küldi, ezért nem dupláz. Ennek helyi böngészőnaplóját ne töröld,
+amíg nem tisztázódott a művelet. A telefonos kódot csak munkatársnak add meg.
+
+6. MENTÉSEK ÉS ADATOK ELKÜLÖNÍTÉSE
+A bal alsó Mentés Excelbe → Közös raktár a készletet és az utolsó 100 mozgást
+menti .xlsx fájlba. Ez listázásra jó. Teljes raktármentéshez a főgépen a
+Raktár biztonsági mentése gombot használd: ez a teljes adatbázist, az eladás-
+és bevételezés-azonosítókat is megőrzi. Visszaállítás előtt minden gépen zárd
+be a programot. A főgép közös raktára és az egyes gépek készlethivatkozásai
+összetartoznak; régi raktármentés és új jegyzetkapcsolatok keverése hibát okozhat.
+Helyreállításhoz kérj segítséget, ne másold a főgép személyes profilját a többire.
+
+A saját JSON-biztonsági mentés a készlethivatkozási metaadatokat is megőrzi.
+A saját notes.json, archive.json, workorders.json és függő jegyzetnapló helyben
+marad. A közös raktár shared-inventory/inventory.json fájlja termékeket,
+készletet és névtelen készlethivatkozásokat tartalmaz. Ügyfélnevet, telefon-
+számot, alvázszámot és jegyzetszöveget a jegyzetből nem küldünk a raktárba.

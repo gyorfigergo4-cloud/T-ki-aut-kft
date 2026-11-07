@@ -3,6 +3,7 @@ const path = require('node:path');
 const fs = require('node:fs/promises');
 const store = require('./store');
 const notePatches = require('./note-patches');
+const {createService:createInventoryService}=require('./inventory-service');
 const { createService: createGarageService } = require('./garage-service');
 const archiveStore = require('./archive-store');
 const initialImport = require('./initial-import');
@@ -25,6 +26,15 @@ app.on('second-instance', () => {
 app.whenReady().then(async () => {
   const file = path.join(app.getPath('userData'), 'notes.json');
   let lastNotesCount = 0;
+  const inventory=createInventoryService(app.getPath('userData'),{writeNotes:notes=>store.write(file,notes),readNotes:()=>store.read(file)});
+  await inventory.start();
+  const stockReply=fn=>async(_,input)=>{try{return {ok:true,...await fn(input)};}catch(e){return {ok:false,error:e.message,code:e.code};}};
+  ipcMain.handle('inventory-load',stockReply(()=>inventory.load()));
+  ipcMain.handle('inventory-command',stockReply(c=>inventory.command(c)));
+  ipcMain.handle('inventory-resolve',stockReply(async code=>({product:await inventory.resolve(code)})));
+  ipcMain.handle('inventory-recover',()=>inventory.recover());
+  ipcMain.handle('inventory-pending',()=>inventory.hasAnyPending());
+  ipcMain.handle('inventory-backup',stockReply(async()=>{const bytes=await inventory.backup();const r=await dialog.showSaveDialog(win,{defaultPath:'TokiAuto-raktar.json',filters:[{name:'Teljes raktármentés',extensions:['json']}]});if(r.canceled)return {canceled:true};await fs.writeFile(r.filePath,bytes);return {};}));
   const garageService = createGarageService(app.getPath('userData'));
   await garageService.start();
   ipcMain.handle('load-garage', () => garageService.load());
@@ -43,10 +53,10 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('garage-network-status', () => garageService.status());
   ipcMain.handle('garage-network-configure', async (_, input) => {
-    try { return { ok: true, ...await garageService.configure(input) }; }
+    try { const result=await garageService.configure(input);await inventory.close();await inventory.start();return {ok:true,...result}; }
     catch (error) { return { ok: false, message: error.message }; }
   });
-  app.on('will-quit', () => { void garageService.close(); });
+  app.on('will-quit', () => { void garageService.close();void inventory.close(); });
   const workordersFile = path.join(app.getPath('userData'), 'workorders.json');
   const excelSessions = new Map();
   const folderSessions = new Map();
@@ -60,12 +70,13 @@ app.whenReady().then(async () => {
   }
   ipcMain.handle('load-archive', () => { prepareInitialData(); return archiveStore.read(archiveFile); });
   ipcMain.handle('save-archive', (_, archive) => archiveStore.write(archiveFile, archive));
-  ipcMain.handle('load', () => { prepareInitialData(); const notes=store.read(file); lastNotesCount=notes.length; return notes; });
-  ipcMain.handle('save', (_, notes) => { store.write(file, notes); lastNotesCount=notes.length; });
+  function readLocalNotes(){const notes=store.read(file);lastNotesCount=notes.length;return notes;}
+  ipcMain.handle('load', () => {prepareInitialData();if(inventory.hasPending())return inventory.recover().then(readLocalNotes,()=>{const notes=inventory.pendingNotes();store.validate(notes);lastNotesCount=notes.length;return notes;});return readLocalNotes();});
+  ipcMain.handle('save', (_, notes) => inventory.saveNotes(()=>notes).then(saved=>{lastNotesCount=saved.length;}));
   ipcMain.handle('save-note-changes', (_, patch) => {
     prepareInitialData();
-    if(lastNotesCount>0&&!syncFs.existsSync(file))throw new Error('A megnyitott jegyzetfájl eltűnt. Ne zárd be a programot; készíts biztonsági mentést.');
-    const notes=notePatches.apply(store.read(file),patch);store.write(file,notes);lastNotesCount=notes.length;
+    if(lastNotesCount>0&&!syncFs.existsSync(file)&&!inventory.hasPending())throw new Error('A megnyitott jegyzetfájl eltűnt. Ne zárd be a programot; készíts biztonsági mentést.');
+    return inventory.saveNotes(notes=>notePatches.apply(notes,patch)).then(saved=>{lastNotesCount=saved.length;});
   });
   ipcMain.handle('import-folder', async () => {
     try {
@@ -156,11 +167,12 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('export-excel', async (_, request) => {
     try {
-      if(!request||!['notes','workorders','garage'].includes(request.kind))throw Error('Válassz exportálható adatkört.');
+      if(!request||!['notes','workorders','garage','inventory'].includes(request.kind))throw Error('Válassz exportálható adatkört.');
       prepareInitialData();
-      const data=request.kind==='garage'?(await garageService.load()).people:request.kind==='notes'?store.read(file):workordersStore.read(workordersFile);
-      const selected=excelExport.select(data,request.id);
-      const result=await dialog.showSaveDialog(win,{defaultPath:'TokiAuto-'+({notes:'jegyzetek',workorders:'munkalapok',garage:'autonyilvantarto'}[request.kind])+'.xlsx',filters:[{name:'Excel-munkafüzet',extensions:['xlsx']}]});
+      const data=request.kind==='inventory'?await inventory.load():request.kind==='garage'?(await garageService.load()).people:request.kind==='notes'?store.read(file):workordersStore.read(workordersFile);
+      if(request.kind==='inventory'&&request.id)throw Error('A raktár teljes készletlistaként menthető.');
+      const selected=request.kind==='inventory'?data:excelExport.select(data,request.id);
+      const result=await dialog.showSaveDialog(win,{defaultPath:'TokiAuto-'+({notes:'jegyzetek',workorders:'munkalapok',garage:'autonyilvantarto',inventory:'raktar'}[request.kind])+'.xlsx',filters:[{name:'Excel-munkafüzet',extensions:['xlsx']}]});
       if(result.canceled)return {canceled:true};
       await excelExport.write(result.filePath,request.kind,selected);return {ok:true};
     }catch(error){return {ok:false,error:'Az Excel-mentés nem sikerült. '+error.message};}
@@ -170,7 +182,7 @@ app.whenReady().then(async () => {
     validateArchive(archive);
     const result = await dialog.showSaveDialog(win, { defaultPath: 'jegyzetek.json', filters: [{ name: 'Jegyzetmentés', extensions: ['json'] }] });
     if (result.canceled) return false;
-    await fs.writeFile(result.filePath, JSON.stringify({ format: 'autobolt-backup', version: 2, archive, notes, workorders: workordersStore.read(workordersFile) }, null, 2), 'utf8');
+    await fs.writeFile(result.filePath, JSON.stringify({ format: 'autobolt-backup', version: 2, archive, notes, inventoryLinks:inventory.localLinks(), workorders: workordersStore.read(workordersFile) }, null, 2), 'utf8');
     return true;
   });
   win = new BrowserWindow({ width: 1240, height: 850, minWidth: 900, minHeight: 600, title: 'Töki Autó Kft. · Belső jegyzetek', backgroundColor: '#F5F7F2', icon: path.join(__dirname, 'assets', 'toki-icon.png'), webPreferences: { backgroundThrottling: false, preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });

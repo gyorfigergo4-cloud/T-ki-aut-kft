@@ -35,8 +35,8 @@ function workbook(kind, data) {
  }
  const yes = v=>v===true?'Igen':'Nem';
  const number = v=>v===''||v===undefined?'':Number(String(v).replace(',','.'));
- const itemHeaders=['Tételazonosító','Cikkszám','Megnevezés','Teli ár (Ft/db)','Kedvezmény (%)','Kedvezményes ár (Ft/db)','Db','Beszállító','Megrendelve','Rendelés időpontja','Fizetve','Felírva','Megérkezett'];
- const itemValues=i=>[i.id,i.partNumber,i.description||'',number(i.fullPrice),number(i.discountPercent),number(i.discountedPrice),number(i.quantity),i.supplier,yes(Items.order(i).ordered),Items.order(i).orderedAt,yes(i.paid),yes(i.recorded),yes(i.arrived)];
+ const itemHeaders=['Tételazonosító','Cikkszám','Megnevezés','Teli ár (Ft/db)','Kedvezmény (%)','Kedvezményes ár (Ft/db)','Db','Beszállító','Megrendelve','Rendelés időpontja','Fizetve','Felírva','Megérkezett','Raktárról','Raktári termékazonosító'];
+ const itemValues=i=>[i.id,i.partNumber,i.description||'',number(i.fullPrice),number(i.discountPercent),number(i.discountedPrice),number(i.quantity),i.supplier,yes(Items.order(i).ordered),Items.order(i).orderedAt,yes(i.paid),yes(i.recorded),yes(i.arrived),yes(i.fromStock),i.stockProductId||''];
  if(kind==='notes'){
   require('./store').validate(data);
   const notes=normalize(data,{years:[],days:[]}).notes;
@@ -59,6 +59,11 @@ function workbook(kind, data) {
   require('./garage-model').validate(data);
   const main=sheet('Autónyilvántartó',['Névazonosító','Név','Autóazonosító','Autó','Alvázszám','Rendszám']);
   for(const p of data){if(!p.cars.length)add(main,[p.id,p.name,'','','','']);for(const c of p.cars)add(main,[p.id,p.name,c.id,c.vehicle,c.vin,c.plate]);}
+ }else if(kind==='inventory'){
+  if(!data||!Array.isArray(data.products)||!Array.isArray(data.movements))throw Error('Hibás raktáradat.');
+  const main=sheet('Raktár',['Termékazonosító','Terméknév','Cikkszám','Vonalkódok','Készlet (db)']);
+  for(const p of data.products)add(main,[p.id,p.name,p.sku,p.barcodes.join(' / '),p.quantity]);
+  const moves=sheet('Készletmozgások',['Időpont','Cikkszám','Terméknév','Változás (db)','Indok']);for(const m of data.movements)add(moves,[m.at,m.sku,m.name,m.delta,m.reason]);
  }else throw Error('Érvénytelen Excel-adatkör.');
  return book;
 }

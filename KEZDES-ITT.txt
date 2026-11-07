@@ -1,3 +1,28 @@
+ÚJ · 1.14.0: KÖZÖS RAKTÁR / LELTÁR
+A bal oldali Raktár / leltár részben termékeket, cikkszámokat és vonalkódokat
+rögzíthetsz. A bevételezés összeadja a darabszámokat. Keresés terméknévre,
+cikkszámra és vonalkódra is működik. A közös készlet automatikusan frissül.
+A hálózat az autónyilvántartó meglévő központi / csatlakozó beállítását követi.
+Frissítsd mind a négy gépet, és a főgépen nyisd meg egyszer a Raktár részt.
+A raktárnak két új tűzfalport szükséges: alapesetben TCP 47832 és 47833,
+csak a főgépen, a helyi hálózat számára. A régi 47831-es kapcsolat megmarad.
+
+A jegyzet cikkszámsorában új Raktárról pipa van. Csak ez von le készletet!
+A cikkszámnak a Raktárban rögzített cikkszámhoz vagy vonalkódhoz kell illenie.
+A pipa megnyomása rögtön menti a jegyzetet és a készletet. Mennyiségjavításkor
+a mező elhagyásakor korrigál. A pipa kivétele visszateszi a korábbi készletet.
+Tétel vagy teljes jegyzet törlése a következő mentéskor adja vissza a készletet.
+A szokásos gépelés továbbra is kézi / óránkénti mentéssel működik.
+Mentési hiba esetén figyeld a hibaüzenetet; a pipa önmagában még nem igazolja
+a sikert. Sikertelen levonásnál javítsd a darabszámot vagy vedd ki a pipát.
+
+Telefonhoz: a főgépen Raktár → Telefonos beolvasás. A saját helyi tanúsítvány
+telepítése után HTTPS-címen használható a kamera; a telefon ugyanazon a helyi
+hálózaton legyen Wi-Fi-vel. Részletes lépések: RAKTAR-UTMUTATO.txt.
+A raktár és készletmozgás Excelbe is menthető. A teljes raktár biztonsági
+mentését a főgépen a Raktár biztonsági mentése gomb készíti.
+A saját jegyzetek és munkalapok továbbra sem kerülnek át a többi gépre.
+
 ÚJ · 1.13.0: EXCEL-MENTÉS ÉS FELÍRVA PIPA
 Bal alul: Mentés Excelbe. Válaszd a saját jegyzeteket, saját munkalapokat
 vagy a közös autónyilvántartót. Jegyzetből és munkalapból az összes vagy
