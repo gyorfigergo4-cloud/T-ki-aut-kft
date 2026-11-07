@@ -35,6 +35,9 @@ A vonalkódolvasó billentyűzetként működjön, a kód végén Entert küldj�
 Kattints a Vonalkód / cikkszám mezőbe, állítsd be a darabszámot, és olvasd be.
 Minden sikeres beolvasás új bevételezés, a darabszám hozzáadódik a készlethez.
 Azonos művelet hálózati újraküldése viszont nem adja hozzá még egyszer.
+A gyors egymás utáni beolvasások sorba kerülnek; a helyi böngészőnapló
+megőrzi őket, és az újrapróbálás nem dupláz. Hiba esetén a Függő beolvasások
+folytatása gombbal folytathatók. Ezt a helyi naplót ne töröld kézzel.
 Ismeretlen kódnál előbb rögzítsd a terméket, utána olvasd be ismét.
 Kereshetsz terméknévre, cikkszámra vagy vonalkódra. Sok termék esetén lapozhatsz.
 Korrekcióval előjeles darabszámváltozást rögzíthetsz, kötelező indoklással.
