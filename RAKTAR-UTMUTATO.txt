@@ -102,7 +102,8 @@ ad új kiszolgálói tanúsítványt. Stabil IP-cím használata kényelmesebb.
 Egy beolvasás után a kamera megáll, hogy ugyanazt a címkét ne adja hozzá sokszor.
 Ellenőrizd a terméket, állítsd be a darabszámot, és Hozzáadás a készlethez.
 Ismeretlen kódnál előbb terméknév és cikkszám kell, utána bevételezhetsz.
-Kamera nélkül kézzel is beírhatod a vonalkódot vagy cikkszámot.
+Kamera nélkül kézzel is beírhatod a vonalkódot vagy cikkszámot. Terméknévre
+is kereshetsz: a találati gombok közül válaszd ki a megfelelő terméket.
 A telefonról bevételezés és új termék felvitele érhető el; eladás a jegyzetben.
 Nincs internetes keresés vagy automatikus külső termékkatalógus.
 Telefonos válaszvesztés után a Függő művelet újrapróbálása ugyanazt az
