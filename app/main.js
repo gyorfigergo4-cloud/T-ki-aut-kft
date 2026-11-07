@@ -34,6 +34,11 @@ app.whenReady().then(async () => {
   ipcMain.handle('inventory-resolve',stockReply(async code=>({product:await inventory.resolve(code)})));
   ipcMain.handle('inventory-recover',()=>inventory.recover());
   ipcMain.handle('inventory-pending',()=>inventory.hasAnyPending());
+  ipcMain.handle('inventory-catalog-search',stockReply(options=>inventory.catalogSearch(options)));
+  ipcMain.handle('inventory-catalog-start',stockReply(()=>inventory.catalogStart()));
+  ipcMain.handle('inventory-catalog-cancel',stockReply(()=>inventory.catalogCancel()));
+  ipcMain.handle('inventory-catalog-import',stockReply(async()=>{const r=await dialog.showOpenDialog(win,{title:'Saját szűrőkatalógus betöltése',properties:['openFile'],filters:[{name:'Töki szűrőkatalógus',extensions:['json']}]});if(r.canceled)return {canceled:true};return inventory.catalogInstall(r.filePaths[0]);}));
+  ipcMain.handle('inventory-catalog-export',stockReply(async()=>{const bytes=await inventory.catalogExport();const r=await dialog.showSaveDialog(win,{defaultPath:'TokiAuto-Szurokatalogus.json',filters:[{name:'Szűrőkatalógus',extensions:['json']}]});if(r.canceled)return {canceled:true};await fs.writeFile(r.filePath,bytes);return {};}));
   ipcMain.handle('inventory-backup',stockReply(async()=>{const bytes=await inventory.backup();const r=await dialog.showSaveDialog(win,{defaultPath:'TokiAuto-raktar.json',filters:[{name:'Teljes raktármentés',extensions:['json']}]});if(r.canceled)return {canceled:true};await fs.writeFile(r.filePath,bytes);return {};}));
   const garageService = createGarageService(app.getPath('userData'));
   await garageService.start();

@@ -281,3 +281,36 @@ Négy elkülönített Electron-folyamat hálózati próbája aktív grafikus ké
 A Windows-csomag a `dist/TokiAuto-win32-x64` könyvtárba kerül. Proxyt igénylő környezetben az Electron letöltéséhez `ELECTRON_GET_USE_PROXY=1`, valamint a `GLOBAL_AGENT_HTTP_PROXY` és `GLOBAL_AGENT_HTTPS_PROXY` beállítása szükséges a meglévő proxycímekre. A TLS- és checksum-ellenőrzést hagyd bekapcsolva.
 
 Ellenőrzés: adattárolási, archívum- és DOM funkcionális tesztek Linuxon; böngészőben a mappák, több név, új év és nap, keresés és újratöltés ellenőrizve mintaadatokkal. A Windows bináris futtatása külön Windows gépen ellenőrizendő.
+
+## Szűrőkatalógus (1.15.0)
+
+
+SZŰRŐKATALÓGUS ÉS SAJÁT VONALKÓDOK – 1.15.0
+1. A központi gépen: Raktár / leltár → Termékkatalógus → 2019-es lista letöltése.
+   Internet kell az első letöltéshez: körülbelül 710 MB forrás feldolgozása történik.
+   A kiválogatott helyi lista 138 988 olaj-, lég- és pollenszűrő referenciaadata.
+   A letöltés állapota látható, megszakítható. Nem növeli a raktárkészletet.
+2. Keress cikkszámra, gyártóra vagy szűrőtípusra. Ellenőrizd a gyártót és cikkszámot!
+   A csomagolás vonalkódját olvasd be vagy írd be, majd mentsd a termékhez.
+   Új termék készlete ekkor 0; meglévő termék mennyisége és vonalkódjai megmaradnak.
+3. Következő beolvasáskor a mentett vonalkódot a közös raktár már felismeri,
+   mind a négy csatlakoztatott gépen és a telefonon is.
+   Egy termékhez több külön csomagolási vonalkód menthető.
+4. Telefonon is kiválasztható a katalógustermék ismeretlen vonalkódhoz.
+   A bevételezést alapból külön jóvá kell hagyni. Az opcionális automatikus
+   kamerás bevételezés egy sikeres beolvasásra 1 db-ot ad hozzá; a kamera megáll.
+5. A főgépen a katalógus külön JSON-fájlba exportálható, másik főgépen importálható.
+   Így az otthon letöltött listát átviheted a boltba újabb letöltés nélkül.
+   Ez csak a referencialista: a saját vonalkódok és készlet a Raktár biztonsági
+   mentésében vannak. Az otthoni és bolti készlet nem szinkronizál egymással.
+6. Minden gépen frissítsd az alkalmazást; telefonon töltsd újra a Safari-oldalt.
+   A meglévő hálózati és tanúsítványbeállításokat nem kell újra elvégezni.
+
+A lista 2019-es, nem hivatalos, nyilvános referenciaforrásból származik;
+nem teljes és nem friss gyártói katalógus, EAN-kódokat nem tartalmaz.
+Forrás: https://github.com/tecdocSQL/tecdocdatabase1Q2019
+Forrásverzió: 7b9828809040b647d46998b65870b3831e858aa1
+Újrafelhasználási engedélye nem ellenőrzött; a forrásadatot az alkalmazás
+nem tartalmazza, azt a főgép külön tölti le. A saját hozzárendelések külön maradnak.
+A jegyzetek és munkalapok továbbra is gépenként külön vannak; a kézi és
+óránkénti jegyzetmentés működése változatlan.
