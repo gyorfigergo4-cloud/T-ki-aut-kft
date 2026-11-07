@@ -1,3 +1,13 @@
+ÚJ · 1.14.1: TELEFONOS VONALKÓD-FELISMERÉS
+Javított kamerás felismerés, nagyobb kért felbontással, elfordított kódokkal
+és későn megjelenő kameraképpel is. Támogatott telefonon kiválasztható a kamera,
+állítható a nagyítás és bekapcsolható a lámpa.
+Új gomb: Fotó készítése / kép beolvasása. Ha az élőkép nem olvas, készíts
+éles képet a teljes vonalkódról. A képet a telefon helyben dolgozza fel.
+A készlet továbbra is csak a Hozzáadás a készlethez jóváhagyásra változik.
+Frissítés után a főgépen induljon az új app, a telefon Safarijában frissítsd
+újra az oldalt. A korábbi cím, telefonos kód és tanúsítvány megmarad.
+
 ÚJ · 1.14.0: KÖZÖS RAKTÁR / LELTÁR
 A bal oldali Raktár / leltár részben termékeket, cikkszámokat és vonalkódokat
 rögzíthetsz. A bevételezés összeadja a darabszámokat. Keresés terméknévre,

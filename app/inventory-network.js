@@ -3,12 +3,12 @@ const {privateAddress}=require('./garage-network'),{StockError}=require('./inven
 const MAX=16*1024*1024;
 function handler({database,token,phone=false,ca}){
  return async(req,res)=>{
-  const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'",'Permissions-Policy':'camera=(self), microphone=()'};
+  const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'",'Permissions-Policy':'camera=(self), microphone=()'};
   const send=(status,data,type='application/json; charset=utf-8')=>{res.writeHead(status,{...headers,'Content-Type':type});res.end(type.startsWith('application/json')?JSON.stringify(data):data);};
   if(!privateAddress(req.socket.remoteAddress))return send(403,{error:'Csak a helyi hálózatról használható.'});
   if(req.method==='GET'&&req.url==='/inventory-ca.crt'&&ca)return send(200,ca,'application/x-x509-ca-cert');
   if(phone&&req.method==='GET'){
-   const assets={'/':['inventory-phone.html','text/html; charset=utf-8'],'/phone.js':['inventory-phone.js','text/javascript; charset=utf-8'],'/phone.css':['inventory-phone.css','text/css; charset=utf-8']};
+   const assets={'/':['inventory-phone.html','text/html; charset=utf-8'],'/camera.js':['inventory-camera.js','text/javascript; charset=utf-8'],'/phone.js':['inventory-phone.js','text/javascript; charset=utf-8'],'/phone.css':['inventory-phone.css','text/css; charset=utf-8']};
    if(assets[req.url]){const [name,type]=assets[req.url];return send(200,fs.readFileSync(path.join(__dirname,name)),type);}
    if(req.url==='/zxing.js')return send(200,fs.readFileSync(require.resolve('@zxing/browser/umd/zxing-browser.min.js')),'text/javascript; charset=utf-8');
   }

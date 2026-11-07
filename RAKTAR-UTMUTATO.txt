@@ -1,4 +1,4 @@
-TÖKI AUTÓ · KÖZÖS RAKTÁR ÉS TELEFONOS BEOLVASÁS · 1.14.0
+TÖKI AUTÓ · KÖZÖS RAKTÁR ÉS TELEFONOS BEOLVASÁS · 1.14.1
 
 1. A NÉGY GÉP FRISSÍTÉSE
 Zárd be a korábbi alkalmazást, és mind a négy gépen a legfrissebb csomagot
@@ -124,3 +124,14 @@ A saját notes.json, archive.json, workorders.json és függő jegyzetnapló hel
 marad. A közös raktár shared-inventory/inventory.json fájlja termékeket,
 készletet és névtelen készlethivatkozásokat tartalmaz. Ügyfélnevet, telefon-
 számot, alvázszámot és jegyzetszöveget a jegyzetből nem küldünk a raktárba.
+
+7. HA A KAMERA ÉLES KÉPET AD, DE NEM OLVAS (1.14.1)
+A főgépen induljon az 1.14.1-es alkalmazás. A telefonon frissítsd újra a
+megszokott HTTPS-oldalt, hogy az új olvasó betöltődjön. A tanúsítványt és kódot
+nem kell újra beállítani. A Fotó készítése / kép beolvasása gomb az új felület
+ismertetőjele. Próbáld a teljes kódot élesen, jó fényben, 15–25 cm-ről.
+Ha van Kamera kiválasztása lista, válassz másik hátlapi kamerát. A támogatott
+nagyítás és lámpa is megjelenik. Másik lehetőségként készíts éles fotót a
+címkéről a Fotó készítése gombbal. A fotó helyben, a telefonon lesz feldolgozva.
+A felismert terméket és darabszámot ellenőrizd, majd külön hagyd jóvá a
+bevételezést. Több vonalkódot tartalmazó címkénél a kívánt kódot célozd.

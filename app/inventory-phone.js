@@ -1,8 +1,9 @@
-(()=>{'use strict';const $=id=>document.getElementById(id);let token='',product=null,controls,busy=false;
+(()=>{'use strict';const $=id=>document.getElementById(id);let token='',product=null,busy=false;
  const pending=()=>{try{return JSON.parse(localStorage.getItem('toki-stock-pending')||'null');}catch{return null;}};
  function message(s){$('status').textContent=s;}
  async function api(command){const r=await fetch('/api/stock',{method:command?'POST':'GET',headers:{Authorization:'Bearer '+token,...(command?{'Content-Type':'application/json'}:{})},...(command?{body:JSON.stringify(command)}:{})});const d=await r.json();if(!r.ok){const e=Error(d.error||'Nem sikerült a művelet.');e.definitive=r.status<500;throw e;}return d;}
- function stop(){controls?.stop();controls=null;$('video').hidden=true;$('stop').hidden=true;}
+ const camera=StockCamera.create({onMessage:message,onCode:text=>{$('barcode').value=text;find().catch(e=>message(e.message));}});
+ function stop(){camera.stop();}
  function show(p){product=p;$('product-name').textContent=p?.name||'';$('stock').textContent=p?'Cikkszám: '+p.sku+' · Készlet: '+p.quantity+' db':'';$('receive').hidden=!p;}
  async function find(){stop();const code=$('barcode').value.trim();if(!code)return;const d=await api();const k=s=>s.trim().normalize('NFC').toLocaleLowerCase('hu');const p=d.products.find(p=>k(p.sku)===k(code)||p.barcodes.some(b=>k(b)===k(code)));$('phone-results').replaceChildren();show(p);$('new-product').hidden=true;
   if(p){message('Ellenőrizd a terméket és a darabszámot, majd nyomj Hozzáadás-t.');return;}
@@ -20,6 +21,8 @@
  $('receive').onsubmit=e=>{e.preventDefault();if(!product)return;send({type:'receive',id:crypto.randomUUID(),productId:product.id,quantity:Number($('quantity').value)}).catch(e=>message(e.message));};
  $('new-product').onsubmit=e=>{e.preventDefault();send({type:'product',id:crypto.randomUUID(),product:{name:$('name').value,sku:$('sku').value,barcodes:[$('barcode').value.trim()]}}).catch(e=>message(e.message));};
  $('retry').onclick=()=>{const c=pending();if(c)send(c).catch(e=>message(e.message));};
- $('camera').onclick=async()=>{if(busy||pending()){message('Előbb fejezd be a függő műveletet.');return;}if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){message('A kamerához telepítsd és engedélyezd a főgép helyi tanúsítványát, majd nyisd meg a HTTPS-címet. A kód kézzel is beírható.');return;}stop();$('video').hidden=false;$('stop').hidden=false;let found=false;try{const reader=new ZXingBrowser.BrowserMultiFormatReader();const c=await reader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},$('video'),(result,error,ctrl)=>{if(result&&!found){found=true;ctrl.stop();$('barcode').value=result.getText();find().catch(e=>message(e.message));}});if(found)c.stop();else controls=c;}catch(e){stop();message('A kamera nem indítható. Engedélyezd a kamerát a böngészőben. '+e.message);}};
+ $('camera').onclick=()=>{if(busy||pending()){message('Előbb fejezd be a függő műveletet.');return;}show(null);$('new-product').hidden=true;$('phone-results').replaceChildren();camera.start().catch(e=>message(e.message));};
+ $('photo').onclick=()=>{if(busy||pending()){message('Előbb fejezd be a függő műveletet.');return;}stop();$('photo-file').click();};
+ $('photo-file').onchange=async()=>{if(busy||pending())return;const file=$('photo-file').files?.[0];if(file){show(null);$('new-product').hidden=true;$('phone-results').replaceChildren();await camera.photo(file);}$('photo-file').value='';};
  $('stop').onclick=stop;$('logout').onclick=()=>{stop();token='';$('code').value='';$('scanner').hidden=true;$('login').hidden=false;message('Kiléptél.');};window.addEventListener('pagehide',stop);
 })();

@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Telefonos kamerafelismerés · 1.14.1
+
+Az élő videó leolvasása megvárja a tényleges képméretet és az olvasható képkockát, nem tart fenn egy kezdetben nulla vagy elfordulás után elavult méretű dekódolóvásznat. Minden képkocka aktuális mérettel készül, TRY_HARDER móddal, külön 90 fokos próbával és időnként középső kivágással. A kérés 1920×1080-as hátlapi képet preferál; a tényleges beállítás a telefon képességétől függ. A támogatott fókusz, nagyítás, lámpa és kameralista opcionális: hiányuk nem állítja le a felismerést. Az aktív kameráról és a sikertelen olvasásról látható visszajelzés van. Stop, kameracsere és kilépés megszünteti a streamet és a feldolgozó időzítőt.
+
+Új **Fotó készítése / kép beolvasása** útvonal a készülék natív fényképezőjéhez/képválasztójához. Az állókép két méretben, teljes képpel és középső kivágással, elforgatva is olvasható; a fájl és a képpontok a telefonon maradnak. A CSP csak a saját ideiglenes blob-képforrást engedi még hozzá. A felismerés nem készít készletműveletet; a termék és darabszám jóváhagyása megmaradt. A szerver címe, a helyi CA, a telefonos kód, a készlet és a jegyzetadatok változatlan helyen maradnak.
+
+A valódi Chromium-próba későn olvasható videóméretet, vízszintes és függőleges EAN-13-at, Code 128-at és fájlválasztóból érkező elfordított fotót is tesztel. Fizikai iPhone-on a felhasználó konkrét címkéjét továbbra is helyben kell kipróbálni.
+
 ## Közös raktár, vonalkód és jegyzetkapcsolat · 1.14.0
 
 A **Raktár / leltár** részleg közös terméklistát, cikkszámot, több vonalkódot és egész darabszámú készletet kezel. Az autónyilvántartó működő központ/csatlakozó beállítását használja, annak portja+1-en; a külön telefonos HTTPS-felület portja+2. Az eredeti autólista protokollja és portja változatlan. A központ első Raktár-megnyitása engedélyezi az induláskor automatikusan elinduló készletszolgáltatást. Beállítatlan autóhálózatnál helyi próbakészletet jelez, ezeket nem egyesíti automatikusan. Kezelés és tanúsítványtelepítés: [RAKTAR-UTMUTATO.txt](RAKTAR-UTMUTATO.txt). Képernyőképes lépések: [képes útmutató](RAKTAR-KEPES-UTMUTATO.md), [letölthető PDF](downloads/raktar-utmutato/TokiAuto-Kepes-Beallitas.pdf).

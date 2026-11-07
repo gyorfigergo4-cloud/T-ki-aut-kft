@@ -6,7 +6,7 @@ test('közös HTTP készlet, hitelesített HTTPS telefon, helyes CA és böngés
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'toki-stock-net-'));let server;try{const db=createDatabase(path.join(dir,'stock.json')),tls=credentials(dir,['127.0.0.1']),p=await port();server=await Network.start({database:db,token:'a'.repeat(32),phoneToken:'b'.repeat(32),port:p,tls});
  assert.equal((await req(p,'/api/stock')).status,401);assert.equal((await req(p,'/api/stock',{token:'a'.repeat(32),origin:'https://evil.invalid'})).status,403);
  const root=await req(p,'/inventory-ca.crt');assert.equal(root.status,200);assert.equal(root.text,tls.ca);assert.doesNotMatch(root.text,/PRIVATE KEY/);
- assert.equal((await req(p+1,'/',{secure:true,ca:tls.ca})).status,200);assert.equal((await req(p+1,'/zxing.js',{secure:true,ca:tls.ca})).status,200);await assert.rejects(req(p+1,'/',{secure:true}));
+ assert.equal((await req(p+1,'/',{secure:true,ca:tls.ca})).status,200);assert.equal((await req(p+1,'/zxing.js',{secure:true,ca:tls.ca})).status,200);assert.equal((await req(p+1,'/camera.js',{secure:true,ca:tls.ca})).status,200);await assert.rejects(req(p+1,'/',{secure:true}));
  assert.equal((await req(p+1,'/api/stock',{secure:true,ca:tls.ca,token:'a'.repeat(32)})).status,401);
  assert.equal((await req(p+1,'/api/stock',{secure:true,ca:tls.ca,token:'b'.repeat(32),origin:'https://evil.invalid'})).status,403);
  const options={secure:true,ca:tls.ca,token:'b'.repeat(32),origin:'https://127.0.0.1:'+(p+1)};
