@@ -73,7 +73,7 @@ function renderWorkflowStatus() {
   }
   renderPayment(note);
 }
-for (const status of NoteStatuses.all) {
+for (const status of NoteStatuses.all.filter(status => status.id !== 'written')) {
   const label = document.createElement('label'); label.className = 'note-status-option'; label.dataset.workflowStatus = status.id;
   const input = document.createElement('input'); input.type = 'radio'; input.name = 'note-status'; input.value = status.id;
   const text = document.createElement('span'); text.textContent = status.label; label.append(input, text); $('note-status-options').append(label);
@@ -106,6 +106,7 @@ function renderVehicleTabs(note) {
     row.hidden = !selected; row.classList.toggle('is-selected', selected);
   }
   const vehicle = note.vehicles.find(row => row.id === note.activeVehicleId);
+  $('oil').value = vehicle?.oil || ''; $('oil').disabled = !vehicle;
   $('vehicle-items-context').textContent = vehicle ? 'Kiválasztott autó: ' + Vehicles.label(vehicle, note.vehicles.indexOf(vehicle)) : 'Hozzárendelés nélküli tételek – a sor Autó mezőjében választhatsz alvázszámot.';
   $('note-to-wo').textContent = vehicle ? 'Munkalap – kiválasztott autó' : 'Munkalap – közös tételek';
   $('note-to-wo').title = 'Csak az itt látható tételeket és a kiválasztott autót veszi át.';
@@ -250,7 +251,7 @@ function renderList() {
     if (Items.needsRecording(note.items)) { const warning=document.createElement('span');warning.className='note-recording-warning';warning.textContent='!';warning.title='Van megrendelt, még fel nem írt tétel.';warning.setAttribute('aria-label',warning.title);button.append(warning); }
     const preview = document.createElement('small'); preview.textContent = query ? note.day : note.items.map(item => item.partNumber).filter(Boolean).join(' · ') || note.oil || note.vin || 'Adatok kitöltése…';
     const caption = document.createElement('span'); caption.className = 'note-status-caption'; caption.textContent = '● ' + workflowStatus.label;
-    button.append(title, preview, caption); button.onclick = () => afterCheck(selected === note.id ? validInputs() : allowNavigation(), () => { selected = note.id; setDayContext(note.day); render(); }); $('list').append(button);
+    button.append(title, preview); if(workflowStatus.id !== 'written') button.append(caption); button.onclick = () => afterCheck(selected === note.id ? validInputs() : allowNavigation(), () => { selected = note.id; setDayContext(note.day); render(); }); $('list').append(button);
   }
   if (!visible.length) {
     const empty = document.createElement('p'); empty.className = 'list-empty';
@@ -451,7 +452,7 @@ $('new').onclick = () => {
 for (const field of fields) $(field).addEventListener('input', () => {
   const note = current(); if (!note) return;
   if (!$(field).validity.valid) { $('status').textContent = 'Az ár nem lehet negatív, legfeljebb két tizedest adj meg.'; return; }
-  note[field] = $(field).value; touchNote(note); persistNotes();
+  if(field === 'oil'){const vehicle=note.vehicles.find(v=>v.id===note.activeVehicleId);if(!vehicle)return;vehicle.oil=$(field).value;note.oil=note.vehicles.map(v=>v.oil||'').filter(Boolean).join(' / ');}else note[field] = $(field).value; touchNote(note); persistNotes();
   if($('search').value.trim())renderList();else if(field==='title'||field==='oil'){const card=[...$('list').children].find(c=>c.dataset.note===note.id);if(card){card.querySelector('strong').textContent=note.title||'Új név';card.querySelector('small').textContent=note.items.map(i=>i.partNumber).filter(Boolean).join(' · ')||note.oil||note.vin||'Adatok kitöltése…';}}
   metadata(false);
 });

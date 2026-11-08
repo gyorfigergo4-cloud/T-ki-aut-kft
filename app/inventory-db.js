@@ -19,16 +19,16 @@ function createDatabase(file){
  const view=d=>({revision:d.revision,products:d.products,movements:d.movements.slice(-100).reverse()});
  function command(c){
   if(!c||typeof c!=='object'||!['product','receive','adjust','delete','claims','link-barcode'].includes(c.type))throw new StockError('Érvénytelen raktárművelet.');
-  const d=read(),now=new Date().toISOString();
+  const d=read(),now=new Date().toISOString(),operator=c.operator===undefined?'Korábbi / név nélkül':text(c.operator,80);
   if(c.type==='claims'){
-   if(Object.keys(c).some(k=>!['type','device','seq','allocations'].includes(k)))throw new StockError('Csak készlethivatkozások küldhetők.');
+   if(Object.keys(c).some(k=>!['type','device','seq','allocations','operator'].includes(k)))throw new StockError('Csak készlethivatkozások küldhetők.');
    if(!/^[a-f0-9-]{36}$/.test(c.device)||!Number.isSafeInteger(c.seq)||c.seq<1||!Array.isArray(c.allocations)||c.allocations.length>200000)throw new StockError('Hibás készletkapcsolat.');
    const keys=new Set();for(const a of c.allocations){if(!a||Object.keys(a).some(k=>!['id','productId','quantity'].includes(k)))throw new StockError('Személyes adat nem küldhető a raktárba.');text(a.id,500);text(a.productId);qty(a.quantity);if(!a.quantity||keys.has(a.id))throw new StockError('Hibás tételhivatkozás.');keys.add(a.id);}
    const previous=d.devices[c.device],digest=hash(c.allocations);
    if(previous&&c.seq<previous.seq)throw new StockError('Régi készletmódosítás.','stale');
    if(previous&&c.seq===previous.seq){if(previous.digest!==digest)throw new StockError('Eltérő tartalom ugyanahhoz a készletművelethez.');return view(d);}
    const delta=new Map();for(const a of previous?.allocations||[])delta.set(a.productId,(delta.get(a.productId)||0)+a.quantity);for(const a of c.allocations)delta.set(a.productId,(delta.get(a.productId)||0)-a.quantity);
-   for(const [id,n]of delta){const p=d.products.find(p=>p.id===id);if(!p)throw new StockError('A raktári termék nem található.');const next=p.quantity+n;if(next<0)throw new StockError('Nincs elegendő készlet: '+p.name+' ('+p.quantity+' db elérhető).','insufficient');qty(next);p.quantity=next;if(n)d.movements.push({id:randomUUID(),at:now,productId:id,sku:p.sku,name:p.name,delta:n,reason:n>0?'Jegyzet korrekció / visszavétel':'Jegyzet – raktárról'});}
+   for(const [id,n]of delta){const p=d.products.find(p=>p.id===id);if(!p)throw new StockError('A raktári termék nem található.');const next=p.quantity+n;if(next<0)throw new StockError('Nincs elegendő készlet: '+p.name+' ('+p.quantity+' db elérhető).','insufficient');qty(next);p.quantity=next;if(n)d.movements.push({id:randomUUID(),at:now,operator,productId:id,sku:p.sku,name:p.name,delta:n,reason:n>0?'Jegyzet korrekció / visszavétel':'Jegyzet – raktárról'});}
    d.devices[c.device]={seq:c.seq,digest,allocations:c.allocations};
   }else{
    text(c.id,100);if(!/^[a-f0-9-]{36}$/.test(c.id))throw new StockError('Hibás műveletazonosító.');const digest=hash(c);
@@ -45,7 +45,7 @@ function createDatabase(file){
     const p=d.products.find(p=>p.id===c.productId);if(!p)throw new StockError('A raktári termék nem található.');
     if(c.type==='link-barcode'){const barcode=text(c.barcode);if(d.products.some(x=>x.id!==p.id&&[x.sku,...x.barcodes].some(v=>key(v)===key(barcode))))throw new StockError('A vonalkód már másik termékhez tartozik.');if(!p.barcodes.some(v=>key(v)===key(barcode))){if(p.barcodes.length>=100)throw new StockError('Legfeljebb 100 vonalkód adható meg.');p.barcodes.push(barcode);}if(c.catalogId){if(typeof c.catalogId!=='string'||c.catalogId.length>200)throw new StockError('Hibás katalógushivatkozás.');if(p.catalogId&&p.catalogId!==c.catalogId)throw new StockError('A termék már másik katalógustételhez kapcsolódik. Ellenőrizd a gyártót és cikkszámot.');p.catalogId=c.catalogId;}}
     else if(c.type==='delete'){if(p.quantity||Object.values(d.devices).some(x=>x.allocations.some(a=>a.productId===p.id)))throw new StockError('Készlettel vagy jegyzetkapcsolattal rendelkező termék nem törölhető.');d.products=d.products.filter(x=>x.id!==p.id);}
-    else{const n=c.quantity;if(!Number.isSafeInteger(n)||!n||(c.type==='receive'&&n<0))throw new StockError('Pozitív egész darabszám szükséges; korrekciónál negatív is megadható.');qty(p.quantity+n);const reason=c.type==='receive'?'Bevételezés':text(c.reason,300);p.quantity+=n;d.movements.push({id:c.id,at:now,productId:p.id,sku:p.sku,name:p.name,delta:n,reason});}
+    else{const n=c.quantity;if(!Number.isSafeInteger(n)||!n||(c.type==='receive'&&n<0))throw new StockError('Pozitív egész darabszám szükséges; korrekciónál negatív is megadható.');qty(p.quantity+n);const reason=c.type==='receive'?'Bevételezés':text(c.reason,300);p.quantity+=n;d.movements.push({id:c.id,at:now,operator,productId:p.id,sku:p.sku,name:p.name,delta:n,reason});}
    }
    d.receipts[c.id]=digest;
   }

@@ -1,6 +1,6 @@
 const {app}=require('electron');const root=require('node:path').resolve(__dirname,'..');let win;
 app.setPath('userData',process.env.TOKI_GUI_DATA);
-app.on('browser-window-created',(_,w)=>{win=w;w.webContents.once('did-finish-load',async()=>{try{await w.webContents.executeJavaScript('GarageUI.ready');process.send({ready:true});}catch(e){process.send({startupError:e.message});}});});
+app.on('browser-window-created',(_,w)=>{win=w;w.webContents.once('did-finish-load',async()=>{try{await w.webContents.executeJavaScript('GarageUI.ready');await w.webContents.executeJavaScript("document.getElementById('stock-operator').value='Teszt raktáros';");process.send({ready:true});}catch(e){process.send({startupError:e.message});}});});
 process.on('message',async message=>{try{
  if(message.action==='exit'){app.exit(0);return;}
  if(message.action==='quit-attempt'){app.quit();process.send({id:message.id,result:true});return;}

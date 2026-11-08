@@ -11,10 +11,10 @@
   const ids = new Set();
   for (const row of rows) {
    if (!row || typeof row.id !== 'string' || !row.id || row.id.length > 200 || ids.has(row.id) || typeof row.vin !== 'string' || row.vin.length > 20000 || typeof row.brand !== 'string' || row.brand.length > 200) throw new Error('Érvénytelen alvázszám- vagy márkaadat');
-   ids.add(row.id);
+   if(row.oil !== undefined && (typeof row.oil !== 'string' || row.oil.length > 20000)) throw new Error('Érvénytelen olajadat'); ids.add(row.id);
   }
  }
- const blank = id => ({ id, vin: '', brand: '' });
+ const blank = id => ({ id, vin: '', brand: '', oil: '' });
  function get(note) {
   if (note.vehicles !== undefined) { validate(note.vehicles); return note.vehicles.map(row => ({ ...row, brand: normalizeBrand(row.brand) })); }
   const text = note.vin || '', pieces = text.split(/\s*\/\s*|\r?\n/).filter(Boolean);
@@ -28,7 +28,7 @@
   for (const item of note.items || []) if (item.vehicleId !== undefined && !valid(item.vehicleId)) throw new Error('A cikkszámhoz rendelt autó nem található.');
  }
  function normalize(note) {
-  const vehicles = get(note), result = { ...note, vehicles };
+  const vehicles = get(note).map((v,i) => ({...v, oil: v.oil === undefined ? (i === 0 ? note.oil || '' : '') : v.oil})), result = { ...note, vehicles };
   if (Array.isArray(note.items)) {
    // Only an unambiguous single-car legacy note can be assigned automatically.
    result.items = note.items.map(item => ({ ...item, vehicleId: item.vehicleId === undefined ? (vehicles.length === 1 ? vehicles[0].id : '') : item.vehicleId }));
@@ -49,7 +49,7 @@
  }
  function selectedNote(note) {
   const vehicles = note.vehicles.filter(vehicle => vehicle.id === note.activeVehicleId);
-  return { ...note, vehicles, items: itemsFor(note).map(item => ({ ...item })), ...quoteInfo({ vehicles }) };
+  return { ...note, oil: vehicles[0]?.oil || '', vehicles, items: itemsFor(note).map(item => ({ ...item })), ...quoteInfo({ vehicles }) };
  }
  function findSelection(note, query) {
   const fold = value => value.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -60,7 +60,7 @@
   return item?.vehicleId;
  }
  function sync(note) { validate(note.vehicles); note.vin = note.vehicles.map(row => row.vin.trim()).filter(Boolean).join(' / '); }
- function searchText(note) { return get(note).map(row => row.vin + ' ' + row.brand).join(' '); }
+ function searchText(note) { return get(note).map(row => row.vin + ' ' + row.brand + ' ' + (row.oil || '')).join(' '); }
  function quoteInfo(note) {
   const rows = get(note).filter(row => row.vin.trim() || row.brand.trim());
   return { vin: rows.map(row => row.vin.trim()).filter(Boolean).join(' / '), vehicle: [...new Set(rows.map(row => row.brand.trim()).filter(Boolean))].join(' / ') };

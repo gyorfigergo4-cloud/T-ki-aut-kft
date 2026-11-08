@@ -30,6 +30,7 @@ app.whenReady().then(async () => {
   await inventory.start();
   const stockReply=fn=>async(_,input)=>{try{return {ok:true,...await fn(input)};}catch(e){return {ok:false,error:e.message,code:e.code};}};
   ipcMain.handle('inventory-load',stockReply(()=>inventory.load()));
+  ipcMain.handle('inventory-operator',stockReply(name=>inventory.setOperator(name)));
   ipcMain.handle('inventory-command',stockReply(c=>inventory.command(c)));
   ipcMain.handle('inventory-resolve',stockReply(async code=>({product:await inventory.resolve(code)})));
   ipcMain.handle('inventory-recover',()=>inventory.recover());

@@ -8,6 +8,6 @@ app.whenReady().then(async()=>{
  session.defaultSession.setCertificateVerifyProc((r,done)=>{try{const cert=new X509Certificate(r.certificate.data);const now=Date.now();done(cert.verify(ca.publicKey)&&cert.checkIssued(ca)&&cert.checkIP(r.hostname)&&Date.parse(cert.validFrom)<=now&&Date.parse(cert.validTo)>now?0:-2);}catch{done(-2);}});
  session.defaultSession.setPermissionRequestHandler((wc,permission,callback)=>callback(permission==='media'&&wc.getURL().startsWith(process.env.TOKI_PHONE_URL)));
  win=new BrowserWindow({width:430,height:900,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,backgroundThrottling:false}});
- await win.loadURL(process.env.TOKI_PHONE_URL);process.send({ready:true});
+ await win.loadURL(process.env.TOKI_PHONE_URL);await win.webContents.executeJavaScript("document.getElementById('operator').value='Teszt telefonos';");process.send({ready:true});
 }).catch(e=>{process.send({startupError:e.message});app.exit(1);});
 process.on('message',async m=>{try{if(m.action==='exit'){app.exit(0);return;}if(m.action==='screenshot'){fs.writeFileSync(m.path,(await win.webContents.capturePage()).toPNG());process.send({id:m.id,result:true});return;}const result=await win.webContents.executeJavaScript(m.script);process.send({id:m.id,result});}catch(e){process.send({id:m.id,error:e.message});}});

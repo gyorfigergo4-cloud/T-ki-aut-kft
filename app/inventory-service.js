@@ -16,7 +16,7 @@ function createService(dir,{writeNotes,readNotes}={}){
   if(c.mode!=='client'){
    db=createDatabase(path.join(dir,'shared-inventory','inventory.json'));
    if(c.mode==='host'){
-    const tf=path.join(dir,'inventory-phone-code.json');const code=fs.existsSync(tf)?read(tf).code:randomBytes(16).toString('hex');if(!fs.existsSync(tf))atomic(tf,{code});
+    const tf=path.join(dir,'inventory-phone-code.json');const code='tokiautoleltar';if(!fs.existsSync(tf)||read(tf).code!==code)atomic(tf,{code});
     const tls=require('./inventory-tls').credentials(dir,addresses());server=await Network.start({database:db,token:c.token,port:c.port,phoneToken:code,tls,catalog:catalogAPI});
    }
   }
@@ -30,7 +30,7 @@ function createService(dir,{writeNotes,readNotes}={}){
   await finishJournal();const before=links(),next=allocations(notes);
   if(JSON.stringify(before.allocations)===JSON.stringify(next)){writeNotes(notes);return;}
   if(!fs.existsSync(linkFile))atomic(linkFile,before);
-  const after={device:before.device,seq:before.seq+1,allocations:next},command={type:'claims',device:after.device,seq:after.seq,allocations:next};
+  const after={device:before.device,seq:before.seq+1,allocations:next},command={type:'claims',device:after.device,seq:after.seq,allocations:next,...(fs.existsSync(path.join(dir,'inventory-operator.json'))?{operator:read(path.join(dir,'inventory-operator.json')).name}:{})};
   const j={notes,links:after,command};atomic(journalFile,j);
   try{await finishJournal();}catch(e){if(e.code&&e.code!=='unavailable'&&e.code!=='corrupt')fs.rmSync(journalFile,{force:true});throw e;}
  }
@@ -39,6 +39,7 @@ function createService(dir,{writeNotes,readNotes}={}){
  async function command(c){return serialize(async()=>{await finishJournal();if(fs.existsSync(commandFile)){const old=read(commandFile);if(JSON.stringify(old)!==JSON.stringify(c)){await recoverCommand();throw new StockError('Az előző bizonytalan raktárművelet elkészült. Ellenőrizd a készletet, majd ismételd meg az új műveletet.','recovered');}}atomic(commandFile,c);try{const result=await raw(c);fs.rmSync(commandFile,{force:true});return result;}catch(e){if(e.code&&e.code!=='unavailable')fs.rmSync(commandFile,{force:true});throw e;}});}
  function status(){const c=config();const ips=addresses();return {mode:c.mode,port:c.port,phonePort:c.port+1,addresses:ips,host:c.host||ips[0]||'',enabled:fs.existsSync(enabledFile),pending:fs.existsSync(journalFile)||fs.existsSync(commandFile),...(c.mode==='host'&&fs.existsSync(path.join(dir,'inventory-phone-code.json'))?{phoneCode:read(path.join(dir,'inventory-phone-code.json')).code}:{} )};}
  return {load,command,status,serialize,commitNotes,
+  setOperator: name=>{if(typeof name!=='string'||!name.trim()||name.length>80)throw new StockError('Add meg a raktáros nevét (legfeljebb 80 karakter).');atomic(path.join(dir,'inventory-operator.json'),{name:name.trim()});return {name:name.trim()};},
   catalogSearch:async(options={})=>{const c=await ensure();return c.mode==='client'?Network.request(c,undefined,'/api/catalog?'+new URLSearchParams({query:options.query||'',category:options.category||'',offset:String(options.offset||0)})):catalogAPI.search(options);},
   catalogStart:async()=>{const c=await ensure();if(c.mode==='client')throw new StockError('A listát a központi gépen töltsd le.');return {job:job.start()};},
   catalogCancel:()=>({job:job.cancel()}),catalogInstall:async(file)=>{const c=await ensure();if(c.mode==='client')throw new StockError('A katalógus betöltése a főgépen végezhető.');if(job.status().running)throw new StockError('Előbb várd meg vagy állítsd le a letöltést.');return catalog.install(file);},catalogExport:async()=>{const c=await ensure();if(c.mode==='client')throw new StockError('A katalógust a főgépen mentsd ki.');return catalog.export();},localLinks:()=>fs.existsSync(linkFile)?read(linkFile):null,hasAnyPending:()=>fs.existsSync(journalFile)||fs.existsSync(commandFile),saveNotes:update=>serialize(async()=>{await finishJournal();const notes=update(readNotes());require('./store').validate(notes);await commitNotes(notes);return notes;}),recover:()=>serialize(async()=>{await finishJournal();await recoverCommand();}),hasPending:()=>fs.existsSync(journalFile),pendingNotes:()=>read(journalFile).notes,

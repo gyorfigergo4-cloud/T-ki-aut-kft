@@ -41,12 +41,12 @@ function workbook(kind, data) {
   require('./store').validate(data);
   const notes=normalize(data,{years:[],days:[]}).notes;
   const main=sheet('Jegyzetek',['Bejegyzésazonosító','Dátum','Név','Telefonszám','Állapot','Olaj','Jegyzet','Módosítva']);
-  const cars=sheet('Járművek',['Bejegyzésazonosító','Dátum','Név','Járműazonosító','Autómárka','Alvázszám']);
+  const cars=sheet('Járművek',['Bejegyzésazonosító','Dátum','Név','Járműazonosító','Autómárka','Alvázszám','Olaj']);
   const items=sheet('Cikkszámok',['Bejegyzésazonosító','Dátum','Név','Járműazonosító','Autómárka','Alvázszám',...itemHeaders]);
   const reminders=sheet('Emlékeztetők',['Bejegyzésazonosító','Név','Emlékeztetőazonosító','Szöveg','Kész','Létrehozva','Ébresztő (ISO)','Szundi (ISO)']);
   for(const n of notes){
    add(main,[n.id,n.day,n.title,n.phone||'',Status.get(n).label,n.oil||'',n.body,n.updated]);
-   for(const v of n.vehicles)add(cars,[n.id,n.day,n.title,v.id,v.brand,v.vin]);
+   for(const v of n.vehicles)add(cars,[n.id,n.day,n.title,v.id,v.brand,v.vin,v.oil||'']);
    for(const i of n.items){const v=n.vehicles.find(v=>v.id===i.vehicleId);add(items,[n.id,n.day,n.title,i.vehicleId||'',v?.brand||'',v?.vin||'',...itemValues(i)]);}
    for(const r of n.reminders||[])add(reminders,[n.id,n.title,r.id,r.text,yes(r.done),r.createdAt,r.dueAt||'',r.snoozedUntil||'']);
   }

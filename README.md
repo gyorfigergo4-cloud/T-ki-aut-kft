@@ -314,3 +314,27 @@ Forrásverzió: 7b9828809040b647d46998b65870b3831e858aa1
 nem tartalmazza, azt a főgép külön tölti le. A saját hozzárendelések külön maradnak.
 A jegyzetek és munkalapok továbbra is gépenként külön vannak; a kézi és
 óránkénti jegyzetmentés működése változatlan.
+
+
+1.16.0 – NÉV SZERINTI KÖZÖS RAKTÁR, USB-OLVASÓ, AUTÓNKÉNTI OLAJ
+A frissítést mind a négy gépen telepítsd a meglévő adatmappák megtartásával.
+Telefonon frissítsd a Safari-oldalt; a tanúsítvány és a hálózat változatlan.
+A telefonos kapcsolódási kód most: tokiautoleltar
+A régi hosszú telefonos kód helyett ezt használd; a gépek kapcsolódási kódja nem változik.
+Telefonos belépésnél mindenki írja be a saját nevét. Névváltáshoz lépj ki és vissza.
+A számítógép Raktár részében is add meg egyszer a Raktáros neve mezőt.
+A bevételezés, korrekció és az ezután mentett jegyzetből eredő készletmozgás
+mellett látható a kiválasztott név. A név műveleti címke, nem külön jelszavas fiók.
+A régi készletmozgásokhoz nem találunk ki nevet: Korábbi / név nélkül jelzést kapnak.
+A készlet közös, a négy gép egyszerre dolgozhat. A jegyzetek és munkalapok
+változatlanul gépenként külön maradnak; csak a választott raktárosnév kerül a naplóba.
+USB: csatlakoztasd az olvasót, add meg a neved és a darabszámot, majd kattints
+az USB-s vonalkódolvasó indítása gombra. Olvasáskor az Enter automatikusan
+bevételez. Az olvasót billentyűzet üzemmódban, Enter lezárással használd.
+Ismeretlen kódnál rögzítsd a terméket / válaszd a katalógusból, majd olvasd be újra.
+Olaj: válassz autóbuborékot, az olajmező az adott autóhoz tartozik.
+A régi közös olajszöveg az első autóhoz kerül megőrzésre; a többihez külön írható.
+Az Excel Járművek lapja is tartalmazza az autónkénti olajat.
+A névbuborék alatti sárga Felírva állapotgomb és felirat eltűnt. A cikkszámok
+Felírva pipája és a megrendelt, fel nem írt tételekre figyelmeztető ! megmaradt.
+A kézi / Ctrl+S és óránkénti jegyzetmentés változatlan.
