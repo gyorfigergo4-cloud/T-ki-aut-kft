@@ -272,3 +272,35 @@ Az Excel Járművek lapja is tartalmazza az autónkénti olajat.
 A névbuborék alatti sárga Felírva állapotgomb és felirat eltűnt. A cikkszámok
 Felírva pipája és a megrendelt, fel nem írt tételekre figyelmeztető ! megmaradt.
 A kézi / Ctrl+S és óránkénti jegyzetmentés változatlan.
+
+
+1.17.0 – RAKTÁRTÉRKÉP ÉS TERMÉKHELYEK
+A kapott alaprajz polcai, pultjai és számozott helyei kattinthatók.
+A rajzon a bejárat felül, középen van; a kijelölt helyek piros kiemelést kapnak.
+Telefonon az alaprajz oldalra is húzható.
+
+HELY MEGADÁSA KÉZZEL
+Raktár / leltár → termék sorában Szerkesztés → Hely kiválasztása a térképen.
+Kattints a megfelelő pontra / pontokra (pl. bf polc 03, 01 vagy h rakt 02).
+Újabb kattintás a kijelölést leveszi. Egy termékhez több hely is megadható.
+Kijelölt helyek átvétele → szükség esetén pontosítás, pl. felső polc → Termék mentése.
+A hely önmagában nem változtatja meg a készlet darabszámát.
+A térkép bezárása átvétel nélkül eldobja az ottani kijelölést.
+A termék Mégse gombja az összes nem mentett szerkesztést eldobja.
+
+KERESÉS ÉS MEGTALÁLÁS
+A Raktár Keresés mezőjébe írd a cikkszámot, ne a bevételező mezőbe!
+A találat Hely oszlopában látszik a polc neve és a pontosítás.
+Kattints rá: megnyílik a térkép és pirossal mutatja a termék mentett helyeit.
+Helynévre is kereshetsz. OC295 és OC 295 keresés egyaránt használható.
+A Jegyzetek cikkszámsorában a Hely gomb ugyanazt a közös raktári terméket keresi.
+Ha nincs egyértelmű raktári termék, előbb a Raktárban kell azt rögzíteni.
+Telefonon termékkeresés / vonalkód beolvasása után a Hely gomb is megjelenik.
+A helyek megtekintése nem vételez be és nem von le készletet.
+
+A helyek a közös raktár termékadataihoz tartoznak. A főgépen és a többi gépen
+ugyanazok jelennek meg, a mentés után legkésőbb a következő frissítéskor.
+A közös raktár biztonsági mentése és a Raktár Excel-exportja is tartalmazza őket.
+A meglévő termékek helye kezdetben üres, semmilyen helyet nem találunk ki hozzájuk.
+Frissítsétek mind a négy gépet; telefonon töltsétek újra a Safari-oldalt.
+A jegyzetek, munkalapok és a kézi / óránkénti mentés gépenként külön maradnak.

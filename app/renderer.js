@@ -376,6 +376,7 @@ function renderItems(note) {
       if(field==='quantity')input.addEventListener('change',()=>{if(item.fromStock&&validInputs())window.NotesFlush().then(()=>{$('item-error').textContent='';}).catch(e=>{$('item-error').textContent=e.message;});});
       cell.append(input);
       if (field === 'partNumber') {
+        const place=document.createElement('button');place.type='button';place.className='item-location-button';place.textContent='⌖ Hely';place.title='Raktári hely keresése ehhez a cikkszámhoz';place.onclick=async()=>{place.disabled=true;try{const r=await window.notesAPI.inventoryResolve(item.partNumber);if(!r.ok)throw Error(r.error);window.WarehouseMapUI.showProduct(r.product||r);}catch(e){$('item-error').textContent='Raktári hely: '+e.message;}finally{place.disabled=false;}};cell.append(place);
         const assignment = document.createElement('select'); assignment.className = 'item-vehicle-select'; assignment.dataset.field = 'vehicleId'; assignment.setAttribute('aria-label', 'Autó – ' + (index + 1) + '. cikkszámsor');
         const choices = [{ id: '', text: 'Hozzárendelés nélkül' }, ...note.vehicles.map((vehicle, number) => ({ id: vehicle.id, text: Vehicles.label(vehicle, number) }))];
         for (const choice of choices) { const option = document.createElement('option'); option.value = choice.id; option.textContent = choice.text; assignment.append(option); }
