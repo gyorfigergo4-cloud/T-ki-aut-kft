@@ -317,6 +317,7 @@ function renderItems(note) {
   Vehicles.itemsFor(note).forEach((item, index) => {
     const row = document.createElement('tr'); row.dataset.itemId = item.id; row.dataset.vehicleId = item.vehicleId;
     const priceInputs = {};
+    async function useStockPrice(force=false,product){const sku=item.partNumber;const r=product?{ok:true,product}:await window.notesAPI.inventoryResolve(sku);if(!r.ok)throw Error(r.error);if(item.partNumber!==sku||current()!==note||!Vehicles.itemsFor(note).includes(item))return;if(invalidInputs.size){if(force)throw Error('Előbb javítsd a megjelölt mezőt.');return false;}const next=window.InventoryPolicy.applyPrice(item,r.product,force);if(next===item)return false;Object.assign(item,next);priceDriver='auto';const visibleRow=[...$('items-body').children].find(r=>r.dataset.itemId===item.id);for(const field of ['fullPrice','discountPercent','discountedPrice']){const input=visibleRow?.querySelector('[data-field='+field+']');if(input)input.value=item[field];}Items.syncLegacy(note);touchNote(note);persistNotes();renderList();metadata();return true;}
     let priceDriver = item.priceMode === 'manual' || (item.priceMode === 'legacy' && item.discountedPrice !== '') ? 'manual' : 'auto';
     const orderControl = window.ItemOrderUI.create(item, (index + 1) + '. sor', checked => {
       try {
@@ -333,7 +334,7 @@ function renderItems(note) {
       try { Object.assign(item,Items.withRecorded(item,checked));touchNote(note);persistNotes();renderList();metadata(false); }
       catch(error) { $('item-error').textContent=error.message; }
     }, async checked => {
-      try {if(!validInputs())return;if(checked){const result=await window.notesAPI.inventoryResolve(item.partNumber);if(!result.ok)throw Error(result.error);item.stockProductId=result.product.id;}item.fromStock=checked;touchNote(note);persistNotes();await window.NotesFlush();$('item-error').textContent='';}
+      try {if(!validInputs())return;if(checked){const result=await window.notesAPI.inventoryResolve(item.partNumber);if(!result.ok)throw Error(result.error);item.stockProductId=result.product.id;await useStockPrice(false,result.product);}item.fromStock=checked;touchNote(note);persistNotes();await window.NotesFlush();renderItems(note);void window.StockAlertUI?.refresh();$('item-error').textContent='';}
       catch(error){$('item-error').textContent=error.message;}
     });
     const columns = [['partNumber', 'Cikkszám', 'text'], ['fullPrice', 'Teli ár', 'number'], ['discountPercent', 'Kedvezmény %', 'number'], ['discountedPrice', 'Kedvezményes ár', 'number'], ['quantity', 'Db', 'number'], ['supplier', 'Beszállító', 'text']];
@@ -373,9 +374,11 @@ function renderItems(note) {
           input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('item-error').textContent = error.message;
         }
       });
+      if(field==='partNumber')input.addEventListener('change',()=>{if(item.fullPrice===''&&item.partNumber.trim()&&window.notesAPI.inventoryResolve)void useStockPrice().catch(()=>{});});
       if(field==='quantity')input.addEventListener('change',()=>{if(item.fromStock&&validInputs())window.NotesFlush().then(()=>{$('item-error').textContent='';}).catch(e=>{$('item-error').textContent=e.message;});});
       cell.append(input);
       if (field === 'partNumber') {
+        const stockPrice=document.createElement('button');stockPrice.type='button';stockPrice.className='item-location-button';stockPrice.textContent='Raktári ár';stockPrice.title='A raktár Ft/db árának átvétele a Teli ár mezőbe, készletlevonás nélkül';stockPrice.onclick=async()=>{stockPrice.disabled=true;try{if(!await useStockPrice(true))throw Error('Ehhez a termékhez még nincs raktári ár megadva.');$('item-error').textContent='';}catch(e){$('item-error').textContent=e.message;}finally{stockPrice.disabled=false;}};cell.append(stockPrice);
         const place=document.createElement('button');place.type='button';place.className='item-location-button';place.textContent='⌖ Hely';place.title='Raktári hely keresése ehhez a cikkszámhoz';place.onclick=async()=>{place.disabled=true;try{const r=await window.notesAPI.inventoryResolve(item.partNumber);if(!r.ok)throw Error(r.error);window.WarehouseMapUI.showProduct(r.product||r);}catch(e){$('item-error').textContent='Raktári hely: '+e.message;}finally{place.disabled=false;}};cell.append(place);
         const assignment = document.createElement('select'); assignment.className = 'item-vehicle-select'; assignment.dataset.field = 'vehicleId'; assignment.setAttribute('aria-label', 'Autó – ' + (index + 1) + '. cikkszámsor');
         const choices = [{ id: '', text: 'Hozzárendelés nélkül' }, ...note.vehicles.map((vehicle, number) => ({ id: vehicle.id, text: Vehicles.label(vehicle, number) }))];

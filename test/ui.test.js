@@ -22,7 +22,7 @@ async function openUI(saved, options = {}) {
     ...(options.patches?{saveNoteChanges:async patch=>{saved.notes=require('../app/note-patches').apply(copy(saved.notes),copy(patch));}}:{}),
     export: async () => true, onAppCloseRequested: callback => { closeRequest = callback; }, completeAppClose: response => closeResults.push(copy(response)), appCloseReady: () => {}
   };
-  for (const script of ['items.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'inventory-policy.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   if (!options.realReview) window.NoteReviewUI.confirm = () => true;
   await tick();
   const $ = id => window.document.getElementById(id);

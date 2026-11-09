@@ -21,7 +21,7 @@
   if(tab==='workorders'&&!canLeave())return false;
   tab=next;document.body.dataset.section=tab;
   for(const name of ['notes','workorders','garage','inventory']){const active=name===tab;if(!$('tab-'+name))continue;$('tab-'+name).setAttribute('aria-selected',String(active));$(name+'-view').hidden=!active;$(name+'-navigation').hidden=!active;}
-  window.RemindersUI?.syncAlarmSlot();
+  window.RemindersUI?.syncAlarmSlot();window.StockAlertUI?.sync();
   return true;
  }
  if($('tab-garage'))$('tab-garage').onclick=()=>showTab('garage');

@@ -29,6 +29,7 @@ app.whenReady().then(async () => {
   const inventory=createInventoryService(app.getPath('userData'),{writeNotes:notes=>store.write(file,notes),readNotes:()=>store.read(file)});
   await inventory.start();
   const stockReply=fn=>async(_,input)=>{try{return {ok:true,...await fn(input)};}catch(e){return {ok:false,error:e.message,code:e.code};}};
+  ipcMain.handle('inventory-alerts',stockReply(()=>inventory.alerts()));
   ipcMain.handle('inventory-load',stockReply(()=>inventory.load()));
   ipcMain.handle('inventory-operator',stockReply(name=>inventory.setOperator(name)));
   ipcMain.handle('inventory-command',stockReply(c=>inventory.command(c)));

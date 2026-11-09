@@ -330,3 +330,35 @@ A Raktár Excel-exportja és teljes biztonsági mentése tartalmazza a besorolá
 A besorolás módosítása nem változtatja meg a darabszámot, vonalkódot vagy helyet.
 Frissítsétek a négy gépet, telefonon töltsétek újra a Safari-oldalt.
 A jegyzetek és munkalapok továbbra is gépenként külön maradnak.
+
+
+1.19.0 – KÉSZLETFIGYELŐ ÉS RAKTÁRI ÁR
+Raktár → termék Szerkesztése:
+- Ár (Ft/db): ez a jegyzet Teli ár mezőjéhez használható egységár.
+- Készletfigyelés bekapcsolása: pipáld be, majd add meg a darabhatárt.
+- Termék mentése: az ár és a határ a közös raktárban mentődik.
+Példa: 3 db határnál 3, 2, 1 és 0 db esetén jelez. 0-s határ csak kifogyáskor jelez.
+Pipa nélkül nincs készletfigyelés az adott termékre; a régi termékeknél kezdetben ki van kapcsolva.
+A figyelmeztetés fent, pirosan villog, minden részlegen az emlékeztető mellett / alatt.
+A Megnézem gomb felsorolja a termékeket, készletüket és a beállított határokat.
+Innen a Termék beállítása gomb megnyitja a szerkesztést.
+Feltöltés vagy a figyelés kikapcsolása után automatikusan eltűnik a jelzés.
+A háttérben legfeljebb 10 másodpercenként ellenőrzi a közös készletet.
+Megszakadt kapcsolatnál sárga jelzés közli, hogy a készlet nem ellenőrizhető;
+a korábbi figyelmeztetést nem tekinti megoldottnak egy hálózati hiba miatt.
+
+JEGYZET ÁRAZÁSA
+Írd be a raktárban már létező cikkszámot, majd lépj ki a mezőből (Tab vagy kattintás).
+Ha a Teli ár üres, a mentett raktári Ft/db ár automatikusan bekerül.
+A kedvezmény százaléka megmarad, a kedvezményes ár újraszámolódik.
+A már kézzel kitöltött árat nem írja felül automatikusan.
+A cikkszám melletti Raktári ár gombbal kifejezetten lecserélheted a meglévő árat is.
+A Raktárról pipa bekapcsolásakor is kitölti az üres árat, ha van mentett raktári ár.
+Az ár átvétele önmagában nem von le készletet; csak a Raktárról pipa számít.
+Az ár átvétele után a jegyzet a szokásos kézi / Ctrl+S vagy óránkénti mentéssel rögzül.
+A Raktárról pipa továbbra is azonnal menti a készletmódosítást.
+Egy raktári árváltozás nem írja át a korábbi jegyzetek árait.
+A Raktár táblázatában látszik az Ár és a Készlethatár; az Excel-export és a teljes
+raktármentés is tartalmazza őket. Telefonon a termék ára és az alacsony készlet is látszik.
+Mind a négy gépen frissíts, telefonon töltsd újra a Safari-oldalt.
+A jegyzetek és munkalapok továbbra is gépenként külön maradnak.
