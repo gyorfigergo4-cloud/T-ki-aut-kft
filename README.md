@@ -370,3 +370,29 @@ A közös raktár biztonsági mentése és a Raktár Excel-exportja is tartalmaz
 A meglévő termékek helye kezdetben üres, semmilyen helyet nem találunk ki hozzájuk.
 Frissítsétek mind a négy gépet; telefonon töltsétek újra a Safari-oldalt.
 A jegyzetek, munkalapok és a kézi / óránkénti mentés gépenként külön maradnak.
+
+
+1.18.0 – RAKTÁRI TÉTELTÍPUSOK
+A bal oldali menü felső sorában egymás mellett van az Autónyilvántartó
+és a Raktár / leltár; a Jegyzetek és Munkalapok az alattuk lévő sorban.
+A jegyzetek maradnak az induló nézet.
+
+A raktári listában a Cikkszám melletti Tételtípus listából válassz.
+Az itt kiválasztott besorolás azonnal mentődik a közös raktárba.
+Új terméknél vagy Szerkesztésnél is kiválasztható, ott Termék mentése rögzíti.
+A 25 választható típus:
+Légszűrő, Pollenszűrő, Olajszűrő, Motorolaj, Akkumulátor, Ponyva, Égő,
+Illatosító, Ragasztó, Egyéb kiegészítő, Kozmetikum, Fagyálló, Ablakmosó folyadék,
+Adalék anyagok, Ablaktörlő, Ad blue, Váltóolaj, Fékolaj, Sprayk, Antenna,
+Elem, Kipufogó alkatrészek, Vezérlés, FAP adalék, Gyújtáskapcsoló betétek.
+
+A kereső mellett a Tételtípus szűrővel választhatod ki, melyik csoportot lásd.
+A szűrés és a szöveges cikkszám-/terméknév-/helykeresés együtt használható.
+A meglévő termékek Nincs besorolva állapotban maradnak, amíg kézzel nem választasz.
+Új katalógusos szűrőnél a megfelelő Olajszűrő, Légszűrő vagy Pollenszűrő típus
+előre kitöltődik, de módosítható. Meglévő termék saját besorolása megmarad.
+Telefonon a termék adatai között látható a típus; új terméknél is kiválasztható.
+A Raktár Excel-exportja és teljes biztonsági mentése tartalmazza a besorolást.
+A besorolás módosítása nem változtatja meg a darabszámot, vonalkódot vagy helyet.
+Frissítsétek a négy gépet, telefonon töltsétek újra a Safari-oldalt.
+A jegyzetek és munkalapok továbbra is gépenként külön maradnak.

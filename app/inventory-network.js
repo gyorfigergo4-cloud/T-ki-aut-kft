@@ -8,7 +8,7 @@ function handler({database,token,phone=false,ca,catalog}){
   if(!privateAddress(req.socket.remoteAddress))return send(403,{error:'Csak a helyi hálózatról használható.'});
   if(req.method==='GET'&&req.url==='/inventory-ca.crt'&&ca)return send(200,ca,'application/x-x509-ca-cert');
   if(phone&&req.method==='GET'){
-   const assets={'/':['inventory-phone.html','text/html; charset=utf-8'],'/camera.js':['inventory-camera.js','text/javascript; charset=utf-8'],'/phone.js':['inventory-phone.js','text/javascript; charset=utf-8'],'/phone.css':['inventory-phone.css','text/css; charset=utf-8'],'/warehouse-map.js':['warehouse-map.js','text/javascript; charset=utf-8'],'/warehouse-map-ui.js':['warehouse-map-ui.js','text/javascript; charset=utf-8'],'/warehouse-map.css':['warehouse-map.css','text/css; charset=utf-8']};
+   const assets={'/':['inventory-phone.html','text/html; charset=utf-8'],'/camera.js':['inventory-camera.js','text/javascript; charset=utf-8'],'/phone.js':['inventory-phone.js','text/javascript; charset=utf-8'],'/phone.css':['inventory-phone.css','text/css; charset=utf-8'],'/inventory-categories.js':['inventory-categories.js','text/javascript; charset=utf-8'],'/warehouse-map.js':['warehouse-map.js','text/javascript; charset=utf-8'],'/warehouse-map-ui.js':['warehouse-map-ui.js','text/javascript; charset=utf-8'],'/warehouse-map.css':['warehouse-map.css','text/css; charset=utf-8']};
    if(assets[req.url]){const [name,type]=assets[req.url];return send(200,fs.readFileSync(path.join(__dirname,name)),type);}
    if(req.url==='/zxing.js')return send(200,fs.readFileSync(require.resolve('@zxing/browser/umd/zxing-browser.min.js')),'text/javascript; charset=utf-8');
   }
