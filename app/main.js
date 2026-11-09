@@ -29,6 +29,8 @@ app.whenReady().then(async () => {
   const inventory=createInventoryService(app.getPath('userData'),{writeNotes:notes=>store.write(file,notes),readNotes:()=>store.read(file)});
   await inventory.start();
   const stockReply=fn=>async(_,input)=>{try{return {ok:true,...await fn(input)};}catch(e){return {ok:false,error:e.message,code:e.code};}};
+  ipcMain.handle('inventory-stocktake-load',stockReply(id=>inventory.stocktake(id)));
+  ipcMain.handle('inventory-stocktake-export',stockReply(async id=>{const report=await inventory.stocktake(id);if(!report.session)throw Error('Nincs kijelölt leltárellenőrzés.');const r=await dialog.showSaveDialog(win,{defaultPath:'TokiAuto-leltar-ellenorzes.xlsx',filters:[{name:'Excel',extensions:['xlsx']}]});if(r.canceled)return {canceled:true};await excelExport.write(r.filePath,'stocktake',report);return {};}));
   ipcMain.handle('inventory-alerts',stockReply(()=>inventory.alerts()));
   ipcMain.handle('inventory-load',stockReply(()=>inventory.load()));
   ipcMain.handle('inventory-operator',stockReply(name=>inventory.setOperator(name)));

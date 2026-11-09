@@ -460,3 +460,56 @@ A vállalás és a pipa újraindítás után is megmarad.
 
 Frissítsétek a főgépet és a másik három gépet is. Telefonon töltsétek újra az oldalt.
 A jegyzetek, munkalapok és emlékeztetők továbbra is gépenként külön maradnak.
+
+
+1.21.0 – MEGRENDELVE ELREJTÉSE ÉS LELTÁR ELLENŐRZŐ
+MEGRENDELVE
+A Megrendelve pipa után az adott tétel eltűnik a felső készletjelzésekből.
+A rendelés állapota megmarad a közös raktárban: a Raktárkészlet listában
+az Utánrendelés oszlop mutatja. A Pipa visszavonása gomb újra láthatóvá teszi.
+A többi, még meg nem rendelt készlethiány jelzése változatlanul megmarad.
+Feltöltés után egy későbbi új készlethiány új piros jelzést indít.
+Ez a működés felváltja az 1.20.0-s, megrendelés után is sárgán maradó jelzést.
+
+LELTÁR ELLENŐRZŐ – SZÁMÍTÓGÉP
+Raktár / leltár → Leltár ellenőrző → Új ellenőrzés.
+Előbb add meg a saját raktárosnevedet, és nevezd el az ellenőrzést.
+Indításkor rögzül a mostani terméklista és az induló raktárkészlet.
+A vonalkód / cikkszám mezőbe olvass be, és add meg a Hozzáadott darabszámot.
+Az Enter vagy a Számláláshoz adom gomb kizárólag a számolt mennyiséghez adja a darabokat.
+Ismételt beolvasás összeadódik; ugyanazon termék eltérő mentett vonalkódjai együtt számítanak.
+Négy gépről és telefonról ugyanahhoz a nyitott ellenőrzéshez dolgozhattok.
+Osszátok fel a megszámolandó árut: ugyanazt a fizikai darabot ne számoljátok többen.
+Egy sor Darabszám javítása mezőjébe a teljes helyes szám írható, akár 0 is.
+A még meg nem számolt sor külön Nincs számolva állapotú, nem válik automatikusan hiánnyá.
+Ismeretlen kódnál hiba jelenik meg. Előbb a Raktárban rendeld hozzá a megfelelő termékhez;
+a számlálás nem hoz létre automatikusan új raktári terméket.
+Az újonnan létrehozott raktári termék egy következő ellenőrzés induló listájába kerülhet.
+A függő USB-s beolvasások megmaradnak; hibánál folytatás vagy hibás beolvasás kihagyása választható.
+
+ELTÉRÉSEK
+Induló készlet, Számolt db és Eltérés oszlopok: pl. induló 5, számolt 3 → -2 db.
+A Csak eltérések szűrő a már számolt, eltérő tételeket mutatja.
+A Beolvasott kódok oszlopban látszanak a rögzített kódok, a számolónál az utolsó raktáros neve.
+Ha közben eladás vagy bevételezés történt, külön figyelmeztetés és az aktuális készlet is látható.
+Az eltérés mindig az induláskori készlethez képest értendő. Pontos összevetéshez lehetőleg
+ne legyen közben készletmozgás; a jelzett változásokat külön ellenőrizzétek.
+A számlálás és a javítás NEM írja át a raktár darabszámát.
+
+TELEFON
+Jelentkezz be a megszokott telefonos oldalon a saját neveddel.
+Művelet → Leltár ellenőrzés – csak számlálás.
+A gépen legyen előbb elindított nyitott ellenőrzés. Kamera vagy kézi kódkeresés után
+add meg a számolt darabszámot, majd Számláláshoz adom.
+Ebben a módban az automatikus kamerás bevételezés sem módosítja a raktárkészletet.
+A rendes Bevételezés a raktárba mód továbbra is a tényleges készlethez ad.
+
+MEGŐRZÉS
+Mentés Excelbe: az ellenőrzés és az összes sora külön munkafüzetbe kerül.
+Ellenőrzés lezárása: a számolás lezárul, a jelentés záró adatai megmaradnak.
+Lezárás előtt várjátok meg, hogy minden gépen elfogyjon a függő beolvasási sor.
+A korábbi ellenőrzések a legördülő listából újranyithatók megtekintésre.
+Legfeljebb 50 ellenőrzés tárolható; lezárt ellenőrzés külön, megerősítéssel törölhető.
+A teljes Raktár biztonsági mentése az ellenőrzéseket is tartalmazza.
+A saját jegyzetek, munkalapok és emlékeztetők gépenként külön maradnak.
+Frissítsétek mind a négy gépet, telefonon töltsétek újra a Safari-oldalt.

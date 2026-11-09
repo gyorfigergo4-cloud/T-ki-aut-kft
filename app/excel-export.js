@@ -59,6 +59,8 @@ function workbook(kind, data) {
   require('./garage-model').validate(data);
   const main=sheet('Autónyilvántartó',['Névazonosító','Név','Autóazonosító','Autó','Alvázszám','Rendszám']);
   for(const p of data){if(!p.cars.length)add(main,[p.id,p.name,'','','','']);for(const c of p.cars)add(main,[p.id,p.name,c.id,c.vehicle,c.vin,c.plate]);}
+ }else if(kind==='stocktake'){
+  if(!data?.session||!Array.isArray(data.rows))throw Error('Hibás leltárjelentés.');const info=sheet('Ellenőrzés',['Név','Indítva','Indította','Lezárva','Lezárta']);add(info,[data.session.title,data.session.createdAt,data.session.createdBy,data.session.closedAt||'',data.session.closedBy||'']);const s=sheet('Leltár eltérések',['Cikkszám','Termék','Induló készlet','Számolt db','Eltérés','Aktuális / záró készlet','Közben készletmozgás','Utoljára számolta','Számolás ideje','Beolvasott kódok']);for(const r of data.rows)add(s,[r.sku,r.name,r.expected,r.quantity??'',r.difference??'',r.currentQuantity??'',r.stockChanged?'Igen':'Nem',r.updatedBy||'',r.updatedAt||'',(r.scannedCodes||[]).join(' / ')]);
  }else if(kind==='inventory'){
   if(!data||!Array.isArray(data.products)||!Array.isArray(data.movements))throw Error('Hibás raktáradat.');
   const main=sheet('Raktár',['Termékazonosító','Terméknév','Cikkszám','Vonalkódok','Készlet (db)','Raktári hely','Hely pontosítása','Tételtípus','Ár (Ft/db)','Készletjelzés határa (db)','Utánrendelés állapota','Rendelést vállalta','Vállalás időpontja','Megrendelte','Megrendelés időpontja']);
