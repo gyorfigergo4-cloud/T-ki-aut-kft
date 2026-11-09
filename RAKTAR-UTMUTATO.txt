@@ -280,3 +280,35 @@ A Raktár táblázatában látszik az Ár és a Készlethatár; az Excel-export 
 raktármentés is tartalmazza őket. Telefonon a termék ára és az alacsony készlet is látszik.
 Mind a négy gépen frissíts, telefonon töltsd újra a Safari-oldalt.
 A jegyzetek és munkalapok továbbra is gépenként külön maradnak.
+
+
+1.20.0 – KÉSZLETFIGYELŐ: MEGRENDELEM / MEGRENDELVE
+A készletjelzés ugyanott fent marad, minden részlegen.
+Piros: a készlet a beállított határon vagy alatta van, még senki nem vállalta.
+Megrendelem: kattints rá a felső jelzésnél, a jelzés sárga lesz a vállaló nevével.
+Ha még nincs saját raktárosneved, az ablakban előbb megadhatod.
+Megrendelve pipa: akkor jelöld be, amikor ténylegesen leadtad a rendelést.
+A jelzés bepipálva is sárga marad, amíg a készletet a jelzési határ fölé nem töltitek.
+A vállaló és a rendelést leadó személy neve külön megmarad, ha nem ugyanaz.
+A Megrendelve pipa visszavehető; ilyenkor vállalt, még le nem adott rendelésként,
+sárgán marad. A vállaló neve nem változik.
+
+TÖBB TERMÉK ÉS KÖZÖS MUNKA
+A felső jelzésnél a nyilakkal lapozhatsz; a Megnézem gomb az összes jelzést mutatja.
+Az új piros készlethiány automatikusan előre kerül, nem bújik el a sárgák mögött.
+Az összes gép ugyanazt az állapotot látja, legfeljebb a következő frissítéskor.
+Két egyidejű Megrendelem kattintásból csak az első vállalás mentődik;
+a másik munkatárs látja, ki vállalta már a rendelést.
+A rendelés jelölése nem változtat készletet, árat vagy jegyzetet.
+
+FELTÖLTÉS ÉS ÚJ KÉSZLETHIÁNY
+Részleges feltöltésnél, ha a készlet még a határon / alatta marad, a sárga jelzés megmarad.
+A határ fölé töltve a figyelmeztetés és a hozzá tartozó aktuális rendelésjelölés lezárul.
+Újabb készlethiánynál új piros jelzés indul, Megrendelve pipa nélkül.
+A régi, késve beérkező kattintás nem módosíthatja az új készlethiány állapotát.
+A készletfigyelés kikapcsolása szintén lezárja az aktuális jelzést.
+A közös raktár mentése és az Excel-export is tartalmazza az aktuális rendelés állapotát.
+A vállalás és a pipa újraindítás után is megmarad.
+
+Frissítsétek a főgépet és a másik három gépet is. Telefonon töltsétek újra az oldalt.
+A jegyzetek, munkalapok és emlékeztetők továbbra is gépenként külön maradnak.
