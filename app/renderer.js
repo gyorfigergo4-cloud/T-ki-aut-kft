@@ -500,6 +500,7 @@ $('export').onclick = async () => {
 window.addEventListener('beforeunload', event => {
   if (invalidInputs.size || pending || saveErrors.size) { event.preventDefault(); event.returnValue = ''; }
 });
+window.NotesCheckBeforeHide = () => validInputs();
 window.NotesPrepareClose = async () => {
   if (!validInputs()) return false;
   const pendingReminders = notes.flatMap(note => (note.reminders || []).filter(reminder => !reminder.done).map(reminder => (note.title || 'Új név') + ': ' + reminder.text));

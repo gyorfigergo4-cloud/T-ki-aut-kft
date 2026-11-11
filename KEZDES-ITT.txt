@@ -1,3 +1,29 @@
+ÚJ · 1.24.0: WINDOWS-INDÍTÁS ÉS TÁLCAIKON
+Bal alul az Indítás és tálca gombbal két külön kapcsolót állíthatsz:
+
+1. Induljon a Windowsszal
+   Pipáld be, majd nyomj Mentést. A Windowsba való bejelentkezéskor
+   az óra melletti Töki Autó ikonként indul. Az ikonnal megnyithatod.
+   Az automatikus indítás kezdetben ki van kapcsolva, gépenként állítható.
+
+2. Bezáráskor fusson tovább az óra mellett
+   Windows alatt alapból bekapcsolva. Az X előbb elmenti a jegyzeteket
+   és munkalapokat, majd elrejti az ablakot. A raktár és a telefonos
+   kapcsolat tovább működik. Mentési hibánál az ablak nyitva marad.
+   Ha kikapcsolod, az X a teljes kilépést indítja.
+
+Megnyitás: kattints az óra melletti Töki Autó ikonra. Ha nem látod,
+a Windows ^ nyilával nyisd le a rejtett ikonokat.
+Teljes kilépés: jobb kattintás az ikonra -> Kilépés.
+A Biztosan minden tételt felírtál? kérdés csak a teljes kilépéskor jelenik
+meg. A Vissza a jegyzethez megszakítja a kilépést.
+
+Frissítéshez mindig lépj ki teljesen a régi alkalmazásból, majd bontsd ki
+a teljes új ZIP-et, és indítsd a TokiAuto-Inditas.cmd fájlt.
+A jegyzetek, hálózati beállítások és telefonos tanúsítvány megmaradnak.
+Bekapcsolt automatikus indításnál az új verzió frissíti a saját indítási
+útvonalát. A beállítások csak ezen a számítógépen érvényesek.
+
 ÚJ · 1.23.0: ALVÁZSZÁM FELISMERÉSE ÉS KORÁBBI JEGYZETEK
 A jegyzetben az Alvázszám mezőre kattintva vagy gépelés közben megjelennek
 az ugyanahhoz az autóhoz korábban rögzített saját jegyzetek, minden évből.

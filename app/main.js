@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, Tray } = require('electron');
 const path = require('node:path');
+const { platform } = require('node:process');
 const fs = require('node:fs/promises');
 const store = require('./store');
 const notePatches = require('./note-patches');
@@ -13,10 +14,12 @@ const excelExport = require('./excel-export');
 const workordersStore = require('./workorders-store');
 const workorderPrint = require('./workorder-print');
 const { attach: attachCloseGuard } = require('./window-close');
+const { create: createDesktopIntegration } = require('./desktop-integration');
 const crypto = require('node:crypto');
 const syncFs = require('node:fs');
 const { validate: validateArchive } = require('./archive');
 let win;
+if (platform === 'win32') app.setAppUserModelId('TokiAuto');
 if (!app.requestSingleInstanceLock()) { app.quit(); }
 else {
 app.on('second-instance', () => {
@@ -194,9 +197,10 @@ app.whenReady().then(async () => {
     await fs.writeFile(result.filePath, JSON.stringify({ format: 'autobolt-backup', version: 2, archive, notes, inventoryLinks:inventory.localLinks(), workorders: workordersStore.read(workordersFile) }, null, 2), 'utf8');
     return true;
   });
-  win = new BrowserWindow({ width: 1240, height: 850, minWidth: 900, minHeight: 600, title: 'Töki Autó Kft. · Belső jegyzetek', backgroundColor: '#F5F7F2', icon: path.join(__dirname, 'assets', 'toki-icon.png'), webPreferences: { backgroundThrottling: false, preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
-  attachCloseGuard({ win, app, ipcMain, newToken: crypto.randomUUID });
-  ipcMain.on('reminder-alarm-state', (event, active) => { if (event.sender === win.webContents && typeof active === 'boolean' && !win.isDestroyed()) win.flashFrame(active); });
+  win = new BrowserWindow({ show: false, width: 1240, height: 850, minWidth: 900, minHeight: 600, title: 'Töki Autó Kft. · Belső jegyzetek', backgroundColor: '#F5F7F2', icon: path.join(__dirname, 'assets', 'toki-icon.png'), webPreferences: { backgroundThrottling: false, preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  const desktop = createDesktopIntegration({ app, win, Tray, Menu, ipcMain, iconPath: path.join(__dirname, 'assets', 'toki-icon.ico') });
+  attachCloseGuard({ win, app, ipcMain, newToken: crypto.randomUUID, shouldHide: desktop.shouldHide, hide: desktop.hide, reveal: desktop.show });
+  ipcMain.on('reminder-alarm-state', (event, active) => { if (event.sender === win.webContents && typeof active === 'boolean' && !win.isDestroyed()) { win.flashFrame(active); desktop.notifyAlarm(active); } });
   win.setMenuBarVisibility(false);
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type === 'keyDown' && !input.isAutoRepeat && (input.control || input.meta) && input.key.toLowerCase() === 'p') { event.preventDefault(); win.webContents.send('request-workorder-print'); }
@@ -204,6 +208,7 @@ app.whenReady().then(async () => {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
   win.loadFile(path.join(__dirname, 'index.html'));
+  if (!desktop.shouldStartHidden()) win.show();
 });
 app.on('window-all-closed', () => app.quit());
 }

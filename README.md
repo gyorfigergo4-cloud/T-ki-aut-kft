@@ -2,6 +2,18 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Windows-indítás és tálca · 1.24.0
+
+A bal alsó **Indítás és tálca** gomb saját, gépenkénti beállításokat nyit. Az **Induljon a Windowsszal** kapcsoló alapból kikapcsolt; mentés után a Windows-felhasználó bejelentkezésekor az óra mellett indul a program. A **Bezáráskor fusson tovább az óra mellett** kapcsoló Windows alatt alapból bekapcsolt. Az X a jegyzetek és munkalapok mentése után elrejti az ablakot; a raktár, a telefonos HTTPS és az emlékeztetők futnak tovább. A tálcaikon megnyitja az ablakot; jobb kattintásból a beállítások és a **Kilépés** érhetők el. Rejtett ikon esetén a Windows **^** menüjében található.
+
+A végső ellenőrző kérdés csak a teljes kilépésnél jelenik meg. A Vissza és az Escape megszakítja a kilépést, mentési hiba vagy hibás ár mellett az ablak nyitva marad. Kikapcsolt tálcára rejtéskor az X is teljes kilépést kezdeményez. Ha a tálcaikon létrehozása sikertelen, a program látható ablakkal indul és teljes bezárásra vált; háttérindítás sem teheti elérhetetlenné. Második indítás a már futó, akár elrejtett ablakot hozza elő.
+
+Az automatikus indítás Electron `setLoginItemSettings` / `getLoginItemSettings` API-val, a saját `TokiAuto` nevű felhasználói bejegyzéssel működik, `--toki-background` argumentummal. A mentés a tényleges Windows-állapotot is ellenőrzi. A `desktop-settings.json` külön, atomi cserével és `.bak` másolattal mentett beállításfájl a meglévő `jegyzetfuzet` profilban. Sikertelen fájlmentés visszaállítja az előző indítási bejegyzést. A csomagolt EXE verziónként változó útvonalát a következő verzió első futása frissíti; a Feladatkezelőben letiltott vagy eltávolított automatikus indítást nem kapcsolja vissza magától. A beállítás-IPC csak a saját főablak főkeretétől fogad két logikai kapcsolót, futtatandó útvonalat nem.
+
+Frissítés előtt **teljesen lépj ki a régi programból a tálcaikon Kilépés menüjével**; az X már háttérben tartja. Ezután a teljes ZIP kibontása és a `TokiAuto-Inditas.cmd` indítása frissíti az asztali parancsikont. Az ügyféladatok, hálózati beállítások és a helyi telefonos tanúsítvány az eredeti helyükön maradnak.
+
+Ellenőrzés: **166 sikeres teszt**, továbbá valódi Electron-ablak, preload és IPC elkülönített mintaadatokkal: mentés előtti ablakbezárás megállítása, ismételt rejtés és visszaállítás, mentési hiba, végső kérdés és Vissza, beállítások újranyitása, háttérindítás és második példány. A hitelesített telefonos HTTPS-leltározó rejtett ablak mellett is elérhető maradt. A natív Windows-indítási és tálca-API-kat a Linux-környezetben helyettesített adapterrel ellenőriztük; fizikai Windows-bejelentkezést itt nem futtattunk.
+
 ## Alvázszám felismerése · 1.23.0
 
 A jegyzet alvázszámmezője a **saját, helyben tárolt jegyzetek** minden évében keres. Legalább hat karakter megadása után felajánlja a korábban rögzített autókat, márkával, ügyféllel és a legutóbbi bejegyzésekkel. A teljes VIN egyezését külön jelzi; részletre, például az utolsó hat karakterre is lehet keresni. A keresés kisbetűt, szóközt és kötőjelet figyelmen kívül hagy. A nyitott jegyzetet kizárja a saját előzményei közül.

@@ -17,12 +17,13 @@ async function openUI(saved, options = {}) {
   window.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
   window.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); this.dispatchEvent(new window.Event('close')); };
   window.notesAPI = {
+    ...(options.desktopAPI || {}),
     load: async () => copy(saved.notes), loadArchive: async () => copy(saved.archive),
     save: async notes => { saved.notes = copy(notes); }, saveArchive: async archive => { saved.archive = copy(archive); },
     ...(options.patches?{saveNoteChanges:async patch=>{saved.notes=require('../app/note-patches').apply(copy(saved.notes),copy(patch));}}:{}),
     export: async () => true, onAppCloseRequested: callback => { closeRequest = callback; }, completeAppClose: response => closeResults.push(copy(response)), appCloseReady: () => {}
   };
-  for (const script of ['items.js', 'inventory-policy.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'vin-history.js', 'vin-history-ui.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'inventory-policy.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'vin-history.js', 'vin-history-ui.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'desktop-settings-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   if (!options.realReview) window.NoteReviewUI.confirm = () => true;
   await tick();
   const $ = id => window.document.getElementById(id);
@@ -30,7 +31,7 @@ async function openUI(saved, options = {}) {
   const submit = id => $(id).dispatchEvent(new window.Event('submit', { cancelable: true }));
   const newDay = day => { $('add-day').click(); $('day-value').value = day; submit('day-form'); };
   const cards = () => [...$('list').querySelectorAll('.note')];
-  return { dom, $, input, submit, newDay, cards, closeResults, requestClose: token => closeRequest(token) };
+  return { dom, $, input, submit, newDay, cards, closeResults, requestClose: (token, action) => closeRequest(token, action) };
 }
 test('év/hónap/nap mappák, napi több név, visszakeresés és újranyitás', async () => {
   const saved = { notes: [{ id: 'old', title: 'Régi ügyfél', body: 'Korábbi egyeztetés', updated: '2024-01-15T12:00:00Z' }], archive: { years: [2024, 2025, 2026], days: [] } };
@@ -456,5 +457,26 @@ test('hibás ár mellett az előzmény megnyitása és az új jegyzet nem kerül
  try{
   ui.$('add-item').click();const input=ui.$('items-body').querySelector('[data-field=fullPrice]');input.value='-5';input.dispatchEvent(new ui.dom.window.Event('input'));
   assert.equal(await ui.dom.window.VinHistoryOpen('history-0','history-car-0'),false);assert.equal(await ui.dom.window.VinHistoryNew('history-0','history-car-0'),false);assert.equal(ui.$('title').value,'Mai piszkozat');
+ }finally{ui.dom.window.close();}
+});
+
+test('tálcára rejtés előtt ment, ellenőrző kérdés nélkül; visszatérve a jegyzet szerkeszthető',async()=>{
+ const saved=historyFixture(1),ui=await openUI(saved,{manualOnly:true,realReview:true});
+ try{
+  let questions=0;ui.dom.window.NoteReviewUI.confirm=()=>{questions++;return true;};ui.input('body','Mentendő háttérbe lépés előtt');assert.notEqual(saved.notes[0].body,'Mentendő háttérbe lépés előtt');await ui.requestClose('hide-1','hide');assert.equal(questions,0);assert.equal(ui.$('note-review-dialog').open,false);assert.equal(saved.notes[0].body,'Mentendő háttérbe lépés előtt');assert.deepEqual(ui.closeResults.at(-1),{token:'hide-1',approved:true});assert.equal(ui.dom.window.document.body.inert,false);ui.input('body','Visszatérés után szerkeszthető');await ui.requestClose('real-quit','quit');assert.equal(questions,1);assert.equal(saved.notes[0].body,'Visszatérés után szerkeszthető');
+ }finally{ui.dom.window.close();}
+});
+test('tálcára rejtés hibás ár vagy mentési hiba mellett nyitva hagyja az alkalmazást',async()=>{
+ const ui=await openUI(historyFixture(1),{manualOnly:true,realReview:true});
+ try{
+  ui.$('add-item').click();const price=ui.$('items-body').querySelector('[data-field=fullPrice]');price.value='-5';price.dispatchEvent(new ui.dom.window.Event('input'));await ui.requestClose('invalid-hide','hide');assert.equal(ui.closeResults.at(-1).approved,false);assert.equal(ui.$('note-review-dialog').open,false);price.value='5000';price.dispatchEvent(new ui.dom.window.Event('input'));ui.dom.window.notesAPI.save=async()=>{throw Error('disk full');};await ui.requestClose('failed-hide','hide');assert.equal(ui.closeResults.at(-1).approved,false);assert.equal(ui.$('app-close-error').open,true);assert.equal(ui.dom.window.document.body.inert,false);
+ }finally{ui.dom.window.close();}
+});
+test('Indítás és tálca beállítások: két kapcsoló, Mégse nem ment, hiba után újrapróbálható',async()=>{
+ let state={ok:true,startupSupported:true,trayAvailable:true,openAtLogin:false,closeToTray:true,notice:''},calls=[],requested,fail=false;
+ const ui=await openUI(historyFixture(1),{manualOnly:true,desktopAPI:{loadDesktopSettings:async()=>copy(state),saveDesktopSettings:async value=>{calls.push(copy(value));if(fail)return {ok:false,error:'A Windows nem alkalmazta a módosítást.'};state={...state,...value};return copy(state);},onDesktopSettingsRequested:callback=>{requested=callback;}}});
+ try{
+  ui.$('desktop-settings-open').click();await tick(false);assert.equal(ui.$('desktop-settings-dialog').open,true);assert.equal(ui.$('desktop-startup').checked,false);assert.equal(ui.$('desktop-close-to-tray').checked,true);ui.$('desktop-startup').click();ui.$('desktop-settings-cancel').click();assert.equal(calls.length,0);
+  requested();await tick(false);assert.equal(ui.$('desktop-startup').checked,false);ui.$('desktop-startup').click();ui.$('desktop-close-to-tray').click();fail=true;ui.submit('desktop-settings-form');await tick(false);assert.equal(ui.$('desktop-settings-dialog').open,true);assert.match(ui.$('desktop-settings-error').textContent,/Windows/);assert.equal(ui.$('desktop-settings-save').disabled,false);fail=false;ui.submit('desktop-settings-form');await tick(false);assert.equal(ui.$('desktop-settings-dialog').open,false);assert.deepEqual(calls.at(-1),{openAtLogin:true,closeToTray:false});requested();await tick(false);assert.equal(ui.$('desktop-startup').checked,true);assert.equal(ui.$('desktop-close-to-tray').checked,false);
  }finally{ui.dom.window.close();}
 });
