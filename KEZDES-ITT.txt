@@ -1,3 +1,25 @@
+ÚJ · 1.22.0: LAPOZÁS, ALVÁZSZÁM ÉS MEGRENDELT ÖSSZEG
+A Raktár / leltár terméklistája oldalanként legfeljebb 50 sort mutat.
+Az Előző / Következő gombokkal minden termék elérhető; keresés vagy
+kategóriaváltás az első oldalra visz. A készlet darabszáma nem változik.
+
+A jegyzetek felső névbuborékában a név alatt az alvázszámok jelennek meg.
+Több autónál mindegyik kitöltött alvázszám látható; rámutatva a teljes lista
+olvasható. Ha még nincs megadva, ezt külön felirat jelzi.
+
+A jegyzet táblázata alatti három összegbe kizárólag a Megrendelve pipával
+jelölt sorok számítanak bele, a kiválasztott autóra és a darabszámra számolva.
+Példa: 75 000 Ft nincs megrendelve, 86 000 Ft-ból 4 db megrendelve:
+a megrendelt kedvezményes összeg 344 000 Ft.
+Pipa nélkül az összeg 0 Ft. A megrendelt, de még nem ismert ár helyén
+— jelenik meg; részben megadott áraknál részösszeg olvasható.
+A Fizetve, Felírva vagy Megérkezett pipa önmagában nem jelent megrendelést.
+Az árajánlat / munkalap és az Excel-export továbbra is minden saját tételt
+megőriz. A kézi, Ctrl+S és óránkénti jegyzetmentés megmarad.
+
+Frissítés: zárd be a régi appot, csomagold ki teljesen az új ZIP-et,
+és indítsd a TokiAuto-Inditas.cmd fájlt. A korábbi helyi adatok megmaradnak.
+
 ÚJ · 1.14.1: TELEFONOS VONALKÓD-FELISMERÉS
 Javított kamerás felismerés, nagyobb kért felbontással, elfordított kódokkal
 és későn megjelenő kameraképpel is. Támogatott telefonon kiválasztható a kamera,

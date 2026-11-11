@@ -2,6 +2,16 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Frissítés · 1.22.0
+
+A raktári terméklista oldalanként legfeljebb **50 terméket** mutat. A lapozás minden terméket elérhetően tart; keresés és kategóriaváltás visszalép az első oldalra. Ez a megjelenített sorok korlátja, a készlet mennyiségét nem módosítja.
+
+A jegyzetek névkártyáin a név alatt a bejegyzés kitöltött **alvázszámai** láthatók, teljes szöveggel a rámutatáskor. Kereséskor az alvázszámok mellett a nap is megmarad; hiányzó alvázszámot külön felirat jelez. Cikkszámra továbbra is lehet keresni.
+
+A jegyzet alatti teli ár, kedvezmény és kedvezményes ár összesítése csak a **Megrendelve** pipás tételekre vonatkozik, a kiválasztott autó szerint, darabszámmal szorozva. Például 75 000 Ft-os, nem megrendelt sor és 4 × 86 000 Ft-os, megrendelt sor esetén **344 000 Ft** jelenik meg. Pipa nélkül 0 Ft látszik, ismeretlen árnál „—”, részlegesen ismert áraknál részösszeg. Más belső pipa nem helyettesíti a megrendelést. A teljes tárolt tétellista, a munkalap árajánlati összege és az Excel-export minden tétele megmarad.
+
+Ellenőrzés: a teljes 140 teszt sikeres, köztük 123 termék 50/50/23-as lapozása, szűrés és frissítés, az alvázszámos névkártyák, a megrendelés szerinti összegek, darabszám, autónkénti elkülönítés és hiányzó árak. A program az 1.21.0-s forrásverzióra épül. A csomagnév továbbra is `jegyzetfuzet`, ezért a korábbi Windows-adatkönyvtárat használja.
+
 ## Telefonos kamerafelismerés · 1.14.1
 
 Az élő videó leolvasása megvárja a tényleges képméretet és az olvasható képkockát, nem tart fenn egy kezdetben nulla vagy elfordulás után elavult méretű dekódolóvásznat. Minden képkocka aktuális mérettel készül, TRY_HARDER móddal, külön 90 fokos próbával és időnként középső kivágással. A kérés 1920×1080-as hátlapi képet preferál; a tényleges beállítás a telefon képességétől függ. A támogatott fókusz, nagyítás, lámpa és kameralista opcionális: hiányuk nem állítja le a felismerést. Az aktív kameráról és a sikertelen olvasásról látható visszajelzés van. Stop, kameracsere és kilépés megszünteti a streamet és a feldolgozó időzítőt.
@@ -14,7 +24,7 @@ A valódi Chromium-próba későn olvasható videóméretet, vízszintes és fü
 
 A **Raktár / leltár** részleg közös terméklistát, cikkszámot, több vonalkódot és egész darabszámú készletet kezel. Az autónyilvántartó működő központ/csatlakozó beállítását használja, annak portja+1-en; a külön telefonos HTTPS-felület portja+2. Az eredeti autólista protokollja és portja változatlan. A központ első Raktár-megnyitása engedélyezi az induláskor automatikusan elinduló készletszolgáltatást. Beállítatlan autóhálózatnál helyi próbakészletet jelez, ezeket nem egyesíti automatikusan. Kezelés és tanúsítványtelepítés: [RAKTAR-UTMUTATO.txt](RAKTAR-UTMUTATO.txt). Képernyőképes lépések: [képes útmutató](RAKTAR-KEPES-UTMUTATO.md), [letölthető PDF](downloads/raktar-utmutato/TokiAuto-Kepes-Beallitas.pdf).
 
-A billentyűzetként működő vonalkódolvasó Enterrel küldi a kódot. Ismert kódnál új bevételezés készül, ismeretlennél termékfelvitel szükséges. A gyors egymás utáni beolvasások tartós, műveletazonosítóval ellátott helyi sorba kerülnek; újraindítás utáni folytatás nem számol újra egy már sikeres bevételezést. Terméknévre, cikkszámra és vonalkódra is lehet keresni; a lista 80-as lapozású. Termékadat szerkesztése összehasonlított adatbázis-revízióval védett; a készlet külön, idempotens műveletekkel változik. Korrekcióhoz indok kell; negatív készlet és aktív készletkapcsolattal rendelkező termék törlése tiltott. Egy termékhez több kód tartozhat, a kódok és cikkszámok egyediek.
+A billentyűzetként működő vonalkódolvasó Enterrel küldi a kódot. Ismert kódnál új bevételezés készül, ismeretlennél termékfelvitel szükséges. A gyors egymás utáni beolvasások tartós, műveletazonosítóval ellátott helyi sorba kerülnek; újraindítás utáni folytatás nem számol újra egy már sikeres bevételezést. Terméknévre, cikkszámra és vonalkódra is lehet keresni; a lista az 1.22.0-s verziótól 50-es lapozású. Termékadat szerkesztése összehasonlított adatbázis-revízióval védett; a készlet külön, idempotens műveletekkel változik. Korrekcióhoz indok kell; negatív készlet és aktív készletkapcsolattal rendelkező termék törlése tiltott. Egy termékhez több kód tartozhat, a kódok és cikkszámok egyediek.
 
 A jegyzetek tételsorának **Raktárról** pipája (`fromStock`, `stockProductId`) kizárólag jelölt tételeket kapcsol a készlethez. A pipa azonnali explicit mentés, a mennyiségkorrekció a mező change eseményén ment, más szöveggépelés továbbra is csak memóriát módosít. Kivétel, mennyiségcsökkentés, tétel/jegyzet törlése visszaadja a korábban levont darabszámot a sikeres mentéskor. Cikkszámcsere bontja a kapcsolatot; az új termékhez új jelölés kell. Munkalap-készítés nem terhel másodszor készletet. A helyi mentés nem használ készletkapcsolatot, ha nincs módosult raktári hivatkozás; az egyszerű saját jegyzetek központ nélkül is menthetők.
 

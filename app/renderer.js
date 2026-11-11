@@ -249,7 +249,8 @@ function renderList() {
     const workflowStatus = NoteStatuses.get(note); button.dataset.workflowStatus = workflowStatus.id;
     const title = document.createElement('strong'); title.textContent = note.title || 'Új név';
     if (Items.needsRecording(note.items)) { const warning=document.createElement('span');warning.className='note-recording-warning';warning.textContent='!';warning.title='Van megrendelt, még fel nem írt tétel.';warning.setAttribute('aria-label',warning.title);button.append(warning); }
-    const preview = document.createElement('small'); preview.textContent = query ? note.day : note.items.map(item => item.partNumber).filter(Boolean).join(' · ') || note.oil || note.vin || 'Adatok kitöltése…';
+    const vins = [...new Set(Vehicles.get(note).map(vehicle => vehicle.vin.trim()).filter(Boolean))];
+    const preview = document.createElement('small'); preview.textContent = (vins.join(' · ') || 'Alvázszám nincs megadva') + (query ? ' · ' + note.day : ''); preview.title = preview.textContent;
     const caption = document.createElement('span'); caption.className = 'note-status-caption'; caption.textContent = '● ' + workflowStatus.label;
     button.append(title, preview); if(workflowStatus.id !== 'written') button.append(caption); button.onclick = () => afterCheck(selected === note.id ? validInputs() : allowNavigation(), () => { selected = note.id; setDayContext(note.day); render(); }); $('list').append(button);
   }
@@ -297,16 +298,22 @@ function afterCheck(result, action) {
 }
 function navigate(action) { return afterCheck(allowNavigation(), action); }
 function renderTotals(note) {
-  const result = Items.totals(Vehicles.itemsFor(note));
-  $('total-full').previousElementSibling.textContent = result.missingFull ? 'Teli részösszeg' : 'Teli összesen';
-  $('total-savings').previousElementSibling.textContent = result.missing && result.priced ? 'Kedvezmény részösszeg' : 'Kedvezmény összesen';
-  $('total-discounted').previousElementSibling.textContent = result.missingDiscounted ? 'Kedvezményes részösszeg' : 'Kedvezményes összesen';
-  $('total-full').textContent = result.fullPriced ? Items.formatMoney(result.fullPrice) : '—';
-  $('total-savings').textContent = result.priced ? Items.formatMoney(result.savings) : '—';
-  $('total-discounted').textContent = result.discountedPriced ? Items.formatMoney(result.discountedPrice) : '—';
-  $('price-summary').textContent = Items.totalsHint(result);
+  const visible = Vehicles.itemsFor(note), ordered = visible.filter(item => Items.isActive(item) && Items.order(item).ordered);
+  const result = Items.totals(ordered);
+  $('total-full').previousElementSibling.textContent = result.missingFull ? 'Megrendelt teli részösszeg' : 'Megrendelt teli összesen';
+  $('total-savings').previousElementSibling.textContent = result.missing && result.priced ? 'Megrendelt kedvezmény részösszege' : 'Megrendelt kedvezmény összesen';
+  $('total-discounted').previousElementSibling.textContent = result.missingDiscounted ? 'Megrendelt kedvezményes részösszeg' : 'Megrendelt kedvezményes összesen';
+  const missing = ordered.length ? '—' : Items.formatMoney('0');
+  $('total-full').textContent = result.fullPriced ? Items.formatMoney(result.fullPrice) : missing;
+  $('total-savings').textContent = result.priced ? Items.formatMoney(result.savings) : missing;
+  $('total-discounted').textContent = result.discountedPriced ? Items.formatMoney(result.discountedPrice) : missing;
+  $('price-summary').textContent = !ordered.length ? 'Még nincs megrendelt tétel. Az összesítésbe a Megrendelve pipával jelölt sorok kerülnek.' : [
+    'Csak a megrendelt tételek, a darabszámokat is figyelembe véve.',
+    result.missingFull ? result.missingFull + ' megrendelt tételnél hiányzik a teli ár.' : '',
+    result.missingDiscounted ? result.missingDiscounted + ' megrendelt tételnél hiányzik a kedvezményes ár.' : ''
+  ].filter(Boolean).join(' ');
   renderPayment(note);
-  const orders = Items.orderCounts(Vehicles.itemsFor(note)); $('order-summary').textContent = 'Megrendelve: ' + orders.ordered + ' / ' + orders.total + ' tétel';
+  const orders = Items.orderCounts(visible); $('order-summary').textContent = 'Megrendelve: ' + orders.ordered + ' / ' + orders.total + ' tétel';
 }
 function renderItems(note) {
   $('items-body').replaceChildren();
