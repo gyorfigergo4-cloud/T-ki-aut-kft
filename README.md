@@ -2,6 +2,18 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Alvázszám felismerése · 1.23.0
+
+A jegyzet alvázszámmezője a **saját, helyben tárolt jegyzetek** minden évében keres. Legalább hat karakter megadása után felajánlja a korábban rögzített autókat, márkával, ügyféllel és a legutóbbi bejegyzésekkel. A teljes VIN egyezését külön jelzi; részletre, például az utolsó hat karakterre is lehet keresni. A keresés kisbetűt, szóközt és kötőjelet figyelmen kívül hagy. A nyitott jegyzetet kizárja a saját előzményei közül.
+
+A **Megnyitás** a kapcsolódó napot és a megfelelő autót választja ki, többautós jegyzetnél is. Az **Összes előzmény** ablak 30 bejegyzésenként lapozható. Az **Új jegyzet mára** az adott előzmény nevével, telefonszámával, alvázszámával és márkájával készít új bejegyzést; a tételek, olaj, megjegyzések, emlékeztetők és belső pipák nem kerülnek át. Eltérő korábbi ügyfelek vagy telefonszámok esetén külön előzményválasztás szükséges. A keresés önmagában nem írja felül az aktuális név- és márkamezőket.
+
+A találati panel a beviteli mező alatt jelenik meg, billentyűzettel is kezelhető: lefelé nyíl a megnyitásra lép, Escape bezár, a tabulátor a gombok között mozog. Hibás ármező mellett az előzmény megnyitása és az új jegyzet készítése is megvárja a javítást. A nevek és szövegek kizárólag szövegként jelennek meg. Nincs külső VIN-adatbázis vagy új hálózati adatküldés; a gépenként külön jegyzetek továbbra is külön maradnak.
+
+A névkártya alatti VIN a név vagy olaj szerkesztése után is megmarad. A kézi / óránkénti mentés, a raktár 50-es lapozása, a megrendelt tételek szerinti jegyzetösszesítés és a munkalap nyomtatási szabályai változatlanul működnek.
+
+Ellenőrzés: **150 sikeres teszt**, továbbá valódi Electron-próba 35 szintetikus előzménnyel: formázott VIN és részlet keresése, megfelelő régi nap és autó megnyitása, lapozás, új mai jegyzet, mentés és újranyitás, több ügyfél választása, billentyűzet és a kilépés megszakítása. Az alkalmazás továbbra is a `jegyzetfuzet` adatkönyvtárat használja.
+
 ## Frissítés · 1.22.0
 
 A raktári terméklista oldalanként legfeljebb **50 terméket** mutat. A lapozás minden terméket elérhetően tart; keresés és kategóriaváltás visszalép az első oldalra. Ez a megjelenített sorok korlátja, a készlet mennyiségét nem módosítja.

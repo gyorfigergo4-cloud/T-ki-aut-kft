@@ -22,7 +22,7 @@ async function openUI(saved, options = {}) {
     ...(options.patches?{saveNoteChanges:async patch=>{saved.notes=require('../app/note-patches').apply(copy(saved.notes),copy(patch));}}:{}),
     export: async () => true, onAppCloseRequested: callback => { closeRequest = callback; }, completeAppClose: response => closeResults.push(copy(response)), appCloseReady: () => {}
   };
-  for (const script of ['items.js', 'inventory-policy.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
+  for (const script of ['items.js', 'inventory-policy.js', 'note-status.js', 'car-brands.js', 'vehicles.js', 'vin-history.js', 'vin-history-ui.js', 'reminders.js', 'archive.js', 'order-status-ui.js', 'note-review-ui.js', 'renderer.js', 'reminders-ui.js', 'folder-import-ui.js', 'app-close-ui.js']) window.eval(fs.readFileSync('app/' + script, 'utf8'));
   if (!options.realReview) window.NoteReviewUI.confirm = () => true;
   await tick();
   const $ = id => window.document.getElementById(id);
@@ -416,4 +416,45 @@ test('a megrendelt ismert árpár teljes árat és kedvezményt is összegez, a 
  const Items=require('../app/items'),pair={...Items.edit(Items.blank('pair'),{partNumber:'PAIR',fullPrice:'10000',discountPercent:'20',quantity:'2'}),ordered:true};
  const saved={notes:[{id:'pairs',title:'Áras minta',body:'',day:'2026-11-11',updated:'2026-11-11T08:00:00Z',items:[pair,{...Items.edit(Items.blank('unknown'),{partNumber:'UNKNOWN'}),ordered:true},{...Items.edit(Items.blank('quote'),{partNumber:'QUOTE',fullPrice:'5000',discountPercent:'0'}),ordered:false}]}],archive:{years:[2026],days:[]}};
  const ui=await openUI(saved);try{const amount=id=>ui.$(id).textContent.replace(/\s/g,'');assert.equal(amount('total-full'),'20000Ft');assert.equal(amount('total-savings'),'4000Ft');assert.equal(amount('total-discounted'),'16000Ft');assert.match(ui.$('total-discounted').previousElementSibling.textContent,/részösszeg/);assert.match(ui.$('price-summary').textContent,/1 megrendelt tételnél hiányzik/);ui.$('items-body').children[0].querySelector('[data-field=ordered]').click();assert.equal(amount('total-discounted'),'—');ui.$('items-body').children[1].querySelector('[data-field=ordered]').click();assert.equal(amount('total-discounted'),'0Ft');}finally{ui.dom.window.close();}
+});
+
+const historyVin='WVWZZZ1KZ6W123456';
+function historyFixture(count=3){
+ const Items=require('../app/items');
+ return {notes:[{id:'draft',title:'Mai piszkozat',phone:'',body:'Megőrzendő mai szöveg',day:'2026-11-11',updated:'2026-11-11T10:00:00Z',vehicles:[{id:'draft-car',vin:'',brand:''}],activeVehicleId:'draft-car',items:[]},...Array.from({length:count},(_,i)=>({id:'history-'+i,title:'Minta Péter',phone:'+36 30 000 0000',body:'Korábbi egyeztetés '+i,day:'2025-'+String(Math.floor(i/28)+1).padStart(2,'0')+'-'+String(i%28+1).padStart(2,'0'),updated:'2025-01-01T08:00:00Z',activeVehicleId:'different-'+i,vehicles:[{id:'different-'+i,vin:'WBAHT71010G654321',brand:'BMW',oil:''},{id:'history-car-'+i,vin:historyVin,brand:'Volkswagen',oil:'Korábbi olaj'}],items:[{...Items.edit(Items.blank('historical-'+i),{partNumber:'PREVIOUS-'+i,discountedPrice:'1000'}),vehicleId:'history-car-'+i,ordered:true,paid:true}],source:{originalText:'Eredeti forrás '+i}}))],archive:{years:[2025,2026],days:['2026-11-11']}};
+}
+const waitHistory=()=>new Promise(resolve=>setTimeout(resolve,210));
+test('VIN-felismerés gépeléskor: nincs önmagára találat, Escape bezár, régi jegyzet a megfelelő autóval nyílik meg',async()=>{
+ const saved=historyFixture(),ui=await openUI(saved,{manualOnly:true});
+ try{
+  ui.$('vin').focus();ui.input('vin','12345');await waitHistory();assert.equal(ui.dom.window.document.querySelector('.vin-history-panel'),null);
+  ui.input('vin',historyVin.toLowerCase());await waitHistory();let panel=ui.dom.window.document.querySelector('.vin-history-panel');assert.ok(panel);assert.match(panel.textContent,/Korábban rögzített autó/);assert.equal(panel.querySelectorAll('.vin-history-row').length,3);assert.equal(ui.$('title').value,'Mai piszkozat');assert.equal(saved.notes[0].vehicles[0].vin,'');
+  ui.$('vin').dispatchEvent(new ui.dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(ui.dom.window.document.querySelector('.vin-history-panel'),null);assert.equal(ui.$('vin').getAttribute('aria-expanded'),'false');
+  ui.$('vin').dispatchEvent(new ui.dom.window.Event('focus'));await waitHistory();panel=ui.dom.window.document.querySelector('.vin-history-panel');panel.querySelector('.vin-history-row-actions button').click();await tick(false);
+  assert.equal(ui.$('title').value,'Minta Péter');assert.equal(ui.dom.window.document.querySelector('.vehicle-row.is-selected input[data-vehicle-field=vin]').value,historyVin);assert.equal(ui.$('vehicle-tabs').querySelector('[aria-selected=true]').dataset.vehicleId,'history-car-2');assert.equal(ui.$('items-body').children.length,1);assert.equal(ui.$('items-body').querySelector('[data-field=partNumber]').value,'PREVIOUS-2');assert.equal(ui.$('day-heading').textContent.includes('2025'),true);assert.equal(ui.$('note-review-dialog').open,false);
+  await ui.dom.window.NotesFlush();assert.equal(saved.notes.find(n=>n.id==='draft').body,'Megőrzendő mai szöveg');assert.equal(saved.notes.find(n=>n.id==='draft').vehicles[0].vin,historyVin.toLowerCase());
+ }finally{ui.dom.window.close();}
+});
+test('VIN összes előzménye lapozható, több ügyfélnél külön választás, szövegek biztonságos megjelenítése',async()=>{
+ const saved=historyFixture(35);saved.notes[1].title='<img src=x onerror=alert(1)>';const ui=await openUI(saved,{manualOnly:true});
+ try{
+  ui.$('vin').focus();ui.input('vin','123456');await waitHistory();const panel=ui.dom.window.document.querySelector('.vin-history-panel');assert.match(panel.textContent,/részletére/);assert.match(panel.textContent,/ügyfél kiválasztása/);assert.equal(panel.querySelector('img'),null);
+  [...panel.querySelectorAll('button')].find(b=>b.textContent.includes('ügyfél kiválasztása')).click();assert.equal(ui.$('vin-history-dialog').open,true);assert.equal(ui.$('vin-history-dialog-list').children.length,30);assert.match(ui.$('vin-history-dialog-summary').textContent,/35 bejegyzés/);ui.$('vin-history-next').click();assert.equal(ui.$('vin-history-dialog-list').children.length,5);assert.equal(ui.$('vin-history-next').disabled,true);assert.match(ui.$('vin-history-dialog-list').textContent,/<img src=x onerror=alert\(1\)>/);assert.equal(ui.$('vin-history-dialog-list').querySelector('img'),null);ui.$('vin-history-prev').click();assert.equal(ui.$('vin-history-dialog-list').children.length,30);ui.$('vin-history-close').click();assert.equal(ui.$('vin-history-dialog').open,false);assert.equal(ui.$('title').value,'Mai piszkozat');
+ }finally{ui.dom.window.close();}
+});
+test('új mai jegyzet ismert autóhoz: csak név, telefon, VIN és márka kerül át, régi tétel és pipák nélkül',async()=>{
+ const saved=historyFixture(1),ui=await openUI(saved,{manualOnly:true});
+ try{
+  ui.$('vin').focus();ui.input('vin',historyVin);await waitHistory();const panel=ui.dom.window.document.querySelector('.vin-history-panel');[...panel.querySelectorAll('button')].find(b=>b.textContent==='Új jegyzet mára ehhez az autóhoz').click();await tick(false);
+  assert.equal(ui.$('title').value,'Minta Péter');assert.equal(ui.$('phone').value,'+36 30 000 0000');assert.equal(ui.$('vin').value,historyVin);assert.equal(ui.$('vehicle-brand').value,'Volkswagen');assert.equal(ui.$('oil').value,'');assert.equal(ui.$('body').value,'');assert.equal(ui.$('items-body').children.length,1);assert.equal(ui.$('items-body').querySelector('[data-field=partNumber]').value,'');assert.equal(ui.$('items-body').querySelector('[data-field=ordered]').checked,false);assert.equal(ui.$('items-body').querySelector('[data-field=paid]').checked,false);
+  await ui.dom.window.NotesFlush();const created=saved.notes.find(n=>n.id!=='draft'&&n.id!=='history-0');assert.equal(created.day,ui.dom.window.NotesArchive.localDay(new ui.dom.window.Date()));assert.equal(created.vehicles.length,1);assert.equal(created.reminders.length,0);assert.equal(saved.notes.find(n=>n.id==='history-0').items[0].ordered,true);assert.equal(saved.notes.find(n=>n.id==='history-0').source.originalText,'Eredeti forrás 0');assert.equal(saved.notes.find(n=>n.id==='draft').body,'Megőrzendő mai szöveg');
+  ui.input('title','Új név ugyanahhoz az autóhoz');ui.input('oil','Új olaj');const card=ui.cards().find(c=>c.classList.contains('active'));assert.equal(card.querySelector('small').textContent,historyVin);
+ }finally{ui.dom.window.close();}
+});
+test('hibás ár mellett az előzmény megnyitása és az új jegyzet nem kerüli meg az ellenőrzést',async()=>{
+ const ui=await openUI(historyFixture(1),{manualOnly:true});
+ try{
+  ui.$('add-item').click();const input=ui.$('items-body').querySelector('[data-field=fullPrice]');input.value='-5';input.dispatchEvent(new ui.dom.window.Event('input'));
+  assert.equal(await ui.dom.window.VinHistoryOpen('history-0','history-car-0'),false);assert.equal(await ui.dom.window.VinHistoryNew('history-0','history-car-0'),false);assert.equal(ui.$('title').value,'Mai piszkozat');
+ }finally{ui.dom.window.close();}
 });

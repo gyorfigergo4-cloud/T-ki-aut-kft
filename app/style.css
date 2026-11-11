@@ -94,6 +94,35 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: h
 .note small { font-size: 10px; color: #6f8061; margin-top: 7px; }
 .list-empty { font-size: 12px; color: #6e7e61; margin: 10px 0; }
 
+/* VIN suggestions stay anchored to the selected vehicle's form. */
+.vehicle-row { position: relative; }
+#vin-history-help { margin: -4px 0 12px; color: #6e805f; font-size: 11px; line-height: 1.6; }
+.vin-history-panel { position: absolute; z-index: 30; top: calc(100% + 7px); left: 9px; width: min(800px,calc(100% - 9px)); padding: 16px; border: 1px solid #b8cba3; border-radius: 10px; background: #fff; box-shadow: 0 12px 32px #1d2d2033; max-height: min(480px,55vh); overflow-y: auto; color: #293326; }
+.vin-history-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #edf6d9; border-radius: 6px; padding: 9px 12px; color: #466d18; }
+.vin-history-panel-heading strong { font-size: 13px; }
+.vin-history-dismiss { border: 0; padding: 0 3px; background: transparent; font-size: 23px; line-height: 23px; color: #526447; }
+.vin-history-count,.vin-history-owners { font-size: 11px; line-height: 1.6; color: #6b7b5d; margin: 8px 0; overflow-wrap: anywhere; }
+.vin-history-group + .vin-history-group { border-top: 1px solid #e0e8d7; margin-top: 15px; padding-top: 12px; }
+.vin-history-group h4 { font-size: 14px; line-height: 1.5; margin: 12px 0 2px; overflow-wrap: anywhere; }
+.vin-history-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #e6ecdf; padding: 11px 0; }
+.vin-history-row-text { min-width: 0; }
+.vin-history-row-text strong { display: block; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.vin-history-row-text small { display: block; font-size: 11px; line-height: 1.5; color: #708164; margin-top: 3px; overflow-wrap: anywhere; }
+.vin-history-row-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.vin-history-row-actions button { font-size: 11px; padding: 7px 9px; color: #42651b; background: #f6faef; }
+.vin-history-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.vin-history-actions button,.vin-history-more { font-size: 11px; padding: 9px 11px; }
+.vin-history-more { margin-top: 15px; width: 100%; }
+#vin-history-dialog { width: min(900px,calc(100vw - 40px)); max-height: 88vh; overflow-y: auto; border-top: 4px solid #96d500; }
+.vin-history-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
+.vin-history-dialog-heading h2 { margin: 8px 0 4px; }
+#vin-history-close { background: transparent; border: 0; font-size: 26px; padding: 0 6px; }
+.vin-history-dialog-entry { background: #f8faf4; border: 1px solid #dce5d1; border-radius: 7px; padding: 12px 16px; margin: 10px 0; }
+.vin-history-dialog-entry h3 { font-size: 12px; color: #587933; overflow-wrap: anywhere; margin: 0 0 7px; }
+.vin-history-dialog-entry .vin-history-row { padding-bottom: 0; }
+.vin-history-pages { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; font-size: 12px; color: #6b7b5d; }
+@media(max-width:900px) { .vin-history-row { flex-wrap: wrap; gap: 8px; }.vin-history-row-actions { justify-content: flex-start; }.vin-history-panel { padding: 12px; }.vin-history-actions button { flex: 1 1 180px; } }
+
 /* Readable, light forms */
 #editor { padding: 24px 30px; overflow: auto; flex: 1; min-height: 0; scrollbar-color: #c1cbb6 transparent; scrollbar-width: thin; }
 .editor-top { display: flex; justify-content: space-between; align-items: center; gap: 15px; }

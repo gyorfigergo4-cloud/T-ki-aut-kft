@@ -1,3 +1,26 @@
+ÚJ · 1.23.0: ALVÁZSZÁM FELISMERÉSE ÉS KORÁBBI JEGYZETEK
+A jegyzetben az Alvázszám mezőre kattintva vagy gépelés közben megjelennek
+az ugyanahhoz az autóhoz korábban rögzített saját jegyzetek, minden évből.
+Legalább 6 karaktert írj be; az alvázszám vége alapján is kereshetsz.
+A kis- és nagybetű, a szóköz és a kötőjel nem számít a keresésben.
+Teljes egyezésnél a Korábban rögzített autó felirat jelenik meg.
+
+A Megnyitás gomb a korábbi napra és a megfelelő autó tétellistájára lép.
+Az Összes előzmény gombbal minden kapcsolódó jegyzet lapozható.
+Az Új jegyzet mára ehhez az autóhoz gomb a mai napra hoz létre bejegyzést:
+átveszi a nevet, telefonszámot, alvázszámot és márkát. Az új tétellista üres;
+a régi olaj, megjegyzés, rendelési és fizetési pipák a régi jegyzetben maradnak.
+Ha az autóhoz több korábbi ügyfél tartozik, válaszd ki az előzménylistában,
+kinek szeretnél új mai jegyzetet készíteni.
+
+Az Escape vagy az × bezárja a találatokat. A kereső a gép saját jegyzeteit
+használja, internet és külső járműadatbázis nélkül. A kézi, Ctrl+S és
+óránkénti mentés továbbra is működik; az új bejegyzést is mentsd el.
+A névbuborék a név vagy olaj szerkesztése után is az alvázszámot mutatja.
+
+Frissítés: zárd be a régi appot, csomagold ki teljesen az új ZIP-et,
+és indítsd a TokiAuto-Inditas.cmd fájlt. A korábbi helyi adatok megmaradnak.
+
 ÚJ · 1.22.0: LAPOZÁS, ALVÁZSZÁM ÉS MEGRENDELT ÖSSZEG
 A Raktár / leltár terméklistája oldalanként legfeljebb 50 sort mutat.
 Az Előző / Következő gombokkal minden termék elérhető; keresés vagy
