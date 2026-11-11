@@ -551,7 +551,7 @@ window.VinHistoryOpen = (noteId, vehicleId) => navigate(() => afterCheck(window.
 window.VinHistoryNew = (noteId, vehicleId) => navigate(() => afterCheck(window.WorkOrdersUI ? window.WorkOrdersUI.showNotes() : true, () => {
   const source = notes.find(note => note.id === noteId), vehicle = source?.vehicles.find(entry => entry.id === vehicleId);
   if (!loaded || !source || !vehicle?.vin.trim()) return false;
-  return createNote(today, { title: source.title, phone: source.phone, vin: vehicle.vin, brand: vehicle.brand });
+  return createNote(localDay(new Date()), { title: source.title, phone: source.phone, vin: vehicle.vin, brand: vehicle.brand });
 }));
 window.NotesExportSelection = () => current()?.id || null;
 window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowNavigation });
