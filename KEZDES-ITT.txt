@@ -1,3 +1,14 @@
+ÚJ · 1.24.2: ÉLESEBB ÉRTESÍTÉSI ÉS TÁLCAIKON
+Az óra melletti ikon és a Windows oldalsó értesítése új, egyszerűbb,
+zöld-fekete autós jelet kapott, amely kis méretben is felismerhető.
+Az értesítés külön, nagy felbontású képet használ.
+
+Frissítés előtt teljesen lépj ki a régi programból:
+óra melletti Töki Autó ikon -> jobb kattintás -> Kilépés.
+Az X csak elrejti az alkalmazást. Bontsd ki teljesen az új ZIP-et,
+majd indítsd a TokiAuto-Inditas.cmd fájlt.
+A jegyzetek, az automatikus indítás és a telefonos kapcsolat megmaradnak.
+
 JAVÍTÁS · 1.24.1: WINDOWS-INDÍTÁS MENTÉSE
 Javítva az Induljon a Windowsszal kapcsoló mentésekor tévesen megjelenő
 „A Windows nem alkalmazta az automatikus indítás beállítását” hiba.

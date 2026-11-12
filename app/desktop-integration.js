@@ -2,7 +2,7 @@ const path = require('node:path');
 const settingsStore = require('./desktop-settings-store');
 const LOGIN_NAME = 'TokiAuto';
 const STARTUP_ARGS = ['--toki-background'];
-function create({ app, win, Tray, Menu, ipcMain, iconPath, platform = process.platform, executablePath = process.execPath, argv = process.argv, storage = settingsStore }) {
+function create({ app, win, Tray, Menu, ipcMain, iconPath, notificationIconPath = iconPath, platform = process.platform, executablePath = process.execPath, argv = process.argv, storage = settingsStore }) {
   const file = path.join(app.getPath('userData'), 'desktop-settings.json');
   const startupSupported = platform === 'win32' && app.isPackaged;
   let preferences, notice = '', tray = null, hiddenHint = false, alarmActive = false;
@@ -18,7 +18,7 @@ function create({ app, win, Tray, Menu, ipcMain, iconPath, platform = process.pl
     return { openAtLogin: actual.openAtLogin === true && !!own, executableWillLaunchAtLogin: !!own?.enabled };
   }
   const writeLogin = (openAtLogin, enabled = openAtLogin, loginPath = executablePath) => app.setLoginItemSettings({ name: LOGIN_NAME, path: loginPath, args: [...STARTUP_ARGS], openAtLogin, enabled });
-  function balloon(options) { try { tray?.displayBalloon(options); } catch {} }
+  function balloon(options) { try { tray?.displayBalloon({ icon: notificationIconPath, iconType: 'custom', largeIcon: true, ...options }); } catch {} }
   function show() {
     if (win.isDestroyed()) return;
     if (win.isMinimized()) win.restore();

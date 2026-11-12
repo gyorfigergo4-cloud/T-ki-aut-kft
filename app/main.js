@@ -198,7 +198,7 @@ app.whenReady().then(async () => {
     return true;
   });
   win = new BrowserWindow({ show: false, width: 1240, height: 850, minWidth: 900, minHeight: 600, title: 'Töki Autó Kft. · Belső jegyzetek', backgroundColor: '#F5F7F2', icon: path.join(__dirname, 'assets', 'toki-icon.png'), webPreferences: { backgroundThrottling: false, preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
-  const desktop = createDesktopIntegration({ app, win, Tray, Menu, ipcMain, iconPath: path.join(__dirname, 'assets', 'toki-icon.ico') });
+  const desktop = createDesktopIntegration({ app, win, Tray, Menu, ipcMain, iconPath: path.join(__dirname, 'assets', 'toki-tray.ico'), notificationIconPath: path.join(__dirname, 'assets', 'toki-notification.png') });
   attachCloseGuard({ win, app, ipcMain, newToken: crypto.randomUUID, shouldHide: desktop.shouldHide, hide: desktop.hide, reveal: desktop.show });
   ipcMain.on('reminder-alarm-state', (event, active) => { if (event.sender === win.webContents && typeof active === 'boolean' && !win.isDestroyed()) { win.flashFrame(active); desktop.notifyAlarm(active); } });
   win.setMenuBarVisibility(false);

@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Értesítési és tálcaikon · 1.24.2
+
+A Windows oldalsó értesítése és az óra melletti tálcaikon új, egyszerűbb, zöld-fekete autós jelet használ. A képgenerálóval készült jelben nincs apró felirat, így kis méretben is felismerhető. A 256×256-os `app/assets/toki-notification.png` külön kerül a `displayBalloon` hívásba `iconType: 'custom'` és `largeIcon: true` beállítással. A Windows az értesítéshez ezt a képet használhatja a kis tálcaikon felnagyítása helyett. Az `app/assets/toki-tray.ico` külön 16, 20, 24, 32, 40, 48, 64, 128 és 256 pixeles képet tartalmaz. A kész képet a `scripts/build-notification-icons.cjs` Electron `nativeImage` API-val alakítja platformformátumokká.
+
+Az alkalmazás fő logója, az asztali EXE/parancsikon és az adatkönyvtár megmarad. Az 1.24.1-es Windows-indítási javítás is benne van. Frissítés előtt a tálcaikon **Kilépés** menüjével teljesen zárd be a régi példányt, majd a teljes ZIP kibontása után indítsd a `TokiAuto-Inditas.cmd` fájlt.
+
+Ellenőrzés: **168 meglévő teszt sikeres**; a PNG és az ICO méretei és belső képei ellenőrizve. Valódi Electron-ablakos próba során ellenőriztük az új tálcaikon útvonalát, a nagy értesítési kép tényleges 256×256-as betöltését és az értesítésnek átadott beállításokat, valamint a mentést, indítást, tálcát és telefonos HTTPS-t. A natív Windows értesítési felület ebben a Linux-környezetben nem jeleníthető meg; a Windows-API-hívásokat az elkülönített próbában helyettesített adapter ellenőrizte.
+
 ## Windows-indítás mentésének javítása · 1.24.1
 
 Az **Induljon a Windowsszal** kapcsoló mentése az 1.24.0-s kiadásban tévesen az „A Windows nem alkalmazta az automatikus indítás beállítását” hibával megállhatott, és visszaállította az előző állapotot. A javítás megtartja a teljes bejegyzett parancs, a saját bejegyzésnév, felhasználói hatókör, EXE-útvonal és a Windows engedélyezési állapotának ellenőrzését.
