@@ -1,3 +1,17 @@
+ÚJ · 1.25.0: BEÁLLÍTÁSOK BUBORÉK, TÖBB HELY A NAPTÁRNAK
+Bal alul egyetlen Beállítások gomb maradt. Rákattintva felfelé nyíló
+buborékban érheted el a Jegyzetmappa, Excel beolvasása, Mentés Excelbe,
+Biztonsági mentés és Indítás és tálca gombokat. A mentési mód és a
+verziószám is ebben a buborékban látható.
+Kívülre kattintva, az × gombbal vagy Escape-pel bezárható.
+Az áthelyezett gombok működése és az aktuális fül szerinti mentés megmaradt.
+
+Frissítés előtt teljesen lépj ki a régi programból:
+óra melletti Töki Autó ikon -> jobb kattintás -> Kilépés.
+Az X csak elrejti az alkalmazást. Bontsd ki teljesen az új ZIP-et,
+majd indítsd a TokiAuto-Inditas.cmd fájlt.
+A jegyzetek, az automatikus indítás és a telefonos kapcsolat megmaradnak.
+
 ÚJ · 1.24.3: TÖKI AUTÓ-LOGÓS ÉRTESÍTÉSI ÉS TÁLCAIKON
 Az értesítésben és az óra mellett ismét a Töki Autó feliratos, fehér autós,
 fekete-zöld logó jelenik meg. A meglévő Töki Autó-képet használja.

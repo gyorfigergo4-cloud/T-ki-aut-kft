@@ -2,6 +2,16 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Beállítások buborék és nagyobb naptár · 1.25.0
+
+A bal alsó eszközgombok egyetlen **Beállítások** gomb mögé kerültek. A fölötte nyíló buborékban található a **Jegyzetmappa**, **Excel beolvasása**, **Mentés Excelbe**, **Biztonsági mentés** és **Indítás és tálca**, valamint a mentési mód és verziószám. A buborék ráfed a felületre, ezért nyitva sem vesz el helyet a naptár elrendezéséből. Kívülre kattintva, a bezáró gombbal és Escape-pel is bezárható. A bezáró gomb és az Escape használatakor a billentyűzetes fókusz visszatér a Beállítások gombra.
+
+Az eredeti vezérlők és eseménykezelők maradtak meg. A kiválasztott jegyzet és a részleg nem változik a buborék megnyitásakor. Az Excel-mentés továbbra is a Jegyzetek, Munkalapok, Autónyilvántartó vagy Raktár fülhöz tartozó adatkört ajánlja fel; a korábbi részlegenkénti importgomb-láthatóság megmarad. Művelet választásakor a buborék bezárul, az eredeti ablak vagy fájlválasztó nyílik meg.
+
+Ellenőrzés: **168 meglévő teszt sikeres**, továbbá valódi Electron-ablakban összehasonlítottuk az 1.24.3-as és az új elrendezést. A próba 1600×1030 és 1600×720 méretben egyaránt **189 képponttal nagyobb naptárterületet** mért; ez a tesztkörnyezetben mért érték. Ellenőriztük a buborék helyét, billentyűzetes és külső kattintásos bezárását, az importok és biztonsági mentés fájlválasztóit, a Windows-indítási beállítás ablakát és az Excel-mentés részleg szerinti adatkörét. A szintetikus jegyzetadatok bájtra azonosak maradtak. Új képernyőképek csak mintaadatokat tartalmaznak.
+
+Frissítés: a régi programból a tálcaikon **Kilépés** menüjével teljesen lépj ki; a teljes ZIP kibontása után indítsd a `TokiAuto-Inditas.cmd` fájlt. Az 1.24.3-as Töki Autó-logós ikonok és a korábbi működési javítások is megmaradnak.
+
 ## Töki Autó-logós értesítési és tálcaikon · 1.24.3
 
 A felhasználó kérésére az értesítési kép és a tálcaikon a már meglévő **Töki Autó feliratos, fehér autós, fekete-zöld** `app/assets/toki-icon.png` képből készül. Nincs új logóterv: a Windows-formátumok ugyanebből az emblémából, átméretezéssel készültek. A `toki-notification.png` 256×256-os, a `toki-tray.ico` 16, 20, 24, 32, 40, 48, 64, 128 és 256 pixeles változatokat tartalmaz. A külön, nagy felbontású Windows-értesítési kép beállítása megmarad.

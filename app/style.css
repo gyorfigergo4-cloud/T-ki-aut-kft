@@ -68,6 +68,22 @@ footer button { display: flex; align-items: center; justify-content: center; gap
 footer button:hover { background: #34402a; border-color: #61784b; }
 .brand-footer { display: flex; align-items: center; justify-content: space-between; font-size: 7px; letter-spacing: .8px; color: #a8b89a; }
 .brand-footer span { font-size: 6px; color: #a8b89a; }
+.sidebar-footer { position: relative; flex-shrink: 0; gap: 0; }
+#settings-menu-open { width: 100%; justify-content: flex-start; padding: 12px 15px; border-radius: 9px; font-size: 12px; font-weight: 600; }
+#settings-menu-open[aria-expanded=true] { color: #c7ef80; border-color: #87b43d; background: #303e24; }
+.settings-menu-chevron { margin-left: auto; color: #b6cf95; font-size: 15px; }
+#settings-menu-open[aria-expanded=true] .settings-menu-chevron { transform: rotate(180deg); }
+.settings-menu { position: absolute; z-index: 100; left: 0; bottom: calc(100% + 12px); width: min(330px,calc(100vw - 36px)); max-height: calc(100vh - 115px); overflow-y: auto; padding: 17px; border: 1px solid #526943; border-radius: 13px; background: #20271b; box-shadow: 0 12px 35px #0b100b55; color: #e4eddb; }
+.settings-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 13px; margin-bottom: 13px; border-bottom: 1px solid #3b4930; }
+.settings-menu-heading h2 { margin: 0; color: #d9efbd; font-size: 16px; font-weight: 650; }
+#settings-menu-close { padding: 0 5px; border: 0; background: transparent; font-size: 24px; line-height: 24px; color: #c7d5b9; }
+.settings-menu-actions { display: grid; gap: 9px; }
+.settings-menu-actions > button { width: 100%; font-size: 12px; padding: 11px 12px; }
+.settings-menu-actions .import-buttons button { font-size: 11px; padding: 11px 5px; }
+.settings-menu #export-excel,.settings-menu #desktop-settings-open { margin: 0; }
+.settings-menu-info { display: grid; gap: 13px; padding-top: 15px; margin-top: 15px; border-top: 1px solid #3b4930; }
+.settings-menu .brand-footer { gap: 12px; }
+.settings-menu .brand-footer span { font-size: 7px; }
 
 /* Day navigation and individual customer records */
 main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
