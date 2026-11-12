@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Töki Autó-logós értesítési és tálcaikon · 1.24.3
+
+A felhasználó kérésére az értesítési kép és a tálcaikon a már meglévő **Töki Autó feliratos, fehér autós, fekete-zöld** `app/assets/toki-icon.png` képből készül. Nincs új logóterv: a Windows-formátumok ugyanebből az emblémából, átméretezéssel készültek. A `toki-notification.png` 256×256-os, a `toki-tray.ico` 16, 20, 24, 32, 40, 48, 64, 128 és 256 pixeles változatokat tartalmaz. A külön, nagy felbontású Windows-értesítési kép beállítása megmarad.
+
+Az indítás, tálcára rejtés, mentés, adatkönyvtár és telefonos kapcsolat működése változatlan. Frissítés előtt a régi program **Kilépés** menüjét használd az óra melletti ikonon; az X csak elrejti a régi példányt. A teljes ZIP kibontása után indítsd a `TokiAuto-Inditas.cmd` fájlt.
+
+Ellenőrzés: a Töki Autó-forrásképből létrehozott PNG/ICO fájlok méretei és a Windows-csomagba kerülő példányok ellenőrizve; a meglévő Electron-próba ellenőrzi az értesítési kép betöltését és beállításait, mentést, tálcát és telefonos HTTPS-t. Az ikoncsere nem módosítja a program működését.
+
 ## Értesítési és tálcaikon · 1.24.2
 
 A Windows oldalsó értesítése és az óra melletti tálcaikon új, egyszerűbb, zöld-fekete autós jelet használ. A képgenerálóval készült jelben nincs apró felirat, így kis méretben is felismerhető. A 256×256-os `app/assets/toki-notification.png` külön kerül a `displayBalloon` hívásba `iconType: 'custom'` és `largeIcon: true` beállítással. A Windows az értesítéshez ezt a képet használhatja a kis tálcaikon felnagyítása helyett. Az `app/assets/toki-tray.ico` külön 16, 20, 24, 32, 40, 48, 64, 128 és 256 pixeles képet tartalmaz. A kész képet a `scripts/build-notification-icons.cjs` Electron `nativeImage` API-val alakítja platformformátumokká.

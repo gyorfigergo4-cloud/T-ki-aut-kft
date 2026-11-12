@@ -1,5 +1,5 @@
-// Format the generated artwork for Windows; this does not change the artwork.
-// Run with Electron: electron scripts/build-notification-icons.cjs source.png
+// Format the Töki Autó artwork for Windows without redesigning the logo.
+// Run with Electron: electron scripts/build-notification-icons.cjs app/assets/toki-icon.png
 const { app, nativeImage } = require('electron');
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
 app.setPath('userData', path.join(os.tmpdir(), 'toki-notification-icon-builder'));

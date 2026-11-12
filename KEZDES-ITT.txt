@@ -1,3 +1,14 @@
+ÚJ · 1.24.3: TÖKI AUTÓ-LOGÓS ÉRTESÍTÉSI ÉS TÁLCAIKON
+Az értesítésben és az óra mellett ismét a Töki Autó feliratos, fehér autós,
+fekete-zöld logó jelenik meg. A meglévő Töki Autó-képet használja.
+Az értesítés külön nagy felbontású képet, a tálca több ikonméretet kapott.
+
+Frissítés előtt a régi programból teljesen lépj ki:
+óra melletti Töki Autó ikon -> jobb kattintás -> Kilépés.
+Az X csak elrejti az alkalmazást. Bontsd ki teljesen az új ZIP-et,
+majd indítsd a TokiAuto-Inditas.cmd fájlt.
+A jegyzetek, az automatikus indítás és a telefonos kapcsolat megmaradnak.
+
 ÚJ · 1.24.2: ÉLESEBB ÉRTESÍTÉSI ÉS TÁLCAIKON
 Az óra melletti ikon és a Windows oldalsó értesítése új, egyszerűbb,
 zöld-fekete autós jelet kapott, amely kis méretben is felismerhető.
