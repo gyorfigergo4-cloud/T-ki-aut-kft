@@ -11,8 +11,11 @@ function setup(options = {}) {
   app.isPackaged = options.packaged !== false; app.getPath = () => '/tmp/desktop-fixture'; app.quit = () => { calls.push('quit'); };
   let preferences = copy(options.preferences || Store.defaults()), registry = options.registry ? copy(options.registry) : null, visible = true, minimized = false, tray;
   app.getLoginItemSettings = ({ path: query, args }) => {
-    const match = registry && registry.path.toLowerCase() === query.toLowerCase() && JSON.stringify(registry.args) === JSON.stringify(args);
-    return { openAtLogin: !!match, executableWillLaunchAtLogin: !!match && registry.enabled, launchItems: match ? [{ ...copy(registry), scope: 'user' }] : [] };
+    const pathMatches = registry && registry.path.toLowerCase() === query.toLowerCase();
+    const commandMatches = pathMatches && registry.name === LOGIN_NAME && JSON.stringify(registry.args) === JSON.stringify(args);
+    // Electron 45.2.2 uses Chromium CommandLine::GetArgs() for launchItems:
+    // switch arguments such as --toki-background are omitted from that list.
+    return { openAtLogin: !!commandMatches, executableWillLaunchAtLogin: !!pathMatches && registry.enabled, launchItems: pathMatches ? [{ ...copy(registry), args: options.reportedArgs || [], scope: 'user' }] : [] };
   };
   app.setLoginItemSettings = value => { calls.push(copy(value)); if (options.registryFailure) throw new Error('registry denied'); registry = value.openAtLogin ? { ...copy(value), scope: 'user' } : null; };
   const win = { webContents: Object.assign(new EventEmitter(), { mainFrame: {}, isLoadingMainFrame: () => false, send: (...args) => calls.push(args) }), isDestroyed: () => false, isMinimized: () => minimized, restore: () => { minimized = false; }, isVisible: () => visible, show: () => { visible = true; }, focus: () => calls.push('focus'), hide: () => { visible = false; } };
@@ -47,6 +50,18 @@ test('version update refreshes an existing startup path and preserves external T
 });
 test('settings do not treat somebody else’s startup entry as the app’s own entry', () => {
   const s = setup({ registry: { name: 'AnotherStartup', path: exe, args: STARTUP_ARGS, enabled: true } }); assert.equal(s.load().openAtLogin, false); assert.equal(s.calls.length, 0);
+});
+test('native Windows launchItems may omit switch arguments: saving and reopening startup must still succeed', () => {
+  const s = setup({ reportedArgs: [] });
+  const saved = s.save({ openAtLogin: true, closeToTray: true });
+  assert.equal(saved.ok, true); assert.equal(saved.openAtLogin, true); assert.equal(s.load().openAtLogin, true);
+  assert.deepEqual(s.registry().args, ['--toki-background']); assert.equal(s.preferences().openAtLogin, true);
+});
+test('the full native command check still rejects a different startup switch and repairs it on explicit save', () => {
+  const s = setup({ registry: { name: LOGIN_NAME, path: exe, args: ['--different-switch'], enabled: true } });
+  assert.equal(s.load().openAtLogin, false);
+  assert.equal(s.save({ openAtLogin: true, closeToTray: true }).ok, true);
+  assert.deepEqual(s.registry().args, STARTUP_ARGS); assert.equal(s.load().openAtLogin, true);
 });
 test('storage failure rolls back the login change; registry errors leave preferences unchanged', () => {
   const s = setup({ storageFailure: true }); const result = s.save({ openAtLogin: true, closeToTray: false }); assert.equal(result.ok, false); assert.match(result.error, /disk full/); assert.equal(s.registry(), null); assert.equal(s.desktop.shouldHide(), true);

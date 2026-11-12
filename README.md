@@ -2,6 +2,16 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Windows-indítás mentésének javítása · 1.24.1
+
+Az **Induljon a Windowsszal** kapcsoló mentése az 1.24.0-s kiadásban tévesen az „A Windows nem alkalmazta az automatikus indítás beállítását” hibával megállhatott, és visszaállította az előző állapotot. A javítás megtartja a teljes bejegyzett parancs, a saját bejegyzésnév, felhasználói hatókör, EXE-útvonal és a Windows engedélyezési állapotának ellenőrzését.
+
+Az okot a használt [Electron 45.2.2 Windows-megvalósításában](https://github.com/electron/electron/blob/v45.2.2/shell/browser/browser_win.cc#L183-L259) ellenőriztük: a `launchItems[].args` a Chromium `CommandLine::GetArgs()` eredménye, ezért a `--toki-background` kapcsoló nem szerepel benne. A teljes kapcsolókkal együtt regisztrált parancs egyezését az ugyanott megvalósított `openAtLogin` jelzi. A saját elem `enabled` mezője továbbra is megőrzi a Feladatkezelőben történő letiltás kezelését. Az új ellenőrzés az `openAtLogin` és a saját listaelem állapota alapján dönt; a lista hiányzó kapcsolója miatt nem vonja vissza a helyes mentést.
+
+A Windows tesztadapterét a natív implementáció szerinti válaszra módosítva először reprodukáltuk a hibát, majd a javítás után **168 teszt sikeresen lefutott**. Külön teszt ellenőrzi az üres `launchItems.args` melletti mentést és újranyitást, valamint azt, hogy más kapcsolóval regisztrált parancsot továbbra se fogadjon el helyesként. A valódi Electron-ablakos próba ugyanilyen Windows-válaszformával sikeres: mentés, újranyitás, kikapcsolás, háttérindítás, tálca, kilépés megszakítása és hitelesített telefonos HTTPS. A Windows natív API-ját ebben a Linux-környezetben továbbra is adapter helyettesíti.
+
+Frissítéshez az óra melletti Töki Autó ikon **Kilépés** menüjével teljesen zárd be a régi programot. Az X csak elrejti, így a régi példány egy új indításkor előtérbe jönne. A teljes ZIP kibontása és a `TokiAuto-Inditas.cmd` indítása után az **Indítás és tálca** ablakban újra kapcsold be és mentsd az automatikus indítást. A beállításfájl, ügyféladatok és telefonos tanúsítvány útvonala változatlan.
+
 ## Windows-indítás és tálca · 1.24.0
 
 A bal alsó **Indítás és tálca** gomb saját, gépenkénti beállításokat nyit. Az **Induljon a Windowsszal** kapcsoló alapból kikapcsolt; mentés után a Windows-felhasználó bejelentkezésekor az óra mellett indul a program. A **Bezáráskor fusson tovább az óra mellett** kapcsoló Windows alatt alapból bekapcsolt. Az X a jegyzetek és munkalapok mentése után elrejti az ablakot; a raktár, a telefonos HTTPS és az emlékeztetők futnak tovább. A tálcaikon megnyitja az ablakot; jobb kattintásból a beállítások és a **Kilépés** érhetők el. Rejtett ikon esetén a Windows **^** menüjében található.

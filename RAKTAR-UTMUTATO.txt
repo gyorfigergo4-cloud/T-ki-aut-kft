@@ -1,3 +1,17 @@
+JAVÍTÁS · 1.24.1: WINDOWS-INDÍTÁS MENTÉSE
+Javítva az Induljon a Windowsszal kapcsoló mentésekor tévesen megjelenő
+„A Windows nem alkalmazta az automatikus indítás beállítását” hiba.
+Az indítási kapcsolót az Electron másképp adja vissza Windows alatt;
+a program most a teljes bejegyzett parancsot ellenőrzi helyesen.
+
+Frissítés előtt a régi programból teljesen lépj ki:
+óra melletti Töki Autó ikon -> jobb kattintás -> Kilépés.
+Az X csak elrejti a régi programot, ezért frissítéshez nem elegendő.
+Bontsd ki teljesen az új ZIP-et, indítsd a TokiAuto-Inditas.cmd fájlt.
+Az Indítás és tálca résznél pipáld be az Induljon a Windowsszal lehetőséget,
+majd nyomj Mentést. Újranyitva a beállítást a pipának meg kell maradnia.
+A korábbi jegyzetek, tálcabeállítás és telefonos tanúsítvány megmaradnak.
+
 ÚJ · 1.24.0: WINDOWS-INDÍTÁS ÉS TÁLCAIKON
 Bal alul az Indítás és tálca gombbal két külön kapcsolót állíthatsz:
 

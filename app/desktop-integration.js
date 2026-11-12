@@ -11,8 +11,11 @@ function create({ app, win, Tray, Menu, ipcMain, iconPath, platform = process.pl
   function readLogin(loginPath = executablePath) {
     const target = loginPath || executablePath, actual = app.getLoginItemSettings({ path: target, args: [...STARTUP_ARGS] });
     if (!Array.isArray(actual.launchItems)) return actual;
-    const own = actual.launchItems.find(entry => entry.name.toLowerCase() === LOGIN_NAME.toLowerCase() && entry.scope === 'user' && path.win32.normalize(entry.path).toLowerCase() === path.win32.normalize(target).toLowerCase() && JSON.stringify(entry.args) === JSON.stringify(STARTUP_ARGS));
-    return { openAtLogin: !!own, executableWillLaunchAtLogin: !!own?.enabled };
+    // Electron's Windows launchItems.args comes from CommandLine::GetArgs(),
+    // which omits switches such as --toki-background. openAtLogin checks the
+    // full registered command (including switches) under our AppUserModelId.
+    const own = actual.launchItems.find(entry => entry.name.toLowerCase() === LOGIN_NAME.toLowerCase() && entry.scope === 'user' && path.win32.normalize(entry.path).toLowerCase() === path.win32.normalize(target).toLowerCase());
+    return { openAtLogin: actual.openAtLogin === true && !!own, executableWillLaunchAtLogin: !!own?.enabled };
   }
   const writeLogin = (openAtLogin, enabled = openAtLogin, loginPath = executablePath) => app.setLoginItemSettings({ name: LOGIN_NAME, path: loginPath, args: [...STARTUP_ARGS], openAtLogin, enabled });
   function balloon(options) { try { tray?.displayBalloon(options); } catch {} }
