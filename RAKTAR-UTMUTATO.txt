@@ -1,3 +1,14 @@
+ÚJ · 1.26.1: SZERVÓOLAJ TÉTELTÍPUS
+A raktári termék Tételtípus listájában és a raktár szűrőjében
+választható a Szervóolaj. Telefonos termékrögzítésnél is megjelenik.
+A szervóolaj az általános leltárkedvezményt követi, ami alapból 40%;
+termékenként és az Alapkedvezmények ablakban továbbra is módosítható.
+
+Frissítés előtt: óra melletti Töki Autó ikon -> Kilépés.
+Bontsd ki a teljes ZIP-et, majd indítsd a TokiAuto-Inditas.cmd fájlt.
+Közös készletnél a főgépet és a többi gépet is frissítsd.
+Telefonon töltsd újra az oldalt. A meglévő adatok megmaradnak.
+
 ÚJ · 1.26.0: LELTÁR ÁRAZÁS ÉS KÉSZLETÉRTÉK
 A Raktár / leltár -> Leltár ellenőrző oldalon a termék teli árából
 számolja a kedvezményes egységárat és a darabszámmal szorzott értéket.

@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Szervóolaj tételtípus · 1.26.1
+
+A közös raktári tételtípuslista új eleme a **Szervóolaj** (`power-steering-fluid`). Megjelenik a termék szerkesztésénél, a raktár kategóriaszűrőjében és a telefonos termékrögzítésnél. A meglévő besorolások azonosítói változatlanok. Az új típus az általános leltárkedvezményt követi (alapból 40%); a korábbi egyedi és közös kedvezménybeállítások továbbra is érvényesek.
+
+Ellenőrzés: a meglévő kategória- és árazástesztek sikeresek. Valódi Electron-ablakban az új tételtípus kiválasztható volt, a termék mentése és frissítés utáni visszaolvasása, valamint a kategóriaszűrés működött. Az általános kedvezményt örökölte, a szintetikus jegyzetfájl és készletadatok változatlanok maradtak.
+
+Frissítés előtt a régi programot a tálcaikon **Kilépés** menüjével teljesen zárd be, majd a teljes ZIP kibontása után indítsd a `TokiAuto-Inditas.cmd` fájlt. Közös készletnél a főgépet és a klienseket is frissítsd; a telefonos oldalt töltsd újra.
+
 ## Leltár árazás és készletérték · 1.26.0
 
 A **Leltár ellenőrző** teli árból számol kedvezményes egységárat és darabszámmal szorzott értéket. Az általános alap **40%**, a `engine-oil` (Motorolaj) és `transmission-oil` (Váltóolaj) típusé **20%**. Az olajszűrő és a többi kategória az általános alapot követi. Az **Alapkedvezmények** mindhárom értéket közösen módosítja; az **Ár / kedvezmény** ablak termékenként enged árat és egyedi százalékot megadni, vagy visszatérni az automatikus alaphoz. Az explicit 0% is egyedi kedvezmény. A termék szerkesztőjében az üres egyedi kedvezmény automatikusat jelent.
