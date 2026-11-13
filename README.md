@@ -2,6 +2,14 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Kenőzsír, Tömítőanyagok, Festék · 1.26.2
+
+A közös raktári tételtípuslista három új eleme a **Kenőzsír** (`grease`), **Tömítőanyagok** (`sealant`) és **Festék** (`paint`). Választhatók a termék szerkesztésénél, a raktári kategóriaszűrőben és a telefonos termékrögzítésnél. A korábbi típusok, köztük a Szervóolaj is megmaradtak. Az új típusok az általános leltárkedvezményt követik (alapból 40%), az egyedi kedvezmény megadható.
+
+Ellenőrzés: a meglévő kategória- és árazástesztek sikeresek. Valódi Electron-ablakban mindhárom típus kiválasztása, termékmentése, visszaolvasása és kategóriaszűrése működött. Az általános kedvezményt örökölték, a Szervóolaj is választható maradt. A szintetikus jegyzetek és készletadatok változatlanok maradtak.
+
+Frissítés előtt teljesen lépj ki a régi programból a tálcaikon **Kilépés** menüjével. Bontsd ki a teljes ZIP-et, majd indítsd a `TokiAuto-Inditas.cmd` fájlt. Közös készletnél a főgépet és a klienseket is frissítsd, a telefonos oldalt töltsd újra.
+
 ## Szervóolaj tételtípus · 1.26.1
 
 A közös raktári tételtípuslista új eleme a **Szervóolaj** (`power-steering-fluid`). Megjelenik a termék szerkesztésénél, a raktár kategóriaszűrőjében és a telefonos termékrögzítésnél. A meglévő besorolások azonosítói változatlanok. Az új típus az általános leltárkedvezményt követi (alapból 40%); a korábbi egyedi és közös kedvezménybeállítások továbbra is érvényesek.

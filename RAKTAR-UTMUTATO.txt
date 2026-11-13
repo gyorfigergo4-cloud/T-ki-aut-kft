@@ -1,3 +1,14 @@
+ÚJ · 1.26.2: KENŐZSÍR, TÖMÍTŐANYAGOK, FESTÉK
+Három új raktári tételtípus választható: Kenőzsír, Tömítőanyagok, Festék.
+Megjelennek a termék szerkesztésénél, a raktár szűrőjében és a telefonos
+termékrögzítésnél is. Az általános leltárkedvezményt követik (alapból 40%);
+az egyedi kedvezmény továbbra is beállítható. A Szervóolaj is megmaradt.
+
+Frissítés előtt: óra melletti Töki Autó ikon -> Kilépés.
+Bontsd ki a teljes ZIP-et, majd indítsd a TokiAuto-Inditas.cmd fájlt.
+Közös készletnél a főgépet és a többi gépet is frissítsd.
+Telefonon töltsd újra az oldalt. A meglévő adatok megmaradnak.
+
 ÚJ · 1.26.1: SZERVÓOLAJ TÉTELTÍPUS
 A raktári termék Tételtípus listájában és a raktár szűrőjében
 választható a Szervóolaj. Telefonos termékrögzítésnél is megjelenik.
