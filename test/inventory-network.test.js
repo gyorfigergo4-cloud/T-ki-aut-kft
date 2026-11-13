@@ -2,6 +2,22 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {createDatabase,StockError}=require('../app/inventory-db'),Network=require('../app/inventory-network'),{credentials}=require('../app/inventory-tls'),{createService}=require('../app/inventory-service'),Store=require('../app/store'),Items=require('../app/items');
 async function port(){const s=net.createServer();await new Promise(r=>s.listen(0,'127.0.0.1',r));const p=s.address().port;await new Promise(r=>s.close(r));return p;}
 const req=(p,url,{secure=false,ca,token,body,origin}={})=>new Promise((resolve,reject)=>{const r=(secure?https:http).request({host:'127.0.0.1',port:p,path:url,method:body?'POST':'GET',...(secure?{ca}:{}),headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{}),...(origin?{Origin:origin}:{})}},s=>{const chunks=[];s.on('data',c=>chunks.push(c));s.on('end',()=>resolve({status:s.statusCode,text:Buffer.concat(chunks).toString()}));});r.on('error',reject);if(body)r.write(JSON.stringify(body));r.end();});
+test('stocktake prices are shared across desktop clients and read-only on the trusted-CA phone connection',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'toki-price-net-'));let server;
+ try{
+  const db=createDatabase(path.join(dir,'stock.json')),tls=credentials(dir,['127.0.0.1']),p=await port(),token='a'.repeat(32),phoneToken='b'.repeat(32);
+  const cmd=c=>db.command({id:randomUUID(),operator:'Minta',...c});cmd({type:'product',product:{name:'Minta olaj',sku:'PRICE',price:'1000',category:'engine-oil',barcodes:[]}});
+  const product=db.read().products[0],sessionId=randomUUID();cmd({type:'receive',productId:product.id,quantity:5});cmd({type:'stocktake',action:'start',sessionId,title:'Árak'});
+  server=await Network.start({database:db,token,phoneToken,port:p,tls});const client={host:'127.0.0.1',port:p,token};
+  const first=await Network.request(client,undefined,'/api/stocktake');
+  await Network.request(client,{id:randomUUID(),operator:'Másik gép',type:'stocktake',action:'pricing',sessionId,productId:product.id,expectedPricing:first.rows[0].pricingVersion,fullPrice:'2000',discountPercent:'25'});
+  const phone={secure:true,ca:tls.ca,token:phoneToken};const report=JSON.parse((await req(p+1,'/api/stocktake',phone)).text);
+  assert.equal(report.rows[0].discountedPrice,'1500');assert.equal(report.warehouseValuation.discountedValue,'7500');
+  for(const body of [{type:'stocktake',action:'pricing',sessionId,productId:product.id,fullPrice:'1',discountPercent:'0'},{type:'pricing-settings',settings:{general:'1',engineOil:'2',transmissionOil:'3'}}])assert.equal((await req(p+1,'/api/stock',{...phone,body:{id:randomUUID(),operator:'Telefon',...body}})).status,403);
+  assert.equal((await req(p+1,'/items.js',phone)).status,200);assert.equal((await req(p+1,'/inventory-pricing.js',phone)).status,200);
+  assert.equal(db.read().products[0].price,'2000');assert.equal(db.read().products[0].quantity,5);assert.equal(db.read().movements.length,1);
+ }finally{await server?.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
 test('közös HTTP készlet, hitelesített HTTPS telefon, helyes CA és böngészős hozzáférésvédelem',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'toki-stock-net-'));let server;try{const db=createDatabase(path.join(dir,'stock.json')),tls=credentials(dir,['127.0.0.1']),p=await port();server=await Network.start({database:db,token:'a'.repeat(32),phoneToken:'b'.repeat(32),port:p,tls});
  assert.equal((await req(p,'/api/stock')).status,401);assert.equal((await req(p,'/api/stock',{token:'a'.repeat(32),origin:'https://evil.invalid'})).status,403);

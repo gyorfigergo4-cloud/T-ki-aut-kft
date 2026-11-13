@@ -1,3 +1,35 @@
+ÚJ · 1.26.0: LELTÁR ÁRAZÁS ÉS KÉSZLETÉRTÉK
+A Raktár / leltár -> Leltár ellenőrző oldalon a termék teli árából
+számolja a kedvezményes egységárat és a darabszámmal szorzott értéket.
+Alap kedvezmény: általában 40%, Motorolaj és Váltóolaj típusnál 20%.
+A termék Tételtípus mezőjében válaszd ki a megfelelő besorolást.
+Az olajszűrő és a többi termék az általános kedvezményt használja.
+
+Az Alapkedvezmények gombbal mindhárom alapérték módosítható.
+Nyitott ellenőrzésben az Ár / kedvezmény gombbal termékenként megadható
+az ár és az egyedi százalék, akár 0% is. Az Alapkedvezmény használata
+pipával visszaállítható az automatikus kedvezmény. A Raktári termék
+szerkesztésénél is megadható egyedi leltárkedvezmény; üresen automatikus.
+
+Az oldal végén két összegzés van: a teljes nyilvántartott raktár és a
+már megszámolt készlet kedvezményes értéke. Keresés és lapozás nem szűkíti
+az összesítést. A hiányzó árú pozitív készletű tételeket külön jelzi;
+ilyenkor az összeg részösszeg. A még nem számolt sor nem nulla darab.
+Az egységár két tizedesjegyre kerekül, ezt szorozza a darabszámmal.
+A számlálás és az ár szerkesztése nem módosítja a készletdarabszámot.
+
+Lezáráskor az árak, kedvezmények és összesítések rögzülnek.
+A korábban lezárt ellenőrzésekhez nem talál ki visszamenőleges árakat.
+Az Excel-export új ár- és értékoszlopokat, valamint külön összesítő
+munkalapot tartalmaz. Telefonos leltározáskor is látszanak az árak;
+az árakat és kedvezményeket a számítógépes alkalmazásban lehet átírni.
+
+Közös készletnél először a főgépet, majd a többi számítógépet frissítsd.
+Mindegyiken teljesen lépj ki: óra melletti Töki Autó ikon -> Kilépés.
+Az X csak elrejti a programot. A teljes ZIP-et bontsd ki, majd indítsd
+a TokiAuto-Inditas.cmd fájlt. A helyi adatok és a kapcsolat megmaradnak.
+Telefonon frissítsd az oldalt; új tanúsítvány nem szükséges.
+
 ÚJ · 1.25.0: BEÁLLÍTÁSOK BUBORÉK, TÖBB HELY A NAPTÁRNAK
 Bal alul egyetlen Beállítások gomb maradt. Rákattintva felfelé nyíló
 buborékban érheted el a Jegyzetmappa, Excel beolvasása, Mentés Excelbe,

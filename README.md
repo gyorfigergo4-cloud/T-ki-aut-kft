@@ -2,6 +2,20 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Leltár árazás és készletérték · 1.26.0
+
+A **Leltár ellenőrző** teli árból számol kedvezményes egységárat és darabszámmal szorzott értéket. Az általános alap **40%**, a `engine-oil` (Motorolaj) és `transmission-oil` (Váltóolaj) típusé **20%**. Az olajszűrő és a többi kategória az általános alapot követi. Az **Alapkedvezmények** mindhárom értéket közösen módosítja; az **Ár / kedvezmény** ablak termékenként enged árat és egyedi százalékot megadni, vagy visszatérni az automatikus alaphoz. Az explicit 0% is egyedi kedvezmény. A termék szerkesztőjében az üres egyedi kedvezmény automatikusat jelent.
+
+Az oldal végén külön látható a teljes nyilvántartott raktár és a már megszámolt készlet kedvezményes értéke, teli értékkel és kedvezménnyel együtt. Ezek az összes termékre vonatkoznak, szűréstől és lapozástól függetlenül. Az ismeretlen árú pozitív készletű tételek részösszegként, hiányzó árjelzéssel jelennek meg. A még nem számolt sor elkülönül a 0 darabtól. Az egységár kerekítése két tizedesre történik, majd egész darabszámmal szorzunk; a pénzszámítás egész alapú, `BigInt` pontosságú. Az Excel a 15 számjegynél hosszabb pénzösszeget pontos szövegként kapja.
+
+Az aktív leltár a közös aktuális árakat használja; lezáráskor minden sor árazása és a teljes nyilvántartott készlet értéke is rögzül. A későbbi ár-, kategória-, alap- vagy készletváltozás nem írja át a lezárt összegeket. Régi, árazás nélkül lezárt ellenőrzéshez nem számolunk mai árakból történelmi készletértéket. Az ármentés nem változtat darabszámot, készletmozgást vagy jegyzetkapcsolatot. Az egyidejű árváltozást külön ellenőrzés védi; másik gép számlálása nem okoz felesleges árütközést, és az ismételt parancsazonosító egyszer hajtódik végre.
+
+A leltár Excel-exportja megtartja a korábbi tíz oszlopot, új ár- és értékoszlopokat, valamint **Készletérték összesítés** munkalapot ad hozzá. A raktár Excel-exportja is tartalmaz kedvezményt és készletértéket. Telefonon az árak és az összegzések olvashatók, az árazási és alapkedvezmény-módosító parancsok továbbra is tiltottak. Régi főgép esetén a kliens frissítési jelzést ad, nem feltételezi a hiányzó árazási támogatást. Régi kliensek termékmentése nem törli az új egyedi kedvezményt.
+
+Ellenőrzés: **176 teszt sikeres**. Valódi Electron-ablakban ellenőriztük a 40/20/20 alapot, a közös alapok és az egyedi kedvezmények szerkesztését (0%-kal is), az automatikus alap visszaállítását, a szűréstől független összegzést, a hiányzó ár jelzését, valamint a termékszerkesztőt. Külön telefonos tesztablak helyi CA-val ellenőrzött HTTPS-en sikeresen számlált és árat mutatott. Az alkalmazás tényleges Excel-mentését visszaolvasva is helyes összegek szerepeltek. A lezárt értékek változatlanok maradtak; a szintetikus jegyzetfájl bájtra azonos, a készletdarabszámok, mozgások és készletváltozás-azonosítók változatlanok voltak. A hálózati teszt ellenőrzi az asztali ármegosztást és a telefonos ármódosítás tiltását.
+
+Frissítés: **először a főgép, majd minden kliens**. A tálcaikon **Kilépés** menüjével zárjátok be a régi programot; a teljes ZIP kibontása után `TokiAuto-Inditas.cmd`. A telefonon elég újratölteni az oldalt, a meglévő tanúsítvány és kapcsolódási kód megmarad. A csomag nem tartalmaz felhasználói adatokat.
+
 ## Beállítások buborék és nagyobb naptár · 1.25.0
 
 A bal alsó eszközgombok egyetlen **Beállítások** gomb mögé kerültek. A fölötte nyíló buborékban található a **Jegyzetmappa**, **Excel beolvasása**, **Mentés Excelbe**, **Biztonsági mentés** és **Indítás és tálca**, valamint a mentési mód és verziószám. A buborék ráfed a felületre, ezért nyitva sem vesz el helyet a naptár elrendezéséből. Kívülre kattintva, a bezáró gombbal és Escape-pel is bezárható. A bezáró gomb és az Escape használatakor a billentyűzetes fókusz visszatér a Beállítások gombra.

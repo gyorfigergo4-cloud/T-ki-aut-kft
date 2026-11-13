@@ -3,3 +3,5 @@
 #camera-preview{position:relative}#camera-preview video{display:block;max-height:420px;object-fit:contain;background:#111}.scan-guide{pointer-events:none;position:absolute;left:8%;right:8%;top:26%;height:40%;border:2px solid #a3e72c;border-radius:10px}.camera-hint{font-size:13px;margin:7px 0}select{font:inherit;width:100%;padding:12px;border:1px solid #a8b692;border-radius:8px;background:#fff}#photo{background:#fff;border-color:#76a525}#camera-zoom{padding:4px}
 
 .phone-auto{display:flex;align-items:center;gap:10px;font-size:14px}.phone-auto input{width:22px;height:22px;flex-shrink:0;margin:0}#phone-catalog{padding:12px;margin-top:15px;border:1px solid #b8c99c;border-radius:9px;background:#f8fbf2}#phone-catalog-results button{text-align:left;font-size:14px}#phone-catalog-selected{font-size:14px;color:#45661d}
+
+.phone-count-value{padding:12px;background:#e4efcf;border:1px solid #b4ca91;border-radius:8px;line-height:1.6;overflow-wrap:anywhere}
