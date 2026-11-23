@@ -2,6 +2,12 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Partnerenkénti alapkedvezmény · 1.28.0
+
+Az **Autónyilvántartó → Partnerlista → Szerkesztés** ablakban add meg a partner alapkedvezményét 0 és 100% között. A **Jegyzetek** névmezőjében a pontos név automatikusan beállítja az új tételek alapját. Azonos név esetén a telefonszám választja ki a partnert. Az egyedileg beállított tételárak és kedvezmények megmaradnak.
+
+A jegyzetben a raktári cikkszám alapján felismert motorolaj kedvezménye 20%. Raktári egyezés nélkül a cikkszámsor **Motorolaj · 20%** jelölőnégyzetével állíthatod be ugyanezt. A kedvezmény a jegyzetből készített munkalapra és árajánlatra is átkerül.
+
 ## Közös partnerlista · 1.27.1
 
 A listát az **Autónyilvántartó → Partnerlista** gomb nyitja meg. A név és a telefonszám kereshető, szerkeszthető és törölhető. A központi autónyilvántartóhoz kapcsolódó négy gép ugyanazt a partnerlistát használja. Ha a kapcsolat még nincs beállítva, az **Autónyilvántartó → Kapcsolat beállítása** menüben válasszatok ki egy központi gépet, majd csatlakoztassátok hozzá a másik hármat.

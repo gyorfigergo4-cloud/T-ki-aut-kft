@@ -84,6 +84,10 @@ app.whenReady().then(async () => {
   ipcMain.handle('partners-load', stockReply(async () => ({
     ...await garageService.loadPartners(), mode: garageService.status().mode
   })));
+  ipcMain.handle('partners-discount', stockReply(async ({ name, phone }) => {
+    const { people } = await garageService.loadPartners();
+    return Partners.match(people, name, phone);
+  }));
   ipcMain.handle('partners-save', stockReply(payload => garageService.savePartners(payload)));
   ipcMain.handle('partners-preview', stockReply(async () => {
     prepareInitialData();

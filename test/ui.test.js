@@ -480,3 +480,45 @@ test('Indítás és tálca beállítások: két kapcsoló, Mégse nem ment, hiba
   requested();await tick(false);assert.equal(ui.$('desktop-startup').checked,false);ui.$('desktop-startup').click();ui.$('desktop-close-to-tray').click();fail=true;ui.submit('desktop-settings-form');await tick(false);assert.equal(ui.$('desktop-settings-dialog').open,true);assert.match(ui.$('desktop-settings-error').textContent,/Windows/);assert.equal(ui.$('desktop-settings-save').disabled,false);fail=false;ui.submit('desktop-settings-form');await tick(false);assert.equal(ui.$('desktop-settings-dialog').open,false);assert.deepEqual(calls.at(-1),{openAtLogin:true,closeToTray:false});requested();await tick(false);assert.equal(ui.$('desktop-startup').checked,true);assert.equal(ui.$('desktop-close-to-tray').checked,false);
  }finally{ui.dom.window.close();}
 });
+
+test('new note items inherit the named partner rate while motor oil is fixed at twenty percent', async () => {
+  const saved = { notes: [], archive: { years: [2026], days: [] } };
+  const ui = await openUI(saved, { manualOnly: true, desktopAPI: {
+    partnerDiscount: async name => ({ ok: true, discountPercent: name === 'Kiss Anna' ? '35' : '10' }),
+    inventoryResolve: async code => ({ ok: true, product: { price: '10000', category: code === 'OIL' ? 'engine-oil' : 'brakes' } })
+  } });
+  const { $, dom, input, newDay } = ui;
+  const control = (row, field) => $('items-body').rows[row].querySelector('[data-field=' + field + ']');
+  const edit = (row, field, value, event = 'input') => {
+    const element = control(row, field);
+    element.value = value;
+    element.dispatchEvent(new dom.window.Event(event));
+  };
+  try {
+    newDay('2026-11-05');
+    $('new').click();
+    input('title', 'Kiss Anna');
+    edit(0, 'fullPrice', '10000');
+    await dom.window.NotesFlush();
+    assert.equal(control(0, 'discountPercent').value, '35');
+    assert.equal(control(0, 'discountedPrice').value, '6500');
+    $('add-item').click();
+    edit(1, 'partNumber', 'OIL');
+    edit(1, 'partNumber', 'OIL', 'change');
+    await tick(false);
+    assert.equal(control(1, 'discountPercent').value, '20');
+    assert.equal(control(1, 'discountedPrice').value, '8000');
+    assert.equal(control(1, 'discountPercent').readOnly, true);
+    edit(0, 'discountPercent', '32');
+    $('add-item').click();
+    control(2, 'motorOil').click();
+    edit(2, 'fullPrice', '20000');
+    input('title', 'Másik partner');
+    await dom.window.NotesFlush();
+    assert.deepEqual(saved.notes[0].items.map(item => [item.discountPercent, item.discountedPrice]), [
+      ['32', '6800'], ['20', '8000'], ['20', '16000']
+    ]);
+    control(2, 'motorOil').click();
+    assert.equal(control(2, 'discountPercent').value, '10');
+  } finally { dom.window.close(); }
+});

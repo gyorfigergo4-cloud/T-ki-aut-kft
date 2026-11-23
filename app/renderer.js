@@ -137,6 +137,7 @@ function renderVehicles(note) {
       if (field === 'vin') { input.maxLength = Math.max(1000, vehicle.vin.length); input.placeholder = 'Alvázszám'; }
       else { input.maxLength = 200; input.placeholder = 'Válassz vagy írj márkát…'; input.setAttribute('list', 'car-brands'); input.autocomplete = 'off'; }
       function save() {
+        if (input.readOnly) return;
         input.setCustomValidity('');
         try {
           if (!input.validity.valid) throw new Error('Ellenőrizd az alvázszámot vagy az autómárkát.');
@@ -165,7 +166,7 @@ $('add-vehicle').onclick = () => {
   const note = current(); if (!note || !validInputs()) return;
   const next = [...note.vehicles, Vehicles.blank(crypto.randomUUID())];
   try { Vehicles.validate(next); } catch (error) { $('vehicle-error').textContent = error.message; return; }
-  note.vehicles = next; note.activeVehicleId = next.at(-1).id; note.items.push({ ...Items.blank(crypto.randomUUID()), vehicleId: note.activeVehicleId }); Vehicles.sync(note); touchNote(note); persistNotes(); renderVehicles(note); renderItems(note); metadata(); $('vehicles-list').lastElementChild.querySelector('input').focus();
+  note.vehicles = next; note.activeVehicleId = next.at(-1).id; note.items.push(blankNoteItem(note.activeVehicleId)); lookupPartnerDiscount(note); Vehicles.sync(note); touchNote(note); persistNotes(); renderVehicles(note); renderItems(note); metadata(); $('vehicles-list').lastElementChild.querySelector('input').focus();
 };
 function setDayContext(day) {
   selectedDay = day; selectedMonth = day.slice(0, 7); activeYear = Number(day.slice(0, 4));
@@ -274,6 +275,87 @@ function metadata(updateTotals = true) {
   if(updateTotals) renderTotals(note);
   $('words').textContent = note.body.length + ' karakter';
 }
+const partnerLookups = new Map();
+const stockPriceLookups = new Set();
+const partnerResults = new WeakMap();
+const usesMotorOilRate = item => item.motorOil || item.stockMotorOil;
+const blankNoteItem = vehicleId => ({ ...Items.blank(crypto.randomUUID()), vehicleId, usesPartnerDiscount: true });
+
+async function finishPriceLookups() {
+  while (partnerLookups.size || stockPriceLookups.size) {
+    await Promise.all([...partnerLookups.values()].map(task => task.done).concat([...stockPriceLookups]));
+  }
+}
+
+function showPartnerDiscount(note) {
+  const status = $('note-partner-discount');
+  status.textContent = partnerResults.get(note)?.message || '';
+  status.hidden = !status.textContent;
+}
+
+function updateDiscountControls(item) {
+  const row = [...$('items-body').rows].find(row => row.dataset.itemId === item.id);
+  if (!row) return;
+  for (const field of ['fullPrice', 'discountPercent', 'discountedPrice']) {
+    const input = row.querySelector('[data-field=' + field + ']');
+    if (!invalidInputs.has(input)) input.value = item[field];
+    if (field !== 'fullPrice') input.readOnly = !!usesMotorOilRate(item);
+  }
+  const oil = row.querySelector('[data-field=motorOil]');
+  oil.checked = !!usesMotorOilRate(item);
+  oil.disabled = !!item.stockMotorOil;
+}
+
+function lookupPartnerDiscount(note, allItems = false) {
+  const api = window.notesAPI.partnerDiscount;
+  if (!api) return;
+  const previous = partnerLookups.get(note);
+  if (previous) { clearTimeout(previous.timer); previous.finish(); }
+  const name = note.title.trim(), phone = (note.phone || '').trim();
+  const all = allItems || previous?.all;
+  const targets = new Set(previous?.targets);
+  if (!all) targets.add(note.items.at(-1));
+  const task = { all, targets };
+  task.done = new Promise(resolve => { task.finish = resolve; });
+  partnerLookups.set(note, task);
+  const run = async () => {
+    try {
+      const result = name ? await api(name, phone) : { ok: true };
+      if (partnerLookups.get(note) !== task || !notes.includes(note)) return;
+      if (!result.ok) throw Error(result.error);
+      const rate = result.discountPercent;
+      partnerResults.set(note, { rate, message: result.ambiguous
+        ? 'Több partner szerepel ezen a néven. A kedvezményhez add meg a telefonszámot.'
+        : rate === undefined ? '' : 'Partner alapkedvezménye ' + rate + '% · Motorolaj 20%.' });
+      let changed = false;
+      for (const item of note.items) {
+        if ((!all && !targets.has(item)) || usesMotorOilRate(item)) continue;
+        const untouchedBlank = item.usesPartnerDiscount === undefined && !Items.isActive(item) &&
+          item.priceMode === 'auto' && item.discountPercent === '0';
+        if (!item.usesPartnerDiscount && !(all && untouchedBlank && rate !== undefined)) continue;
+        const next = Items.applyNoteDiscount({ ...item, usesPartnerDiscount: true }, rate ?? '0');
+        if (item.usesPartnerDiscount === next.usesPartnerDiscount &&
+            item.discountPercent === next.discountPercent && item.discountedPrice === next.discountedPrice) continue;
+        Object.assign(item, next);
+        if (current() === note) updateDiscountControls(item);
+        changed = true;
+      }
+      if (changed) { Items.syncLegacy(note); touchNote(note); persistNotes(); }
+      if (current() === note) {
+        showPartnerDiscount(note);
+        if (changed) { renderList(); metadata(false); }
+      }
+    } catch {
+      if (partnerLookups.get(note) !== task || !notes.includes(note)) return;
+      partnerResults.set(note, { message: 'A partner alapkedvezménye jelenleg nem ellenőrizhető.' });
+      if (current() === note) showPartnerDiscount(note);
+    } finally {
+      if (partnerLookups.get(note) === task) partnerLookups.delete(note);
+      task.finish();
+    }
+  };
+  task.timer = setTimeout(run, 220);
+}
 function render() {
   window.VinHistoryUI?.close();
   window.RemindersUI?.render();
@@ -291,7 +373,7 @@ function render() {
     $('import-original').textContent = note.source.originalText || '';
   }
   if (note && $('search').value.trim()) { const id = Vehicles.findSelection(note, $('search').value); if (id !== undefined && note.activeVehicleId !== id) { note.activeVehicleId = id; markNoteChanged(note); persistNotes(); } }
-  if (note) { for (const field of fields) $(field).value = note[field]; renderVehicles(note); renderItems(note); metadata(); }
+  if (note) { showPartnerDiscount(note); for (const field of fields) $(field).value = note[field]; renderVehicles(note); renderItems(note); metadata(); }
 }
 function validInputs() {
   for (const input of invalidInputs) if (!input.isConnected) invalidInputs.delete(input);
@@ -331,8 +413,30 @@ function renderItems(note) {
   Vehicles.itemsFor(note).forEach((item, index) => {
     const row = document.createElement('tr'); row.dataset.itemId = item.id; row.dataset.vehicleId = item.vehicleId;
     const priceInputs = {};
-    async function useStockPrice(force=false,product){const sku=item.partNumber;const r=product?{ok:true,product}:await window.notesAPI.inventoryResolve(sku);if(!r.ok)throw Error(r.error);if(item.partNumber!==sku||current()!==note||!Vehicles.itemsFor(note).includes(item))return;if(invalidInputs.size){if(force)throw Error('Előbb javítsd a megjelölt mezőt.');return false;}const next=window.InventoryPolicy.applyPrice(item,r.product,force);if(next===item)return false;Object.assign(item,next);priceDriver='auto';const visibleRow=[...$('items-body').children].find(r=>r.dataset.itemId===item.id);for(const field of ['fullPrice','discountPercent','discountedPrice']){const input=visibleRow?.querySelector('[data-field='+field+']');if(input)input.value=item[field];}Items.syncLegacy(note);touchNote(note);persistNotes();renderList();metadata();return true;}
     let priceDriver = item.priceMode === 'manual' || (item.priceMode === 'legacy' && item.discountedPrice !== '') ? 'manual' : 'auto';
+    async function useStockPrice(force = false, product) {
+      const sku = item.partNumber;
+      const result = product ? { ok: true, product } : await window.notesAPI.inventoryResolve(sku);
+      if (!result.ok) throw Error(result.error);
+      if (item.partNumber !== sku || current() !== note || !Vehicles.itemsFor(note).includes(item)) return false;
+      if (invalidInputs.size) {
+        if (force) throw Error('Előbb javítsd a megjelölt mezőt.');
+        return false;
+      }
+      const priced = window.InventoryPolicy.applyPrice(item, result.product, force);
+      const stockMotorOil = result.product.category === 'engine-oil';
+      if (priced === item && stockMotorOil === !!item.stockMotorOil) return false;
+      const next = Items.applyNoteDiscount({ ...priced, stockMotorOil }, item.stockMotorOil && !stockMotorOil
+        ? partnerResults.get(note)?.rate ?? '0' : undefined);
+      if (item.stockMotorOil && !usesMotorOilRate(next) && !item.usesPartnerDiscount) {
+        Object.assign(next, Items.edit(next, { discountPercent: '0' }));
+      }
+      Object.assign(item, next);
+      priceDriver = item.priceMode === 'manual' ? 'manual' : 'auto';
+      updateDiscountControls(item);
+      Items.syncLegacy(note); touchNote(note); persistNotes(); renderList(); metadata();
+      return priced !== item || stockMotorOil;
+    }
     const orderControl = window.ItemOrderUI.create(item, (index + 1) + '. sor', checked => {
       try {
         Object.assign(item, Items.withOrder(item, checked)); Items.syncLegacy(note); touchNote(note);
@@ -362,6 +466,7 @@ function renderItems(note) {
       if (field === 'partNumber') { input.placeholder = 'Cikkszám'; input.maxLength = 1000; input.spellcheck = false; }
       if (field === 'supplier') { input.setAttribute('list', 'suppliers'); input.placeholder = 'Pl. IC'; input.maxLength = 200; }
       if (['fullPrice', 'discountPercent', 'discountedPrice'].includes(field)) priceInputs[field] = input;
+      if (field === 'discountPercent' || field === 'discountedPrice') input.readOnly = !!usesMotorOilRate(item);
       if (field === 'discountedPrice') { cell.className = 'calculated-price'; input.className = 'discounted-price-input'; }
       input.addEventListener('input', () => {
         input.setCustomValidity('');
@@ -375,12 +480,18 @@ function renderItems(note) {
             for (const control of [priceInputs.fullPrice, priceInputs[source]]) if (!control.validity.valid) throw new Error('Ellenőrizd az árakat és a kedvezményt.');
             patch = { fullPrice: priceInputs.fullPrice.value, [source]: priceInputs[source].value };
           }
-          const next = Items.edit(item, patch);
+          let next = Items.edit(item, patch);
+          if (field === 'discountPercent' || field === 'discountedPrice') next.usesPartnerDiscount = false;
+          if (field === 'partNumber' && item.stockMotorOil && item.partNumber !== input.value) {
+            next.stockMotorOil = false;
+            if (!next.motorOil) next = Items.edit(next, { discountPercent: next.usesPartnerDiscount ? partnerResults.get(note)?.rate ?? '0' : '0' });
+          }
           Items.validate([next]); Object.assign(item, next);
           invalidInputs.delete(input); input.removeAttribute('aria-invalid');
           const derived = ['fullPrice', 'discountPercent', 'discountedPrice'].includes(field) ? (item.priceMode === 'auto' ? 'discountedPrice' : 'discountPercent') : null;
           if (derived) { const control = priceInputs[derived]; control.value = item[derived]; control.setCustomValidity(''); control.removeAttribute('aria-invalid'); invalidInputs.delete(control); }
           if (field === 'supplier') input.value = item.supplier;
+          if (field === 'partNumber') updateDiscountControls(item);
           $('item-error').textContent = invalidInputs.size ? 'Javítsd a megjelölt mezőt a továbblépéshez.' : '';
           orderControl.refresh();
           Items.syncLegacy(note); touchNote(note); persistNotes(); renderVehicleTabs(note); renderList(); metadata();
@@ -388,12 +499,30 @@ function renderItems(note) {
           input.setCustomValidity(error.message); input.setAttribute('aria-invalid', 'true'); invalidInputs.add(input); $('item-error').textContent = error.message;
         }
       });
-      if(field==='partNumber')input.addEventListener('change',()=>{if(item.fullPrice===''&&item.partNumber.trim()&&window.notesAPI.inventoryResolve)void useStockPrice().catch(()=>{});});
+      if (field === 'partNumber') input.addEventListener('change', () => {
+        if (!item.partNumber.trim() || !window.notesAPI.inventoryResolve) return;
+        const lookup = useStockPrice().catch(() => {}).finally(() => stockPriceLookups.delete(lookup));
+        stockPriceLookups.add(lookup);
+      });
       if(field==='quantity')input.addEventListener('change',()=>{if(item.fromStock&&validInputs())window.NotesFlush().then(()=>{$('item-error').textContent='';}).catch(e=>{$('item-error').textContent=e.message;});});
       cell.append(input);
       if (field === 'partNumber') {
         const stockPrice=document.createElement('button');stockPrice.type='button';stockPrice.className='item-location-button';stockPrice.textContent='Raktári ár';stockPrice.title='A raktár Ft/db árának átvétele a Teli ár mezőbe, készletlevonás nélkül';stockPrice.onclick=async()=>{stockPrice.disabled=true;try{if(!await useStockPrice(true))throw Error('Ehhez a termékhez még nincs raktári ár megadva.');$('item-error').textContent='';}catch(e){$('item-error').textContent=e.message;}finally{stockPrice.disabled=false;}};cell.append(stockPrice);
         const place=document.createElement('button');place.type='button';place.className='item-location-button';place.textContent='⌖ Hely';place.title='Raktári hely keresése ehhez a cikkszámhoz';place.onclick=async()=>{place.disabled=true;try{const r=await window.notesAPI.inventoryResolve(item.partNumber);if(!r.ok)throw Error(r.error);window.WarehouseMapUI.showProduct(r.product||r);}catch(e){$('item-error').textContent='Raktári hely: '+e.message;}finally{place.disabled=false;}};cell.append(place);
+        const oil = document.createElement('input');
+        oil.type = 'checkbox'; oil.dataset.field = 'motorOil';
+        oil.checked = !!usesMotorOilRate(item); oil.disabled = !!item.stockMotorOil;
+        oil.onchange = () => {
+          if (!validInputs()) { oil.checked = !!usesMotorOilRate(item); return; }
+          const next = { ...item, motorOil: oil.checked };
+          const rate = item.usesPartnerDiscount ? partnerResults.get(note)?.rate ?? '0' : '0';
+          Object.assign(item, Items.edit(next, { discountPercent: rate }));
+          priceDriver = 'auto'; updateDiscountControls(item);
+          Items.syncLegacy(note); touchNote(note); persistNotes(); renderList(); metadata();
+          if (!oil.checked && item.usesPartnerDiscount && !partnerResults.has(note)) lookupPartnerDiscount(note, true);
+        };
+        const oilLabel = document.createElement('label');
+        oilLabel.className = 'item-motor-oil'; oilLabel.append(oil, ' Motorolaj · 20%'); cell.append(oilLabel);
         const assignment = document.createElement('select'); assignment.className = 'item-vehicle-select'; assignment.dataset.field = 'vehicleId'; assignment.setAttribute('aria-label', 'Autó – ' + (index + 1) + '. cikkszámsor');
         const choices = [{ id: '', text: 'Hozzárendelés nélkül' }, ...note.vehicles.map((vehicle, number) => ({ id: vehicle.id, text: Vehicles.label(vehicle, number) }))];
         for (const choice of choices) { const option = document.createElement('option'); option.value = choice.id; option.textContent = choice.text; assignment.append(option); }
@@ -419,7 +548,7 @@ function renderItems(note) {
 }
 $('add-item').onclick = () => {
   const note = current(); if (!note || !validInputs()) return;
-  note.items.push({ ...Items.blank(crypto.randomUUID()), vehicleId: note.activeVehicleId }); touchNote(note); persistNotes(); renderItems(note); metadata();
+  note.items.push(blankNoteItem(note.activeVehicleId)); lookupPartnerDiscount(note); touchNote(note); persistNotes(); renderItems(note); metadata();
   $('items-body').lastElementChild.querySelector('input').focus();
 };
 function showDayDialog(month = selectedMonth) {
@@ -458,11 +587,12 @@ $('year-form').onsubmit = event => {
 function createNote(day, initial = {}) {
   clearSearch(); setDayContext(day); const now = new Date().toISOString();
   const vehicle = { ...Vehicles.blank(crypto.randomUUID()), vin: initial.vin || '', brand: initial.brand || '' };
-  const note = { id: crypto.randomUUID(), title: initial.title || '', phone: initial.phone || '', body: '', vin: vehicle.vin, part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [vehicle], items: [Items.blank(crypto.randomUUID())], day: selectedDay, created: now, updated: now };
+  const note = { id: crypto.randomUUID(), title: initial.title || '', phone: initial.phone || '', body: '', vin: vehicle.vin, part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [vehicle], items: [blankNoteItem(vehicle.id)], day: selectedDay, created: now, updated: now };
   note.activeVehicleId = note.vehicles[0].id; note.items[0].vehicleId = note.activeVehicleId;
   notes.unshift(note); touchNote(note); selected = note.id;
   if (!days.includes(selectedDay)) { days.push(selectedDay); days.sort(); persistArchive(); }
   if (!years.includes(activeYear)) { years.push(activeYear); years.sort((a, b) => a - b); persistArchive(); }
+  if (note.title) lookupPartnerDiscount(note, true);
   persistNotes(); render(); $('title').focus(); return true;
 }
 $('new').onclick = () => {
@@ -473,6 +603,7 @@ for (const field of fields) $(field).addEventListener('input', () => {
   const note = current(); if (!note) return;
   if (!$(field).validity.valid) { $('status').textContent = 'Az ár nem lehet negatív, legfeljebb két tizedest adj meg.'; return; }
   if(field === 'oil'){const vehicle=note.vehicles.find(v=>v.id===note.activeVehicleId);if(!vehicle)return;vehicle.oil=$(field).value;note.oil=note.vehicles.map(v=>v.oil||'').filter(Boolean).join(' / ');}else note[field] = $(field).value; touchNote(note); persistNotes();
+  if (field === 'title' || field === 'phone') lookupPartnerDiscount(note, true);
   if($('search').value.trim())renderList();else if(field==='title'||field==='oil'){const card=[...$('list').children].find(c=>c.dataset.note===note.id);if(card){card.querySelector('strong').textContent=note.title||'Új név';const preview=card.querySelector('small');preview.textContent=noteVinPreview(note);preview.title=preview.textContent;}}
   metadata(false);
 });
@@ -507,7 +638,8 @@ window.NotesPrepareClose = async () => {
   return await window.NoteReviewUI.confirm({ title: 'Kilépés előtti ellenőrzés', pending: pendingReminders }) === true;
 };
 window.NotesFlushForClose = async () => {
-  await window.notesAPI.inventoryRecover?.();
+ await finishPriceLookups();
+ await window.notesAPI.inventoryRecover?.();
  await flushSaveQueue();
   if (saveErrors.size) throw new Error($('status').textContent||'A jegyzetek mentése nem sikerült.');
 };
@@ -559,6 +691,7 @@ window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowN
 window.NotesRefresh = id => { clearSearch(); return loadData(id); };
 window.NotesFlush = async () => {
  if (!loaded) throw new Error('A jegyzetek még nem töltődtek be.');
+ await finishPriceLookups();
  await window.notesAPI.inventoryRecover?.();
  await flushSaveQueue();
  if (saveErrors.size) throw new Error($('status').textContent||'A jegyzetek mentése nem sikerült.');
@@ -575,7 +708,11 @@ const hourlySaveTimer=setInterval(()=>{void saveLocalWork();},60*60*1000);
 window.addEventListener('pagehide',()=>clearInterval(hourlySaveTimer));
 window.SaveLocalWork=saveLocalWork;
 
-window.NoteForWorkOrder = () => afterCheck(allowNavigation(), () => current() ? Vehicles.selectedNote(current()) : null);
+window.NoteForWorkOrder = () => afterCheck(allowNavigation(), async () => {
+  const note = current();
+  await finishPriceLookups();
+  return note && current() === note ? Vehicles.selectedNote(note) : null;
+});
 window.addEventListener('excel-imported', async event => {
  if (event.detail.target === 'notes') { await loadData(event.detail.noteId); $('status').textContent = event.detail.message; }
 });

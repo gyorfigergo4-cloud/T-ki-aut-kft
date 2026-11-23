@@ -1,3 +1,15 @@
+ÚJ · 1.28.0 · PARTNERENKÉNTI ALAPKEDVEZMÉNY
+
+Autónyilvántartó → Partnerlista → Szerkesztés → Alapkedvezmény (%).
+A név megadásakor a partner százaléka automatikusan beáll a jegyzet új
+tételeinél. Azonos név esetén írd be a telefonszámot is. A motorolaj
+kedvezménye a jegyzetben 20%. A raktári besorolás alapján a program
+felismeri a motorolajat, egyébként jelöld a cikkszámsorban.
+
+Frissítés előtt az óra melletti Töki Autó ikon menüjéből lépj ki.
+Bontsd ki a teljes ZIP-et, majd indítsd a TokiAuto-Inditas.cmd fájlt
+először a központi gépen, aztán a többi gépen.
+
 ÚJ · 1.27.1 · KÖZÖS PARTNERLISTA
 
 Autónyilvántartó → Partnerlista. Innen kereshetők, felvehetők és

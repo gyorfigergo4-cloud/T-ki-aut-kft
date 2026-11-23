@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('notesAPI', {
+  partnerDiscount: (name, phone) => ipcRenderer.invoke('partners-discount', { name, phone }),
   loadPartners: () => ipcRenderer.invoke('partners-load'),
   savePartners: payload => ipcRenderer.invoke('partners-save', payload),
   previewPartners: () => ipcRenderer.invoke('partners-preview'),

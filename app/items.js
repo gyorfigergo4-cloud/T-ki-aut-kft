@@ -74,7 +74,9 @@
   function edit(item, patch) {
     const next = { ...item, ...patch };
     if (Object.hasOwn(patch, 'supplier')) next.supplier = normalizeSupplier(next.supplier);
-    if (Object.hasOwn(patch, 'discountedPrice')) {
+    if (next.motorOil || next.stockMotorOil) {
+      next.priceMode = 'auto'; next.discountPercent = '20'; next.discountedPrice = discounted(next.fullPrice, '20');
+    } else if (Object.hasOwn(patch, 'discountedPrice')) {
       next.priceMode = 'manual'; next.discountPercent = manualPercent(next.fullPrice, next.discountedPrice);
     } else if (Object.hasOwn(patch, 'discountPercent')) {
       next.priceMode = 'auto'; next.discountedPrice = discounted(next.fullPrice, next.discountPercent);
@@ -87,6 +89,11 @@
       next.ordered = false; next.orderedAt = ''; next.paid = false; next.arrived = false; next.recorded = false; next.fromStock = false;next.stockProductId = '';
     }
     return next;
+  }
+  function applyNoteDiscount(item, rate) {
+    const effective = item.motorOil || item.stockMotorOil ? '20' :
+      item.usesPartnerDiscount && rate !== undefined ? rate : undefined;
+    return effective === undefined ? item : edit(item, { discountPercent: effective });
   }
   function orderCounts(items) {
     const active = items.filter(isActive);
@@ -146,6 +153,12 @@
     for (const item of items) {
       if (!item || ['id', 'partNumber', 'fullPrice', 'discountPercent', 'discountedPrice', 'quantity', 'supplier', 'priceMode'].some(key => typeof item[key] !== 'string') || !item.id || ids.has(item.id) || !['auto', 'legacy', 'manual'].includes(item.priceMode)) throw new Error('Érvénytelen cikkszámsor');
       ids.add(item.id);
+      for (const field of ['motorOil', 'stockMotorOil', 'usesPartnerDiscount']) {
+        if (item[field] !== undefined && typeof item[field] !== 'boolean') throw new Error('Érvénytelen tételkedvezmény.');
+      }
+      if ((item.motorOil || item.stockMotorOil) && (item.priceMode !== 'auto' || percent(item.discountPercent) !== percent('20'))) {
+        throw new Error('A motorolaj kedvezménye 20%.');
+      }
       if (item.description !== undefined && typeof item.description !== 'string') throw new Error('Érvénytelen tételmegnevezés');
       if (item.legacyLine !== undefined && typeof item.legacyLine !== 'string') throw new Error('Érvénytelen korábbi cikkszámsor');
       if (item.ordered !== undefined && typeof item.ordered !== 'boolean') throw new Error('Érvénytelen rendelésjelölés');
@@ -202,7 +215,7 @@
     note.discountPrice = result.discountedPriced && !result.missingDiscounted ? result.discountedPrice : '';
     note.paid = paymentState(note.items, note.paid).paid;
   }
-  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, totalsHint, formatMoney, syncLegacy, order, withOrder, edit, orderCounts, isActive, paymentState, withPaid, withArrival, withRecorded, needsRecording, setAllPaid };
+  const api = { blank, cents, percent, quantity, discounted, discountFromPrices, parseLegacyLine, normalizeNote, normalizeItem, normalizeSupplier, validate, totals, totalsHint, formatMoney, syncLegacy, applyNoteDiscount, order, withOrder, edit, orderCounts, isActive, paymentState, withPaid, withArrival, withRecorded, needsRecording, setAllPaid };
   if (typeof module !== 'undefined') module.exports = api;
   else root.LineItems = api;
 })(globalThis);

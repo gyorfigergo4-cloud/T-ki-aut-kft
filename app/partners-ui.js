@@ -31,6 +31,7 @@
       const row = body.insertRow();
       cell(row, person.name);
       cell(row, person.phone);
+      cell(row, person.discountPercent === undefined ? '—' : person.discountPercent + '%');
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = 'Szerkesztés';
@@ -38,7 +39,7 @@
       button.onclick = () => openEditor(person);
       cell(row, '').append(button);
     }
-    if (!rows.length) cell(body.insertRow(), query ? 'Nincs találat.' : 'A partnerlista üres.').colSpan = 3;
+    if (!rows.length) cell(body.insertRow(), query ? 'Nincs találat.' : 'A partnerlista üres.').colSpan = 4;
   }
 
   async function call(request) {
@@ -75,6 +76,7 @@
     el('partner-edit-heading').textContent = editId ? 'Partner szerkesztése' : 'Új partner';
     el('partner-name').value = person?.name || '';
     el('partner-phone').value = person?.phone || '';
+    el('partner-discount').value = person?.discountPercent?.replace(',', '.') ?? '';
     el('partner-delete').hidden = !editId;
     el('partner-edit-error').textContent = '';
     editor.showModal();
@@ -83,10 +85,12 @@
   async function saveEdit(deleting) {
     if (editing) return;
     const people = editSnapshot.people.filter(person => person.id !== editId);
+    const discount = el('partner-discount').value;
     if (!deleting) people.push({
       id: editId || crypto.randomUUID(),
       name: el('partner-name').value.trim(),
-      phone: el('partner-phone').value.trim()
+      phone: el('partner-phone').value.trim(),
+      ...(discount === '' ? {} : { discountPercent: discount })
     });
     editing = true;
     try {

@@ -75,3 +75,17 @@ test('old note text yields reviewable phones and counts the reasons for skipped 
     ['06 20 989 1234', true, true]
   ]);
 });
+
+test('partner rates are optional, including zero, and duplicate names require a phone match', () => {
+  const people = [
+    { id: '1', name: 'Kiss Anna', phone: '+36 30 111 1111', discountPercent: '35.5' },
+    { id: '2', name: 'Kiss Anna', phone: '+36 20 111 1111', discountPercent: '0' },
+    { id: '3', name: 'Nagy Gabi', phone: '+36 30 111 1111' }
+  ];
+  assert.equal(Partners.validate(people), people);
+  assert.deepEqual(Partners.match(people, ' KISS   ANNA ', ''), { ambiguous: true });
+  assert.equal(Partners.match(people, 'Kiss Anna', '06301111111').discountPercent, '35.5');
+  assert.equal(Partners.match(people, 'Kiss Anna', '0036201111111').discountPercent, '0');
+  assert.equal(Partners.match(people, 'Nagy Gabi', '').discountPercent, undefined);
+  assert.throws(() => Partners.validate([{ ...people[0], discountPercent: '101' }]));
+});

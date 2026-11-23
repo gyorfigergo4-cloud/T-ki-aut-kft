@@ -1,3 +1,4 @@
+const { percent } = require('./items');
 const { randomUUID } = require('node:crypto');
 
 const clean = value => value.normalize('NFC').trim().replace(/\s+/g, ' ');
@@ -25,14 +26,27 @@ function validate(people) {
   const ids = new Set(), keys = new Set();
   for (const person of people) {
     if (!person || typeof person.id !== 'string' || !person.id || ids.has(person.id) ||
-        Object.keys(person).some(field => !['id', 'name', 'phone'].includes(field))) throw Error('Érvénytelen partner.');
+        Object.keys(person).some(field => !['id', 'name', 'phone', 'discountPercent'].includes(field))) throw Error('Érvénytelen partner.');
     contact(person.name, person.phone);
+    if (person.discountPercent !== undefined) {
+      if (typeof person.discountPercent !== 'string' || !person.discountPercent) throw Error('Érvénytelen alapkedvezmény.');
+      percent(person.discountPercent);
+    }
     const key = keyOf(person);
     if (keys.has(key)) throw Error('Ez a név és telefonszám már szerepel a partnerlistában.');
     ids.add(person.id);
     keys.add(key);
   }
   return people;
+}
+
+function match(people, name, phone) {
+  const key = nameKey(name);
+  const matches = people.filter(person => nameKey(person.name) === key);
+  if (matches.length <= 1) return { discountPercent: matches[0]?.discountPercent };
+  const number = phoneKey(phone);
+  const exact = matches.find(person => phoneKey(person.phone) === number);
+  return exact ? { discountPercent: exact.discountPercent } : { ambiguous: true };
 }
 
 function phonesFromBody(body) {
@@ -108,4 +122,4 @@ function merge(people, rows) {
   return next;
 }
 
-module.exports = { validate, candidates, merge };
+module.exports = { validate, candidates, merge, match };

@@ -23,7 +23,7 @@
       <button id="settings-menu-open" type="button" aria-haspopup="dialog" aria-controls="settings-menu" aria-expanded="false"><span aria-hidden="true">⚙</span> Beállítások <span class="settings-menu-chevron" aria-hidden="true">⌃</span></button>
       <section id="settings-menu" class="settings-menu" role="dialog" aria-labelledby="settings-menu-title" hidden>
         <div class="settings-menu-heading"><h2 id="settings-menu-title">Beállítások</h2><button id="settings-menu-close" type="button" aria-label="Beállítások bezárása">×</button></div>
-        <div class="settings-menu-actions"><div class="import-buttons"><button id="import-folder" title="Jegyzetmappa betöltése">Jegyzetmappa</button><button id="import-excel" title="Excel-fájl beolvasása (.xlsx)">Excel beolvasása</button></div><button id="export-excel">Mentés Excelbe</button><button id="export"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>Biztonsági mentés</button><button id="desktop-settings-open" type="button">⚙ Indítás és tálca</button></div><div class="settings-menu-info"><div class="local-status"><span class="status-dot"></span>Kézi mentés / óránkénti mentés</div><div class="brand-footer">TÖKI AUTÓ KFT. <span>BELSŐ HASZNÁLATRA · v1.27.1</span></div></div></section></footer>
+        <div class="settings-menu-actions"><div class="import-buttons"><button id="import-folder" title="Jegyzetmappa betöltése">Jegyzetmappa</button><button id="import-excel" title="Excel-fájl beolvasása (.xlsx)">Excel beolvasása</button></div><button id="export-excel">Mentés Excelbe</button><button id="export"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>Biztonsági mentés</button><button id="desktop-settings-open" type="button">⚙ Indítás és tálca</button></div><div class="settings-menu-info"><div class="local-status"><span class="status-dot"></span>Kézi mentés / óránkénti mentés</div><div class="brand-footer">TÖKI AUTÓ KFT. <span>BELSŐ HASZNÁLATRA · v1.28.0</span></div></div></section></footer>
   </aside>
   <main id="notes-view" role="tabpanel" aria-labelledby="tab-notes">
     <div class="topbar"><div class="location"><span class="workspace-label">BELSŐ NYILVÁNTARTÁS</span><div id="breadcrumb" class="eyebrow"></div></div><div class="reminder-alarm-slot"><div id="reminder-alarm-banner" class="reminder-alarm-banner" hidden aria-label="Esedékes ébresztő"><div class="reminder-alarm-message" role="alert" aria-live="polite" aria-atomic="true"><strong id="reminder-alarm-owner"></strong><span id="reminder-alarm-text"></span></div><button id="reminder-alarm-done" type="button">✓ Kész</button><button id="reminder-alarm-snooze" type="button">Szundi · 5 perc</button><div id="reminder-alarm-pager"><button id="reminder-alarm-prev" type="button" aria-label="Előző ébresztő">‹</button><span id="reminder-alarm-count"></span><button id="reminder-alarm-next" type="button" aria-label="Következő ébresztő">›</button></div></div></div><div class="topbar-actions"><span id="status" role="status">Betöltés…</span><button id="save-notes" class="primary" title="Saját jegyzetek és munkalapok mentése (Ctrl+S)">Mentés · Ctrl+S</button><button id="add-day">＋ Nap hozzáadása</button></div></div>
@@ -36,6 +36,7 @@
       <div class="editor-top"><div class="editor-title-status"><div><div class="eyebrow">ÜGYFÉL / ALKATRÉSZ</div><h2>Bejegyzés adatai</h2></div><fieldset id="note-status-options" class="note-status-options"><legend class="sr-only">Bejegyzés állapota</legend><label id="note-paid-wrap" class="payment-toggle"><input id="note-paid" type="checkbox"><span id="note-paid-label">Fizetve</span></label></fieldset></div><div class="editor-actions"><button id="note-to-wo">Munkalap készítése</button><button id="delete" class="danger" disabled>Bejegyzés törlése</button></div></div>
       <div id="date"></div>
       <details id="import-source" hidden><summary>Átvett jegyzet · eredeti szöveg megtekintése</summary><p id="import-path"></p><pre id="import-original"></pre></details>
+      <p id="note-partner-discount" role="status" hidden></p>
       <div class="fields">
         <label>Név<input id="title" placeholder="Pl. Kovács Péter" maxlength="200"></label><label>Telefonszám<input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Pl. +36 30 123 4567" maxlength="100"></label>
         <section class="vehicles-section full" aria-label="Alvázszámok és autómárkák"><div class="vehicles-heading"><h3>Járművek</h3><button id="add-vehicle" type="button">＋ Alvázszám hozzáadása</button></div><div id="vehicle-tabs" role="tablist" aria-label="Autó kiválasztása a cikkszámokhoz"></div><p id="vin-history-help">Korábbi autó keresése: írj legalább 6 karaktert az alvázszámból.</p><div id="vehicles-list"></div><datalist id="car-brands"></datalist><p id="vehicles-empty" hidden>Még nincs jármű. Az Alvázszám hozzáadása gombbal veheted fel.</p><p id="vehicle-error" class="error" role="alert"></p></section>
@@ -108,7 +109,7 @@
     <button id="partners-preview" type="button" disabled>Átvétel a jegyzetekből</button>
   </div>
   <div class="garage-preview">
-    <table><thead><tr><th scope="col">Név</th><th scope="col">Telefonszám</th><th scope="col">Művelet</th></tr></thead><tbody id="partners-list"></tbody></table>
+    <table><thead><tr><th scope="col">Név</th><th scope="col">Telefonszám</th><th scope="col">Alapkedvezmény</th><th scope="col">Művelet</th></tr></thead><tbody id="partners-list"></tbody></table>
   </div>
 </dialog>
 <dialog id="partner-edit" class="garage-dialog" aria-labelledby="partner-edit-heading">
@@ -116,6 +117,8 @@
     <h2 id="partner-edit-heading">Partner adatai</h2>
     <label>Név<input id="partner-name" required maxlength="200"></label>
     <label>Telefonszám<input id="partner-phone" type="tel" required maxlength="100" placeholder="+36 30 123 4567"></label>
+    <label>Alapkedvezmény (%)<input id="partner-discount" type="number" min="0" max="100" step="any" placeholder="Nincs megadva"></label>
+    <p>Motorolaj a jegyzetben mindig 20%.</p>
     <p id="partner-edit-error" class="error" role="alert"></p>
     <div class="dialog-actions">
       <button id="partner-delete" type="button" class="danger">Törlés</button>
