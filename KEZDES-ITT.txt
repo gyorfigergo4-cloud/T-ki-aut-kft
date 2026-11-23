@@ -1,3 +1,11 @@
+ÚJ · 1.28.1 · NEVEK ÁTVÉTELE TELEFONSZÁM NÉLKÜL IS
+
+Az Autónyilvántartó → Partnerlista → Átvétel a jegyzetekből ablakban
+már az üres telefonszámú nevek is átvehetők. A szám később a partner
+szerkesztésénél megadható. Frissítsd először a központi gépet, aztán
+a többi gépet a teljes ZIP kibontása és a TokiAuto-Inditas.cmd futtatása
+után.
+
 ÚJ · 1.28.0 · PARTNERENKÉNTI ALAPKEDVEZMÉNY
 
 Autónyilvántartó → Partnerlista → Szerkesztés → Alapkedvezmény (%).

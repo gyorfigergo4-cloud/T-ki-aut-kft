@@ -20,9 +20,9 @@ test('legacy import skips exact matches and leaves ambiguous contacts for review
   ];
   const original = structuredClone(notes);
   const preview = Partners.candidates(notes, existing);
-  assert.equal(preview.skipped, 1);
+  assert.equal(preview.skipped, 0);
   assert.equal(preview.duplicates, 2);
-  assert.deepEqual(preview.rows.map(row => row.possibleDuplicate), [true, true, true]);
+  assert.deepEqual(preview.rows.map(row => row.possibleDuplicate), [true, true, true, false]);
   assert.ok(preview.rows.every(row => !('body' in row)));
   const next = Partners.merge(existing, preview.rows.slice(1, 2));
   assert.equal(next.length, 2);
@@ -45,7 +45,7 @@ test('one host and three clients share partners with conflict protection and ind
   await Promise.all(clients.map(service => service.configure(config)));
   const garageBefore = await host.load();
   const snapshots = await Promise.all(services.map(service => service.loadPartners()));
-  const people = Partners.merge(snapshots[0].people, [{ name: 'Kiss Anna', phone: '06 30 123 4567' }]);
+  const people = Partners.merge(snapshots[0].people, [{ name: 'Kiss Anna', phone: '' }]);
   const saved = await clients[0].savePartners({ people, revision: snapshots[1].revision });
   await assert.rejects(clients[1].savePartners({ people: [], revision: snapshots[2].revision }), { code: 'conflict' });
   assert.deepEqual(await clients[2].loadPartners(), saved);
@@ -72,7 +72,9 @@ test('old note text yields reviewable phones and counts the reasons for skipped 
   assert.equal(result.missingName, 1);
   assert.deepEqual(result.rows.map(row => [row.phone, row.fromText, row.possibleDuplicate]), [
     ['+36 30 123 4567', false, true],
-    ['06 20 989 1234', true, true]
+    ['06 20 989 1234', true, true],
+    ['', false, false],
+    ['', false, false]
   ]);
 });
 
@@ -88,4 +90,29 @@ test('partner rates are optional, including zero, and duplicate names require a 
   assert.equal(Partners.match(people, 'Kiss Anna', '0036201111111').discountPercent, '0');
   assert.equal(Partners.match(people, 'Nagy Gabi', '').discountPercent, undefined);
   assert.throws(() => Partners.validate([{ ...people[0], discountPercent: '101' }]));
+});
+
+test('name-only import handles thousands of old notes and supplements a reviewed phone without losing the rate', () => {
+  const notes = Array.from({ length: 5822 }, (_, index) => ({
+    title: 'Partner ' + (index % 1000),
+    body: 'Jegyzetszöveg'
+  }));
+  notes.push({ title: ' Partner 0 ', phone: '06 30 123 4567' });
+  const preview = Partners.candidates(notes, []);
+  assert.equal(preview.rows.length, 1000);
+  assert.equal(preview.rows.filter(person => !person.phone).length, 999);
+  const shared = Partners.merge([], preview.rows);
+  Partners.validate(shared);
+  assert.equal(Partners.candidates(notes, shared).rows.length, 0);
+  const person = shared.find(person => person.name === 'Partner 1');
+  person.discountPercent = '35';
+  const later = [{ title: 'PARTNER 1', phone: '+36 20 987 6543' }];
+  const reviewed = Partners.candidates(later, shared);
+  assert.equal(reviewed.rows.length, 1);
+  assert.equal(reviewed.rows[0].possibleDuplicate, true);
+  const updated = Partners.merge(shared, reviewed.rows);
+  assert.equal(updated.length, shared.length);
+  assert.deepEqual(updated.find(p => p.id === person.id), { ...person, phone: '+36 20 987 6543' });
+  assert.equal(Partners.candidates(later, updated).rows.length, 0);
+  assert.deepEqual(Partners.merge(updated, reviewed.rows), updated);
 });

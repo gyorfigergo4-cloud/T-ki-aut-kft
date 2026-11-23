@@ -99,8 +99,9 @@ app.whenReady().then(async () => {
     if (snapshot.revision !== revision) throw Error('A partnerlista közben változott. Nyisd meg újra a jegyzetimportot.');
     const people = Partners.merge(snapshot.people, rows);
     const added = people.length - snapshot.people.length;
-    if (added) await garageService.savePartners({ people, revision });
-    return { added };
+    const updated = snapshot.people.filter((person, index) => people[index] !== person).length;
+    if (added || updated) await garageService.savePartners({ people, revision });
+    return { added, updated };
   }));
   ipcMain.handle('load-archive', () => { prepareInitialData(); return archiveStore.read(archiveFile); });
   ipcMain.handle('save-archive', (_, archive) => archiveStore.write(archiveFile, archive));

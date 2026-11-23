@@ -2,6 +2,10 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Jegyzetimport telefonszám nélkül · 1.28.1
+
+Az **Autónyilvántartó → Partnerlista → Átvétel a jegyzetekből** ablakban a telefonszám nélküli nevek is kijelölhetők. A név csak egyszer jelenik meg, ha több jegyzetben szerepel szám nélkül. A szám később a partner szerkesztésénél pótolható. Ha másik gépen ugyanahhoz a névhez már van szám a jegyzetben, a kijelölt, egyértelmű találat kiegészíti a meglévő partnert, az alapkedvezményt is megőrizve.
+
 ## Partnerenkénti alapkedvezmény · 1.28.0
 
 Az **Autónyilvántartó → Partnerlista → Szerkesztés** ablakban add meg a partner alapkedvezményét 0 és 100% között. A **Jegyzetek** névmezőjében a pontos név automatikusan beállítja az új tételek alapját. Azonos név esetén a telefonszám választja ki a partnert. Az egyedileg beállított tételárak és kedvezmények megmaradnak.

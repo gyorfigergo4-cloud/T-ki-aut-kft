@@ -15,9 +15,8 @@ function contact(name, phone) {
   if (typeof name !== 'string' || typeof phone !== 'string') throw Error('Add meg a nevet és a telefonszámot.');
   name = clean(name);
   phone = clean(phone);
-  if (!name || name.length > 200 || phone.length > 100 || !phoneKey(phone)) {
-    throw Error('Adj meg egy nevet és egy érvényes telefonszámot.');
-  }
+  if (!name || name.length > 200) throw Error('Adj meg egy legfeljebb 200 karakteres nevet.');
+  if (phone && (phone.length > 100 || !phoneKey(phone))) throw Error('Adj meg érvényes telefonszámot, vagy hagyd üresen a mezőt.');
   return { name, phone };
 }
 
@@ -45,7 +44,7 @@ function match(people, name, phone) {
   const matches = people.filter(person => nameKey(person.name) === key);
   if (matches.length <= 1) return { discountPercent: matches[0]?.discountPercent };
   const number = phoneKey(phone);
-  const exact = matches.find(person => phoneKey(person.phone) === number);
+  const exact = number && matches.find(person => phoneKey(person.phone) === number);
   return exact ? { discountPercent: exact.discountPercent } : { ambiguous: true };
 }
 
@@ -63,11 +62,12 @@ function phonesFromBody(body) {
 
 function candidates(notes, people) {
   const names = new Set(people.map(person => nameKey(person.name)));
-  const phones = new Set(people.map(person => phoneKey(person.phone)));
+  const phones = new Set(people.map(person => phoneKey(person.phone)).filter(Boolean));
   const seen = new Set(people.map(keyOf));
   const rows = [];
   let missingName = 0, missingPhone = 0, invalidPhone = 0, duplicates = 0;
   const added = new Map();
+  const namesWithoutPhone = new Map();
   for (const note of notes) {
     const name = clean(note.title || '');
     if (!name || name.length > 200) { missingName++; continue; }
@@ -77,6 +77,9 @@ function candidates(notes, people) {
     if (!numbers.length) {
       if (field) invalidPhone++;
       else missingPhone++;
+      const key = nameKey(name);
+      if (namesWithoutPhone.has(key)) duplicates++;
+      else namesWithoutPhone.set(key, name);
       continue;
     }
     for (const phone of numbers) {
@@ -93,31 +96,65 @@ function candidates(notes, people) {
     }
   }
   for (const row of rows) {
-    row.possibleDuplicate = names.has(nameKey(row.name)) || phones.has(phoneKey(row.phone));
-    names.add(nameKey(row.name));
-    phones.add(phoneKey(row.phone));
+    const name = nameKey(row.name), phone = phoneKey(row.phone);
+    row.possibleDuplicate = names.has(name) || phones.has(phone);
+    names.add(name);
+    phones.add(phone);
   }
-  // Flag both entries of an ambiguous pair so neither is preselected.
+  // Names with a phone elsewhere are already represented in the preview or directory.
+  for (const [key, name] of namesWithoutPhone) {
+    if (names.has(key)) duplicates++;
+    else rows.push({ name, phone: '', fromText: false, possibleDuplicate: false });
+  }
+
   names.clear();
   phones.clear();
   for (const row of rows.slice().reverse()) {
     const name = nameKey(row.name), phone = phoneKey(row.phone);
-    row.possibleDuplicate ||= names.has(name) || phones.has(phone);
+    row.possibleDuplicate ||= names.has(name) || (!!phone && phones.has(phone));
     names.add(name);
-    phones.add(phone);
+    if (phone) phones.add(phone);
   }
-  return { rows, skipped: missingName + missingPhone + invalidPhone, missingName, missingPhone, invalidPhone, duplicates };
+  return { rows, skipped: missingName, missingName, missingPhone, invalidPhone, duplicates };
 }
 
 function merge(people, rows) {
   const seen = new Set(people.map(keyOf));
   const next = people.slice();
+  const indexes = new Map();
+  const incoming = new Map();
+  const withPhone = new Map();
+  for (const [index, person] of people.entries()) {
+    const name = nameKey(person.name);
+    const entries = indexes.get(name) || [];
+    entries.push(index);
+    indexes.set(name, entries);
+  }
   for (const row of rows) {
     const person = contact(row.name, row.phone);
-    const key = keyOf(person);
+    const name = nameKey(person.name);
+    if (person.phone) withPhone.set(keyOf(person), person);
+    else incoming.set(name, person);
+  }
+  const numberCounts = new Map();
+  for (const person of withPhone.values()) {
+    const name = nameKey(person.name);
+    numberCounts.set(name, (numberCounts.get(name) || 0) + 1);
+  }
+  for (const [key, person] of withPhone) {
     if (seen.has(key)) continue;
-    seen.add(key);
-    next.push({ id: randomUUID(), ...person });
+    const name = nameKey(person.name);
+    const matches = indexes.get(name);
+    if (matches?.length === 1 && !next[matches[0]].phone && numberCounts.get(name) === 1) {
+      // A reviewed number from another machine can fill the existing contact.
+      const index = matches[0];
+      next[index] = { ...next[index], phone: person.phone };
+    } else {
+      next.push({ id: randomUUID(), ...person });
+    }
+  }
+  for (const [name, person] of incoming) {
+    if (!indexes.has(name) && !numberCounts.has(name)) next.push({ id: randomUUID(), ...person });
   }
   return next;
 }

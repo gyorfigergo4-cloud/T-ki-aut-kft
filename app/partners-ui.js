@@ -30,7 +30,7 @@
     for (const person of rows) {
       const row = body.insertRow();
       cell(row, person.name);
-      cell(row, person.phone);
+      cell(row, person.phone || '—');
       cell(row, person.discountPercent === undefined ? '—' : person.discountPercent + '%');
       const button = document.createElement('button');
       button.type = 'button';
@@ -109,12 +109,14 @@
     if (previewing) return;
     previewing = preview.disabled = true;
     try {
-      const { rows, missingName, missingPhone, invalidPhone, duplicates, revision } = await call(api.previewPartners());
+      const { rows, missingName, duplicates, revision } = await call(api.previewPartners());
       if (!dialog.open) return;
       importRevision = revision;
       el('partners-import-error').textContent = '';
+      rows.sort((a, b) => a.name.localeCompare(b.name, 'hu'));
+      const withoutPhone = rows.filter(person => !person.phone).length;
       el('partners-import-summary').textContent =
-        `Átvehető: ${rows.length}. Ismétlődés: ${duplicates}. Telefonszám nélkül: ${missingPhone}. Hibás telefonszámmező: ${invalidPhone}. Érvényes név nélkül: ${missingName}.`;
+        `Átvehető: ${rows.length}, ebből telefonszám nélkül: ${withoutPhone}. Kihagyott ismétlődés: ${duplicates}. Érvényes név nélküli jegyzet: ${missingName}.`;
       const body = el('partners-import-rows');
       body.replaceChildren();
       for (const person of rows) {
@@ -125,20 +127,32 @@
         checkbox.setAttribute('aria-label', person.name + ' ' + person.phone + ' átvétele');
         cell(row, '').append(checkbox);
         cell(row, person.name);
-        cell(row, person.phone);
-        cell(row, [person.fromText && 'Jegyzetszövegből', person.possibleDuplicate && 'Lehetséges ismétlődés'].filter(Boolean).join(' · '));
+        cell(row, person.phone || '—');
+        cell(row, [!person.phone && 'Telefonszám nélkül', person.fromText && 'Jegyzetszövegből', person.possibleDuplicate && 'Lehetséges ismétlődés'].filter(Boolean).join(' · '));
       }
       const selected = () => [...body.querySelectorAll('input')].flatMap((input, index) =>
         input.checked ? [{ name: rows[index].name, phone: rows[index].phone }] : []);
-      body.onchange = () => { importSave.disabled = importing || !body.querySelector('input:checked'); };
+      const search = el('partners-import-search');
+      search.value = '';
+      search.oninput = () => {
+        const query = search.value.trim().toLocaleLowerCase('hu');
+        for (const [index, row] of Array.from(body.rows).entries()) {
+          row.hidden = !rows[index].name.toLocaleLowerCase('hu').includes(query);
+        }
+      };
+      body.onchange = () => {
+        const count = body.querySelectorAll('input:checked').length;
+        el('partners-import-selection').textContent = `Kijelölve: ${count}.`;
+        importSave.disabled = importing || count === 0;
+      };
       body.onchange();
       importSave.onclick = async () => {
         if (importing) return;
         importing = importSave.disabled = true;
         try {
-          const { added } = await call(api.importPartners({ rows: selected(), revision: importRevision }));
+          const { added, updated } = await call(api.importPartners({ rows: selected(), revision: importRevision }));
           importer.close();
-          el('partners-status').textContent = `Átvett partnerek száma: ${added}.`;
+          el('partners-status').textContent = `Új partnerek: ${added}. Pótolt telefonszámok: ${updated}.`;
           await refresh();
         } catch (error) {
           el('partners-import-error').textContent = error.message;
