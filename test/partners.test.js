@@ -1,0 +1,59 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
+const { createServer } = require('node:net');
+const { test } = require('node:test');
+const Partners = require('../app/partners');
+const { createService } = require('../app/garage-service');
+const Network = require('../app/garage-network');
+
+test('legacy import skips exact matches and leaves ambiguous contacts for review', () => {
+  const existing = Partners.merge([], [{ name: 'Kovács Péter', phone: '+36 30 123 4567' }]);
+  const notes = [
+    { title: '  KO VÁCS ', phone: '' },
+    { title: ' KOVÁCS  PÉTER ', phone: '06 (30) 123-4567' },
+    { title: 'Kovács Péter', phone: '+36 70 123 4567' },
+    { title: 'Nagy Juli', phone: '0036 20 987 6543', body: 'Helyi jegyzet' },
+    { title: 'nagy juli', phone: '+36 20 987 6543' },
+    { title: 'Nagy Júlia', phone: '+36 20 987 6543' }
+  ];
+  const original = structuredClone(notes);
+  const preview = Partners.candidates(notes, existing);
+  assert.equal(preview.skipped, 1);
+  assert.equal(preview.duplicates, 2);
+  assert.deepEqual(preview.rows.map(row => row.possibleDuplicate), [true, true, true]);
+  assert.ok(preview.rows.every(row => !('body' in row)));
+  const next = Partners.merge(existing, preview.rows.slice(1, 2));
+  assert.equal(next.length, 2);
+  assert.deepEqual(Partners.merge(next, preview.rows.slice(1, 2)), next);
+  assert.deepEqual(notes, original);
+});
+
+test('one host and three clients share partners with conflict protection and independent vehicle data', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'toki-partners-'));
+  const services = ['host', 'client1', 'client2', 'client3'].map(name => createService(path.join(root, name)));
+  t.after(async () => { await Promise.all(services.map(service => service.close())); await fs.rm(root, { recursive: true, force: true }); });
+  await Promise.all(services.map(service => service.start()));
+  const probe = createServer();
+  await new Promise(resolve => probe.listen(0, '127.0.0.1', resolve));
+  const { port } = probe.address();
+  await new Promise(resolve => probe.close(resolve));
+  const [host, ...clients] = services;
+  const { pairingCode: token } = await host.configure({ mode: 'host', port });
+  const config = { mode: 'client', host: '127.0.0.1', port, token };
+  await Promise.all(clients.map(service => service.configure(config)));
+  const garageBefore = await host.load();
+  const snapshots = await Promise.all(services.map(service => service.loadPartners()));
+  const people = Partners.merge(snapshots[0].people, [{ name: 'Kiss Anna', phone: '06 30 123 4567' }]);
+  const saved = await clients[0].savePartners({ people, revision: snapshots[1].revision });
+  await assert.rejects(clients[1].savePartners({ people: [], revision: snapshots[2].revision }), { code: 'conflict' });
+  assert.deepEqual(await clients[2].loadPartners(), saved);
+  assert.deepEqual(await host.loadPartners(), saved);
+  assert.deepEqual(await host.load(), garageBefore);
+  await assert.rejects(Network.request({ ...config, token: '0'.repeat(32) }, 'GET', undefined, '/partners'), { code: 'unauthorized' });
+  await host.close();
+  await assert.rejects(clients[0].loadPartners());
+  await host.start();
+  assert.deepEqual(await clients[2].loadPartners(), saved);
+});

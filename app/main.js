@@ -3,6 +3,7 @@ const path = require('node:path');
 const { platform } = require('node:process');
 const fs = require('node:fs/promises');
 const store = require('./store');
+const Partners = require('./partners');
 const notePatches = require('./note-patches');
 const {createService:createInventoryService}=require('./inventory-service');
 const { createService: createGarageService } = require('./garage-service');
@@ -80,6 +81,23 @@ app.whenReady().then(async () => {
       prepared = true;
     }
   }
+  ipcMain.handle('partners-load', stockReply(async () => ({
+    ...await garageService.loadPartners(), mode: garageService.status().mode
+  })));
+  ipcMain.handle('partners-save', stockReply(payload => garageService.savePartners(payload)));
+  ipcMain.handle('partners-preview', stockReply(async () => {
+    prepareInitialData();
+    const snapshot = await garageService.loadPartners();
+    return { ...Partners.candidates(store.read(file), snapshot.people), revision: snapshot.revision };
+  }));
+  ipcMain.handle('partners-import', stockReply(async ({ rows, revision }) => {
+    const snapshot = await garageService.loadPartners();
+    if (snapshot.revision !== revision) throw Error('A partnerlista közben változott. Nyisd meg újra a jegyzetimportot.');
+    const people = Partners.merge(snapshot.people, rows);
+    const added = people.length - snapshot.people.length;
+    if (added) await garageService.savePartners({ people, revision });
+    return { added };
+  }));
   ipcMain.handle('load-archive', () => { prepareInitialData(); return archiveStore.read(archiveFile); });
   ipcMain.handle('save-archive', (_, archive) => archiveStore.write(archiveFile, archive));
   function readLocalNotes(){const notes=store.read(file);lastNotesCount=notes.length;return notes;}

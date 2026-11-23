@@ -25,24 +25,25 @@ function settings(input) {
   }
   return config;
 }
-function startServer({ database, token, port = DEFAULT_PORT, host = '0.0.0.0' }) {
+function startServer({ database, partners, token, port = DEFAULT_PORT, host = '0.0.0.0' }) {
   const server = http.createServer(async (req, res) => {
     const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(data)); };
     if (!privateAddress(req.socket.remoteAddress) || req.headers.origin) { send(403, { error: 'Hozzáférés megtagadva.' }); return; }
     const provided = Buffer.from(req.headers.authorization || '');
     const expected = Buffer.from('Bearer ' + token);
     if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) { send(401, { error: 'Hibás kapcsolódási kód.', code: 'unauthorized' }); return; }
-    if (req.url !== '/garage') { send(404, { error: 'Nincs ilyen végpont.' }); return; }
+    const target = req.url === '/garage' ? database : req.url === '/partners' ? partners : undefined;
+    if (!target) { send(404, { error: 'Nincs ilyen végpont.' }); return; }
     if (!['GET', 'PUT'].includes(req.method)) { send(405, { error: 'Nem engedélyezett művelet.' }); return; }
     try {
-      if (req.method === 'GET') { send(200, database.read()); return; }
+      if (req.method === 'GET') { send(200, target.read()); return; }
       let size = 0; const chunks = [];
       for await (const chunk of req) { size += chunk.length; if (size > MAX_BYTES) { send(413, { error: 'Túl nagy autólista.' }); return; } chunks.push(chunk); }
       let body;
       try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); }
       catch { send(400, { error: 'Hibás adatok.' }); return; }
-      if (!body || Object.keys(body).some(k => !['people', 'revision'].includes(k))) { send(400, { error: 'Csak autónyilvántartó adatok küldhetők.' }); return; }
-      try { send(200, database.write(body.people, body.revision)); }
+      if (!body || Object.keys(body).some(k => !['people', 'revision'].includes(k))) { send(400, { error: 'Érvénytelen listaadatok.' }); return; }
+      try { send(200, target.write(body.people, body.revision)); }
       catch (error) { send(error.code === 'conflict' ? 409 : 400, { error: error.message, code: error.code || 'invalid' }); }
     } catch { if (!res.headersSent) send(503, { error: 'A közös autónyilvántartó nem olvasható vagy nem menthető.', code: 'unavailable' }); }
   });
@@ -53,18 +54,19 @@ function startServer({ database, token, port = DEFAULT_PORT, host = '0.0.0.0' })
     server.listen(port, host, () => { server.off('error', fail); server.on('error', () => {}); resolve(server); });
   });
 }
-function request(config, method = 'GET', payload) {
+function request(config, method = 'GET', payload, endpoint = '/garage') {
   return new Promise((resolve, reject) => {
     const body = payload === undefined ? undefined : JSON.stringify(payload);
     if (body && Buffer.byteLength(body) > MAX_BYTES) { reject(new GarageError('Túl nagy autólista.')); return; }
-    const req = http.request({ host: config.host, port: config.port, path: '/garage', method, headers: { Authorization: 'Bearer ' + config.token, ...(body ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } : {}) } }, res => {
+    const req = http.request({ host: config.host, port: config.port, path: endpoint, method, headers: { Authorization: 'Bearer ' + config.token, ...(body ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } : {}) } }, res => {
       let size = 0; const chunks = [];
       res.on('data', chunk => { size += chunk.length; if (size > MAX_BYTES) { res.destroy(); reject(new GarageError('Túl nagy szerverválasz.')); } else chunks.push(chunk); });
       res.on('error', () => reject(new GarageError('Megszakadt a kapcsolat a központi géppel.')));
       res.on('end', () => {
         try { const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
           if (res.statusCode !== 200) { reject(new GarageError(data.error || 'A központi gép nem fogadta el a műveletet.', data.code)); return; }
-          const { validate } = require('./garage-model'); validate(data.people);
+          const model = endpoint === '/partners' ? require('./partners') : require('./garage-model');
+          model.validate(data.people);
           if (typeof data.revision !== 'string' || !data.revision) throw Error('revision');
           resolve(data);
         } catch { reject(new GarageError('Érvénytelen válasz a központi géptől.')); }

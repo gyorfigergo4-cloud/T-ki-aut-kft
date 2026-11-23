@@ -1,7 +1,7 @@
 {
   "product": "TokiAuto",
-  "version": "1.26.2",
-  "sha256": "d108ad45e2e658ba892066b5d8062037204d6e47bf9c34203a99a22c424aaaf9",
+  "version": "1.27.0",
+  "sha256": "a597f47c4fde94aa13b9f093634318fe837f5b578c9bb5c9814d4c82a3f3af32",
   "exeSha256": "be9463165115e478da6da76dad11865742caa78a1d843e25dc59734e39801c2f",
   "parts": [
     {
@@ -22,12 +22,12 @@
     {
       "file": "TokiAuto.part04",
       "size": 41943040,
-      "sha256": "643f44eca63fab8ad367d08705e195d6221d641af5b93de24469db7a876c633b"
+      "sha256": "8da20cbfc0bf7ee3fb318d203e6b16f26aea9c99aa8f5af7855560fa9d7ba766"
     },
     {
       "file": "TokiAuto.part05",
-      "size": 2042354,
-      "sha256": "07e9da39a6c871774653471fbd8a94616809da450eb557819afcc199eeb883a4"
+      "size": 1700731,
+      "sha256": "107f001925e13a4b97b206eafc19ac774b771d48ec36ac109300b46324a844f5"
     }
   ]
 }

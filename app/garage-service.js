@@ -1,4 +1,4 @@
-// Network access is confined to garage records; private notes are never inputs.
+// The network serves the vehicle directory and the partner directory.
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -6,10 +6,24 @@ const { randomBytes, createHash } = require('node:crypto');
 const Store = require('./garage-store');
 const { createDatabase, GarageError } = require('./garage-database');
 const Network = require('./garage-network');
+const Partners = require('./partners');
 function createService(userData) {
   const localFile = path.join(userData, 'garage.json');
   const configFile = path.join(userData, 'garage-network.json');
   const sharedFile = path.join(userData, 'shared-garage', 'people.json');
+  const localPartnersFile = path.join(userData, 'partners.json');
+  const sharedPartnersFile = path.join(userData, 'shared-garage', 'partners.json');
+  let localPartners;
+  function localPartnerDatabase() {
+    return localPartners ||= createDatabase(localPartnersFile, [], Partners.validate);
+  }
+  // Initialize on first use so a partner file error cannot block the vehicle directory.
+  function sharedPartnerDatabase() {
+    let sharedPartners;
+    const open = () => sharedPartners ||= createDatabase(sharedPartnersFile, [], Partners.validate);
+    return { read: () => open().read(), write: (people, revision) => open().write(people, revision) };
+  }
+  const partners = sharedPartnerDatabase();
   let config = { mode: 'local', port: Network.DEFAULT_PORT }, server, database, startupError;
   function localRead() {
     const people = Store.read(localFile);
@@ -25,7 +39,7 @@ function createService(userData) {
       if (fs.existsSync(configFile)) config = Network.settings(JSON.parse(fs.readFileSync(configFile, 'utf8')));
       if (config.mode === 'host') {
         database = createDatabase(sharedFile, fs.existsSync(sharedFile) ? [] : Store.read(localFile));
-        server = await Network.startServer({ database, token: config.token, port: config.port });
+        server = await Network.startServer({ database, partners, token: config.token, port: config.port });
       }
     } catch (error) { startupError = error; }
   }
@@ -43,13 +57,26 @@ function createService(userData) {
     if (localRead().revision !== payload.revision) throw new GarageError('A helyi autólista közben változott. Nyisd meg újra a szerkesztőt.', 'conflict');
     Store.write(localFile, payload.people); return localRead();
   }
+  function partnerStorage() {
+    if (startupError) throw new GarageError('A központi kapcsolat nem érhető el.');
+    return config.mode === 'host' ? partners : localPartnerDatabase();
+  }
+  async function loadPartners() {
+    if (!startupError && config.mode === 'client') return Network.request(config, 'GET', undefined, '/partners');
+    return partnerStorage().read();
+  }
+  async function savePartners(payload) {
+    Partners.validate(payload?.people);
+    if (!startupError && config.mode === 'client') return Network.request(config, 'PUT', payload, '/partners');
+    return partnerStorage().write(payload.people, payload.revision);
+  }
   async function configure(input) {
     const next = Network.settings(input.mode === 'host' ? { ...input, token: config.mode === 'host' ? config.token : randomBytes(16).toString('hex') } : input);
     let candidate, nextDatabase;
     if (next.mode === 'client') await Network.request(next); // Fail safely without replacing working settings.
     if (next.mode === 'host') {
       nextDatabase = database || createDatabase(sharedFile, fs.existsSync(sharedFile) ? [] : Store.read(localFile));
-      if (!server || next.port !== config.port) candidate = await Network.startServer({ database: nextDatabase, token: next.token, port: next.port });
+      if (!server || next.port !== config.port) candidate = await Network.startServer({ database: nextDatabase, partners, token: next.token, port: next.port });
     }
     try { persistConfig(next); }
     catch { if (candidate) candidate.close(); throw new GarageError('A kapcsolat beállítása nem menthető.'); }
@@ -64,6 +91,6 @@ function createService(userData) {
     return { mode: config.mode, port: config.port, host: config.host || '', addresses, ...(config.mode === 'host' ? { pairingCode: config.token } : {}), error: startupError ? 'A központ indítása vagy a beállítások betöltése nem sikerült.' : null };
   }
   async function close() { if (server) { const old = server; server = undefined; old.closeAllConnections(); await new Promise(resolve => old.close(resolve)); } }
-  return { start, load, save, configure, status, close };
+  return { start, load, save, loadPartners, savePartners, configure, status, close };
 }
 module.exports = { createService };
