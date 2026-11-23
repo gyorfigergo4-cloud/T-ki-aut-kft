@@ -57,3 +57,21 @@ test('one host and three clients share partners with conflict protection and ind
   await host.start();
   assert.deepEqual(await clients[2].loadPartners(), saved);
 });
+
+test('old note text yields reviewable phones and counts the reasons for skipped notes', () => {
+  const result = Partners.candidates([
+    { title: 'Júlia', body: 'Cikkszám: 123456789\nTelefon: +36 30 123 4567\n06 20 989 1234' },
+    { title: 'Júlia', phone: '06 (30) 123-4567' },
+    { title: 'Éva', body: '123456789' },
+    { title: 'Péter', phone: 'hibás' },
+    { title: '', phone: '+36 20 123 4567' }
+  ], []);
+  assert.equal(result.duplicates, 1);
+  assert.equal(result.missingPhone, 1);
+  assert.equal(result.invalidPhone, 1);
+  assert.equal(result.missingName, 1);
+  assert.deepEqual(result.rows.map(row => [row.phone, row.fromText, row.possibleDuplicate]), [
+    ['+36 30 123 4567', false, true],
+    ['06 20 989 1234', true, true]
+  ]);
+});

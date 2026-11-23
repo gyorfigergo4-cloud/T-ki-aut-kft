@@ -2,11 +2,11 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
-## Közös partnerlista · 1.27.0
+## Közös partnerlista · 1.27.1
 
 A listát az **Autónyilvántartó → Partnerlista** gomb nyitja meg. A név és a telefonszám kereshető, szerkeszthető és törölhető. A központi autónyilvántartóhoz kapcsolódó négy gép ugyanazt a partnerlistát használja. Ha a kapcsolat még nincs beállítva, az **Autónyilvántartó → Kapcsolat beállítása** menüben válasszatok ki egy központi gépet, majd csatlakoztassátok hozzá a másik hármat.
 
-Az **Átvétel a jegyzetekből** az adott gép mentett jegyzeteit nézi át. Ismételjétek meg mindegyik gépen, ahol vannak átveendő partnerek. Az azonos név–telefonszám párokat kihagyja a program, a kis- és nagybetűket és a telefonszám gyakori eltérő írásmódjait figyelembe véve. Az egyező nevű vagy telefonszámú, egyébként eltérő találatok külön jóváhagyhatók. A központba az átvételre kijelölt nevek és telefonszámok kerülnek.
+Az **Átvétel a jegyzetekből** az adott gép mentett jegyzeteit nézi át. Ismételjétek meg mindegyik gépen, ahol vannak átveendő partnerek. Az azonos név–telefonszám párokat kihagyja a program, a kis- és nagybetűket és a telefonszám gyakori eltérő írásmódjait figyelembe véve. Az egyező nevű vagy telefonszámú, egyébként eltérő találatok külön jóváhagyhatók. Az 1.27.1 a telefonszámmező mellett a jegyzet szövegében címkézett számokat és a külön sorban álló magyar telefonszámokat is megkeresi. A szövegből talált számokat külön kell bejelölni. A központba az átvételre kijelölt nevek és telefonszámok kerülnek.
 
 Frissítés előtt a tálcaikon **Kilépés** menüjével zárjátok be a régi alkalmazást. Először a központi gépen, majd a többi gépen bontsátok ki a teljes ZIP-et és futtassátok a `TokiAuto-Inditas.cmd` fájlt.
 

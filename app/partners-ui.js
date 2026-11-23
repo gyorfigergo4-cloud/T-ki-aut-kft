@@ -105,24 +105,24 @@
     if (previewing) return;
     previewing = preview.disabled = true;
     try {
-      const { rows, skipped, duplicates, revision } = await call(api.previewPartners());
+      const { rows, missingName, missingPhone, invalidPhone, duplicates, revision } = await call(api.previewPartners());
       if (!dialog.open) return;
       importRevision = revision;
       el('partners-import-error').textContent = '';
       el('partners-import-summary').textContent =
-        `Átvehető: ${rows.length}. Ismétlődés: ${duplicates}. Hiányos vagy hibás adat: ${skipped}.`;
+        `Átvehető: ${rows.length}. Ismétlődés: ${duplicates}. Telefonszám nélkül: ${missingPhone}. Hibás telefonszámmező: ${invalidPhone}. Érvényes név nélkül: ${missingName}.`;
       const body = el('partners-import-rows');
       body.replaceChildren();
       for (const person of rows) {
         const row = body.insertRow();
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.checked = !person.possibleDuplicate;
+        checkbox.checked = !person.possibleDuplicate && !person.fromText;
         checkbox.setAttribute('aria-label', person.name + ' ' + person.phone + ' átvétele');
         cell(row, '').append(checkbox);
         cell(row, person.name);
         cell(row, person.phone);
-        cell(row, person.possibleDuplicate ? 'Lehetséges ismétlődés' : '');
+        cell(row, [person.fromText && 'Jegyzetszövegből', person.possibleDuplicate && 'Lehetséges ismétlődés'].filter(Boolean).join(' · '));
       }
       const selected = () => [...body.querySelectorAll('input')].flatMap((input, index) =>
         input.checked ? [{ name: rows[index].name, phone: rows[index].phone }] : []);

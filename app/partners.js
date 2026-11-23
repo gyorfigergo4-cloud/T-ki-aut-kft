@@ -35,20 +35,48 @@ function validate(people) {
   return people;
 }
 
+function phonesFromBody(body) {
+  const found = new Map();
+  for (const line of (body || '').split(/\r?\n/)) {
+    const labeled = line.match(/^\s*(?:telefon(?:szám)?|tel\.?|mobil(?:szám)?|phone)\s*(?::|=|[-–]|\s)\s*(.+)$/iu);
+    const phone = clean(labeled?.[1] || line);
+    const key = phoneKey(phone);
+    const hungarian = /^(?:\+36|0036|06)[\s()./-]*\d/.test(phone) && /^36\d{8,9}$/.test(key);
+    if (phone.length <= 100 && key && (labeled || hungarian)) found.set(key, phone);
+  }
+  return [...found.values()];
+}
+
 function candidates(notes, people) {
   const names = new Set(people.map(person => nameKey(person.name)));
   const phones = new Set(people.map(person => phoneKey(person.phone)));
   const seen = new Set(people.map(keyOf));
   const rows = [];
-  let skipped = 0, duplicates = 0;
+  let missingName = 0, missingPhone = 0, invalidPhone = 0, duplicates = 0;
+  const added = new Map();
   for (const note of notes) {
-    let person;
-    try { person = contact(note.title, note.phone); }
-    catch { skipped++; continue; }
-    const key = keyOf(person);
-    if (seen.has(key)) { duplicates++; continue; }
-    seen.add(key);
-    rows.push(person);
+    const name = clean(note.title || '');
+    if (!name || name.length > 200) { missingName++; continue; }
+    const field = clean(note.phone || '');
+    const fieldValid = field.length <= 100 && phoneKey(field);
+    const numbers = fieldValid ? [field] : phonesFromBody(note.body);
+    if (!numbers.length) {
+      if (field) invalidPhone++;
+      else missingPhone++;
+      continue;
+    }
+    for (const phone of numbers) {
+      const key = keyOf({ name, phone });
+      if (seen.has(key)) {
+        duplicates++;
+        if (fieldValid && added.has(key)) added.get(key).fromText = false;
+        continue;
+      }
+      seen.add(key);
+      const row = { name, phone, fromText: !fieldValid };
+      added.set(key, row);
+      rows.push(row);
+    }
   }
   for (const row of rows) {
     row.possibleDuplicate = names.has(nameKey(row.name)) || phones.has(phoneKey(row.phone));
@@ -64,7 +92,7 @@ function candidates(notes, people) {
     names.add(name);
     phones.add(phone);
   }
-  return { rows, skipped, duplicates };
+  return { rows, skipped: missingName + missingPhone + invalidPhone, missingName, missingPhone, invalidPhone, duplicates };
 }
 
 function merge(people, rows) {

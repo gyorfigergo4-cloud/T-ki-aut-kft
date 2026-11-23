@@ -1,4 +1,4 @@
-ÚJ · 1.27.0 · KÖZÖS PARTNERLISTA
+ÚJ · 1.27.1 · KÖZÖS PARTNERLISTA
 
 Autónyilvántartó → Partnerlista. Innen kereshetők, felvehetők és
 szerkeszthetők a nevek és telefonszámok. A négy csatlakoztatott gép
@@ -6,7 +6,8 @@ ugyanazt a listát látja a központi autónyilvántartó meglévő kapcsolatán
 
 Átvétel a jegyzetekből. Ellenőrizd a kijelölt neveket és telefonszámokat,
 majd mentsd el őket. Ismételd meg az érintett gépeken. Az egyező párok
-kimaradnak, a lehetséges ismétlődéseket külön lehet jóváhagyni.
+kimaradnak, a lehetséges ismétlődéseket külön lehet jóváhagyni. A jegyzetszövegben
+talált telefonszámokat is külön be kell jelölni.
 
 A tálcaikon Kilépés menüjével zárd be a régi programot. Először a
 központi gépen frissíts, majd a másik három gépen. Bontsd ki a teljes
