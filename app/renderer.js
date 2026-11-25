@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 const { months, localDay, validDay, normalize } = window.NotesArchive;
-const fields = ['title', 'phone', 'oil', 'body'];
+const fields = ['title', 'phone', 'body'];
 const Items = window.LineItems;
 const NoteStatuses = window.NoteStatuses;
 const Vehicles = window.NoteVehicles;
@@ -90,7 +90,7 @@ $('note-paid').onchange = () => {
   note.items = Items.setAllPaid(note.items, $('note-paid').checked); note.paid = $('note-paid').checked;
   Items.syncLegacy(note); touchNote(note); persistNotes(); renderItems(note); metadata();
 };
-function renderVehicleTabs(note) {
+function renderVehicleTabs(note, keepPlateInput = false) {
   $('vehicle-tabs').replaceChildren();
   const choices = note.vehicles.map((vehicle, index) => ({ id: vehicle.id, text: Vehicles.label(vehicle, index) }));
   if (!note.vehicles.length || note.activeVehicleId === '' || note.items.some(item => item.vehicleId === '' && Items.isActive(item))) choices.push({ id: '', text: 'Hozzárendelés nélkül' });
@@ -106,7 +106,10 @@ function renderVehicleTabs(note) {
     row.hidden = !selected; row.classList.toggle('is-selected', selected);
   }
   const vehicle = note.vehicles.find(row => row.id === note.activeVehicleId);
-  $('oil').value = vehicle?.oil || ''; $('oil').disabled = !vehicle;
+  if (!keepPlateInput) $('plate').value = vehicle?.plate || '';
+  $('plate').disabled = !vehicle;
+  $('legacy-vehicle-oil').hidden = !vehicle?.oil;
+  $('legacy-vehicle-oil-text').textContent = vehicle?.oil || '';
   $('vehicle-items-context').textContent = vehicle ? 'Kiválasztott autó: ' + Vehicles.label(vehicle, note.vehicles.indexOf(vehicle)) : 'Hozzárendelés nélküli tételek – a sor Autó mezőjében választhatsz alvázszámot.';
   $('note-to-wo').textContent = vehicle ? 'Munkalap – kiválasztott autó' : 'Munkalap – közös tételek';
   $('note-to-wo').title = 'Csak az itt látható tételeket és a kiválasztott autót veszi át.';
@@ -365,7 +368,7 @@ function render() {
   $('breadcrumb').textContent = [activeYear, selectedMonth ? months[Number(selectedMonth.slice(5)) - 1] : '', selectedDay ? selectedDay.slice(8) + '.' : ''].filter(Boolean).join('  /  ');
   $('editor').hidden = !note; $('empty').hidden = !!note; $('delete').disabled = !note;
   $('empty').querySelector('h2').textContent = $('search').value.trim() ? 'Keress az összes korábbi adatban.' : selectedDay ? 'Ennek a napnak még nincs bejegyzése.' : 'Minden bejegyzés a saját napján.';
-  $('empty').querySelector('p').textContent = $('search').value.trim() ? 'Név, alvázszám, cikkszám, olaj és ár alapján is kereshetsz.' : selectedDay ? 'Az „Új név a naphoz” gombbal veheted fel az első adatlapot.' : 'Nyiss meg egy napot, és azon belül több nevet is felvehetsz.';
+  $('empty').querySelector('p').textContent = $('search').value.trim() ? 'Név, rendszám, alvázszám, cikkszám, alkatrész és ár alapján is kereshetsz.' : selectedDay ? 'Az „Új név a naphoz” gombbal veheted fel az első adatlapot.' : 'Nyiss meg egy napot, és azon belül több nevet is felvehetsz.';
   $('import-source').hidden = !note?.source;
   $('import-source').open = false;
   if (note?.source) {
@@ -509,6 +512,17 @@ function renderItems(note) {
       if (field === 'partNumber') {
         const stockPrice=document.createElement('button');stockPrice.type='button';stockPrice.className='item-location-button';stockPrice.textContent='Raktári ár';stockPrice.title='A raktár Ft/db árának átvétele a Teli ár mezőbe, készletlevonás nélkül';stockPrice.onclick=async()=>{stockPrice.disabled=true;try{if(!await useStockPrice(true))throw Error('Ehhez a termékhez még nincs raktári ár megadva.');$('item-error').textContent='';}catch(e){$('item-error').textContent=e.message;}finally{stockPrice.disabled=false;}};cell.append(stockPrice);
         const place=document.createElement('button');place.type='button';place.className='item-location-button';place.textContent='⌖ Hely';place.title='Raktári hely keresése ehhez a cikkszámhoz';place.onclick=async()=>{place.disabled=true;try{const r=await window.notesAPI.inventoryResolve(item.partNumber);if(!r.ok)throw Error(r.error);window.WarehouseMapUI.showProduct(r.product||r);}catch(e){$('item-error').textContent='Raktári hely: '+e.message;}finally{place.disabled=false;}};cell.append(place);
+        const description = document.createElement('input');
+        description.type = 'text'; description.dataset.field = 'description'; description.value = item.description ?? '';
+        description.className = 'item-description';
+        description.maxLength = 1000; description.placeholder = 'Alkatrész megnevezése';
+        description.setAttribute('aria-label', 'Alkatrész megnevezése – ' + (index + 1) + '. sor');
+        description.oninput = () => {
+          Object.assign(item, Items.edit(item, { description: description.value }));
+          orderControl.refresh();
+          Items.syncLegacy(note); touchNote(note); persistNotes(); renderVehicleTabs(note); renderList(); metadata();
+        };
+        cell.insertBefore(description, stockPrice);
         const oil = document.createElement('input');
         oil.type = 'checkbox'; oil.dataset.field = 'motorOil';
         oil.checked = !!usesMotorOilRate(item); oil.disabled = !!item.stockMotorOil;
@@ -586,7 +600,7 @@ $('year-form').onsubmit = event => {
 };
 function createNote(day, initial = {}) {
   clearSearch(); setDayContext(day); const now = new Date().toISOString();
-  const vehicle = { ...Vehicles.blank(crypto.randomUUID()), vin: initial.vin || '', brand: initial.brand || '' };
+  const vehicle = { ...Vehicles.blank(crypto.randomUUID()), vin: initial.vin || '', brand: initial.brand || '', plate: initial.plate || '' };
   const note = { id: crypto.randomUUID(), title: initial.title || '', phone: initial.phone || '', body: '', vin: vehicle.vin, part: '', oil: '', fullPrice: '', discountPrice: '', workflowStatus: NoteStatuses.defaultId, reminders: [], paid: false, vehicles: [vehicle], items: [blankNoteItem(vehicle.id)], day: selectedDay, created: now, updated: now };
   note.activeVehicleId = note.vehicles[0].id; note.items[0].vehicleId = note.activeVehicleId;
   notes.unshift(note); touchNote(note); selected = note.id;
@@ -602,11 +616,18 @@ $('new').onclick = () => {
 for (const field of fields) $(field).addEventListener('input', () => {
   const note = current(); if (!note) return;
   if (!$(field).validity.valid) { $('status').textContent = 'Az ár nem lehet negatív, legfeljebb két tizedest adj meg.'; return; }
-  if(field === 'oil'){const vehicle=note.vehicles.find(v=>v.id===note.activeVehicleId);if(!vehicle)return;vehicle.oil=$(field).value;note.oil=note.vehicles.map(v=>v.oil||'').filter(Boolean).join(' / ');}else note[field] = $(field).value; touchNote(note); persistNotes();
+  note[field] = $(field).value; touchNote(note); persistNotes();
   if (field === 'title' || field === 'phone') lookupPartnerDiscount(note, true);
-  if($('search').value.trim())renderList();else if(field==='title'||field==='oil'){const card=[...$('list').children].find(c=>c.dataset.note===note.id);if(card){card.querySelector('strong').textContent=note.title||'Új név';const preview=card.querySelector('small');preview.textContent=noteVinPreview(note);preview.title=preview.textContent;}}
+  if($('search').value.trim())renderList();else if(field==='title'){const card=[...$('list').children].find(c=>c.dataset.note===note.id);if(card){card.querySelector('strong').textContent=note.title||'Új név';const preview=card.querySelector('small');preview.textContent=noteVinPreview(note);preview.title=preview.textContent;}}
   metadata(false);
 });
+$('plate').oninput = () => {
+  const note = current();
+  const vehicle = note?.vehicles.find(entry => entry.id === note.activeVehicleId);
+  if (!vehicle || !$('plate').validity.valid) return;
+  vehicle.plate = $('plate').value.trim();
+  touchNote(note); persistNotes(); renderVehicleTabs(note, true); renderList(); metadata(false);
+};
 $('search').oninput = () => {
   if (!validInputs()) { $('search').value = appliedSearch; return; }
   const query = $('search').value, visible = visibleNotes();
@@ -684,7 +705,7 @@ window.VinHistoryOpen = (noteId, vehicleId) => navigate(() => afterCheck(window.
 window.VinHistoryNew = (noteId, vehicleId) => navigate(() => afterCheck(window.WorkOrdersUI ? window.WorkOrdersUI.showNotes() : true, () => {
   const source = notes.find(note => note.id === noteId), vehicle = source?.vehicles.find(entry => entry.id === vehicleId);
   if (!loaded || !source || !vehicle?.vin.trim()) return false;
-  return createNote(localDay(new Date()), { title: source.title, phone: source.phone, vin: vehicle.vin, brand: vehicle.brand });
+  return createNote(localDay(new Date()), { title: source.title, phone: source.phone, vin: vehicle.vin, brand: vehicle.brand, plate: vehicle.plate });
 }));
 window.NotesExportSelection = () => current()?.id || null;
 window.NotesImportContext = () => ({ day: selectedDay || today, canLeave: allowNavigation });

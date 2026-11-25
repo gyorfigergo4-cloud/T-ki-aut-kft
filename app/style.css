@@ -421,3 +421,6 @@ body:has(#garage-person-dialog[open]) #garage-view { overflow:hidden; }
 #note-partner-discount { margin: 6px 0 12px; color: #4f722e; font-size: 12px; }
 #items-table .item-motor-oil { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 11px; }
 #items-table .item-motor-oil input { width: auto; margin: 0; accent-color: #719a20; }
+
+#items-table .item-description { margin-top: 5px; }
+#legacy-vehicle-oil-text { margin-top: 5px; white-space: pre-wrap; overflow-wrap: anywhere; }

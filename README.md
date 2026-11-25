@@ -2,6 +2,10 @@
 
 Magyar nyelvű, offline használható autóbolti belső jegyzetelő Windowsra, külön helyi hálózaton megosztható autónyilvántartóval. A bejegyzések év → hónap → nap szerint rendeződnek, egy napon belül minden névhez külön strukturált adatlap tartozik.
 
+## Rendszám és alkatrész megnevezése · 1.29.0
+
+A jegyzetben az **Olaj** mező helyén a kiválasztott autó **Rendszám** mezője található. Az előzőleg rögzített olajadat a rendszám alatt külön megnyitható. Minden cikkszám alatt megadható az **Alkatrész megnevezése**, a beszállítók között pedig választható a **Motorol**. A rendszám és a megnevezés átkerül a jegyzetből készített munkalapra vagy árajánlatra.
+
 ## Jegyzetimport telefonszám nélkül · 1.28.1
 
 Az **Autónyilvántartó → Partnerlista → Átvétel a jegyzetekből** ablakban a telefonszám nélküli nevek is kijelölhetők. A név csak egyszer jelenik meg, ha több jegyzetben szerepel szám nélkül. A szám később a partner szerkesztésénél pótolható. Ha másik gépen ugyanahhoz a névhez már van szám a jegyzetben, a kijelölt, egyértelmű találat kiegészíti a meglévő partnert, az alapkedvezményt is megőrizve.

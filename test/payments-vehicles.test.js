@@ -21,7 +21,7 @@ test('régi alvázszámok és eredeti szöveg megőrzése, ismételhető átáll
 });
 test('433 márka, ismert névváltozatok és saját márka szabad megadása',()=>{
  assert.ok(Vehicles.brands.length>=400);assert.equal(Vehicles.normalizeBrand('vw'),'Volkswagen');assert.equal(Vehicles.normalizeBrand('Skoda'),'Škoda');assert.equal(Vehicles.normalizeBrand('Mercedes'),'Mercedes-Benz');assert.equal(Vehicles.normalizeBrand(''),'');assert.equal(Vehicles.normalizeBrand('Saját márka'),'Saját márka');
- const note={vin:'',vehicles:[{id:'first',vin:vin1,brand:'Volkswagen'},{id:'second',vin:vin2,brand:'Saját márka'}]};Vehicles.validate(note.vehicles);Vehicles.sync(note);assert.equal(note.vin,vin1+' / '+vin2);assert.ok(Vehicles.searchText(note).includes('Saját márka'));assert.deepEqual(Vehicles.quoteInfo(note),{vin:vin1+' / '+vin2,vehicle:'Volkswagen / Saját márka'});
+ const note={vin:'',vehicles:[{id:'first',vin:vin1,brand:'Volkswagen'},{id:'second',vin:vin2,brand:'Saját márka'}]};Vehicles.validate(note.vehicles);Vehicles.sync(note);assert.equal(note.vin,vin1+' / '+vin2);assert.ok(Vehicles.searchText(note).includes('Saját márka'));assert.deepEqual(Vehicles.quoteInfo(note),{vin:vin1+' / '+vin2,vehicle:'Volkswagen / Saját márka',plate:''});
  note.vehicles.splice(0,1);Vehicles.sync(note);assert.equal(note.vin,vin2);note.vehicles=[];Vehicles.sync(note);assert.equal(note.vin,'');
  assert.throws(()=>Vehicles.validate([{id:'same',vin:vin1,brand:''},{id:'same',vin:vin2,brand:''}]),/jármű|alváz/);
 });

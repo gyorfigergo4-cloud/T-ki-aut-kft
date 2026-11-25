@@ -43,7 +43,7 @@ test('év/hónap/nap mappák, napi több név, visszakeresés és újranyitás',
   newDay('2026-11-04'); await tick();
   assert.equal(cards().length, 0); assert.equal($('editor').hidden, true);
   $('new').click();
-  for (const [id, value] of Object.entries({ title: 'Kovács Péter', vin: 'WVWZZZ1KZ6W123456', oil: 'Castrol EDGE 5W-30, 4,5 liter', body: 'Olajcsere' })) input(id, value);
+  for (const [id, value] of Object.entries({ title: 'Kovács Péter', vin: 'WVWZZZ1KZ6W123456', plate: 'AA-AA-123', body: 'Olajcsere' })) input(id, value);
   const editItem=(index,field,value)=>{const el=$('items-body').children[index].querySelector('[data-field="'+field+'"]');el.value=value;el.dispatchEvent(new ui.dom.window.Event('input'));};
   editItem(0,'partNumber','0986479123');editItem(0,'fullPrice','25000');editItem(0,'discountPercent','20');editItem(0,'supplier','IC');
   $('add-item').click();editItem(1,'partNumber','MANN HU 719/7 x');
@@ -55,12 +55,12 @@ test('év/hónap/nap mappák, napi több név, visszakeresés és újranyitás',
   assert.equal(cards().length, 2); assert.equal(saved.notes.length, 3);
   $('list').querySelector('[data-note="' + firstId + '"]').click();
   assert.equal($('title').value, 'Kovács Péter'); assert.equal($('items-body').children[0].querySelector('[data-field=partNumber]').value, '0986479123');assert.equal($('items-body').children.length,2);
-  assert.equal($('oil').value, 'Castrol EDGE 5W-30, 4,5 liter');
+  assert.equal($('plate').value, 'AA-AA-123');
   newDay('2026-11-05'); $('new').click(); input('title', 'Másnapi ügyfél'); await tick();
   assert.equal(cards().length, 1); assert.equal(saved.notes.length, 4);
   $('folders').querySelector('[data-day="2026-11-04"]').click(); assert.equal(cards().length, 2);
   newDay('2026-11-04'); await tick(); assert.equal(saved.notes.length, 4); assert.equal(cards().length, 2);
-  for (const term of ['kovacs', '123456', 'MANN', 'Castrol', '5W-30', '25000', '20000']) {
+  for (const term of ['kovacs', '123456', 'MANN', 'AAAA123', '25000', '20000']) {
     input('search', term); assert.equal(cards().length, 1, term); assert.equal($('title').value, 'Kovács Péter');
   }
   input('search', 'regi'); assert.equal(cards().length, 1); assert.equal($('title').value, 'Régi ügyfél');
@@ -447,9 +447,9 @@ test('új mai jegyzet ismert autóhoz: csak név, telefon, VIN és márka kerül
  const saved=historyFixture(1),ui=await openUI(saved,{manualOnly:true});
  try{
   ui.$('vin').focus();ui.input('vin',historyVin);await waitHistory();const panel=ui.dom.window.document.querySelector('.vin-history-panel');const RealDate=ui.dom.window.Date;ui.dom.window.Date=class extends RealDate{constructor(...args){super(...(args.length?args:['2026-11-12T12:00:00Z']));}};[...panel.querySelectorAll('button')].find(b=>b.textContent==='Új jegyzet mára ehhez az autóhoz').click();await tick(false);
-  assert.equal(ui.$('title').value,'Minta Péter');assert.equal(ui.$('phone').value,'+36 30 000 0000');assert.equal(ui.$('vin').value,historyVin);assert.equal(ui.$('vehicle-brand').value,'Volkswagen');assert.equal(ui.$('oil').value,'');assert.equal(ui.$('body').value,'');assert.equal(ui.$('items-body').children.length,1);assert.equal(ui.$('items-body').querySelector('[data-field=partNumber]').value,'');assert.equal(ui.$('items-body').querySelector('[data-field=ordered]').checked,false);assert.equal(ui.$('items-body').querySelector('[data-field=paid]').checked,false);
+  assert.equal(ui.$('title').value,'Minta Péter');assert.equal(ui.$('phone').value,'+36 30 000 0000');assert.equal(ui.$('vin').value,historyVin);assert.equal(ui.$('vehicle-brand').value,'Volkswagen');assert.equal(ui.$('plate').value,'');assert.equal(ui.$('body').value,'');assert.equal(ui.$('items-body').children.length,1);assert.equal(ui.$('items-body').querySelector('[data-field=partNumber]').value,'');assert.equal(ui.$('items-body').querySelector('[data-field=ordered]').checked,false);assert.equal(ui.$('items-body').querySelector('[data-field=paid]').checked,false);
   await ui.dom.window.NotesFlush();const created=saved.notes.find(n=>n.id!=='draft'&&n.id!=='history-0');assert.equal(created.day,ui.dom.window.NotesArchive.localDay(new ui.dom.window.Date()));assert.equal(created.vehicles.length,1);assert.equal(created.reminders.length,0);assert.equal(saved.notes.find(n=>n.id==='history-0').items[0].ordered,true);assert.equal(saved.notes.find(n=>n.id==='history-0').source.originalText,'Eredeti forrás 0');assert.equal(saved.notes.find(n=>n.id==='draft').body,'Megőrzendő mai szöveg');
-  ui.input('title','Új név ugyanahhoz az autóhoz');ui.input('oil','Új olaj');const card=ui.cards().find(c=>c.classList.contains('active'));assert.equal(card.querySelector('small').textContent,historyVin);
+  ui.input('title','Új név ugyanahhoz az autóhoz');ui.input('plate','ABC-123');const card=ui.cards().find(c=>c.classList.contains('active'));assert.equal(card.querySelector('small').textContent,historyVin);
  }finally{ui.dom.window.close();}
 });
 test('hibás ár mellett az előzmény megnyitása és az új jegyzet nem kerüli meg az ellenőrzést',async()=>{
@@ -521,4 +521,43 @@ test('new note items inherit the named partner rate while motor oil is fixed at 
     control(2, 'motorOil').click();
     assert.equal(control(2, 'discountPercent').value, '10');
   } finally { dom.window.close(); }
+});
+
+test('plates and named parts persist separately per car and carry into a work order from notes', async () => {
+  const saved = {
+    notes: [{ id: 'old', title: 'Minta partner', body: '', oil: 'Régi 5W30', vin: 'MINTA-VIN',
+      day: '2026-11-05', updated: '2026-11-05T12:00:00Z' }],
+    archive: { years: [2026], days: ['2026-11-05'] }
+  };
+  let ui = await openUI(saved, { manualOnly: true });
+  try {
+    assert.equal(ui.$('oil'), null);
+    assert.equal(ui.$('legacy-vehicle-oil-text').textContent, 'Régi 5W30');
+    assert.ok(ui.$('suppliers').querySelector('[value=Motorol]'));
+    ui.input('plate', 'AA-AA-123');
+    ui.$('add-item').click();
+    const change = (field, value) => {
+      const input = ui.$('items-body').lastElementChild.querySelector('[data-field=' + field + ']');
+      input.value = value;
+      input.dispatchEvent(new ui.dom.window.Event('input'));
+    };
+    change('partNumber', 'ABC-999');
+    change('description', 'Első fékbetét');
+    change('supplier', 'motorol');
+    ui.$('add-vehicle').click();
+    assert.equal(ui.$('plate').value, '');
+    ui.input('plate', 'BB-BB-456');
+    await ui.dom.window.NotesFlush();
+    ui.dom.window.close();
+    ui = await openUI(saved, { manualOnly: true });
+    assert.equal(ui.$('plate').value, 'BB-BB-456');
+    ui.input('search', 'AAAA123');
+    assert.equal(ui.$('plate').value, 'AA-AA-123');
+    const source = await ui.dom.window.NoteForWorkOrder();
+    assert.equal(source.plate, 'AA-AA-123');
+    assert.equal(source.items[0].partNumber, 'ABC-999');
+    assert.equal(source.items[0].description, 'Első fékbetét');
+    assert.equal(source.items[0].supplier, 'Motorol');
+    assert.equal(saved.notes[0].vehicles[0].oil, 'Régi 5W30');
+  } finally { ui.dom.window.close(); }
 });

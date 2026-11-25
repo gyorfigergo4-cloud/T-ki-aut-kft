@@ -36,7 +36,11 @@
     if (reduced > full) throw new Error('A kedvezményes ár nem lehet magasabb a teli árnál.');
     return full === 0n ? '0' : discountFromPrices(fullPrice, reducedPrice);
   }
-  function normalizeSupplier(value) { return /^unitra(?:c)?k$/i.test(value.trim()) ? 'Unitrak' : value; }
+  function normalizeSupplier(value) {
+    const known = value.trim().toLowerCase();
+    if (/^unitra(?:c)?k$/.test(known)) return 'Unitrak';
+    return known === 'motorol' ? 'Motorol' : value;
+  }
   function blank(id) {
     return { id, partNumber: '', fullPrice: '', discountPercent: '0', discountedPrice: '', quantity: '1', supplier: '', priceMode: 'auto', ordered: false, orderedAt: '', paid: false, arrived: false, recorded: false, fromStock: false, stockProductId: '' };
   }

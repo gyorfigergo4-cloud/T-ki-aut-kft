@@ -1,3 +1,9 @@
+ÚJ · 1.29.0 · RENDSZÁM ÉS ALKATRÉSZ MEGNEVEZÉSE
+
+A jegyzetben az Olaj mező helyén a kiválasztott autó rendszámát adhatod
+meg. A korábbi olajadat a rendszám alatt megnyitható. Az alkatrész nevét
+a cikkszám alá írhatod, a beszállítók között pedig elérhető a Motorol.
+
 ÚJ · 1.28.1 · NEVEK ÁTVÉTELE TELEFONSZÁM NÉLKÜL IS
 
 Az Autónyilvántartó → Partnerlista → Átvétel a jegyzetekből ablakban

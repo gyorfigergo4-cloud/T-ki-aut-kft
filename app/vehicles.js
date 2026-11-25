@@ -11,15 +11,17 @@
   const ids = new Set();
   for (const row of rows) {
    if (!row || typeof row.id !== 'string' || !row.id || row.id.length > 200 || ids.has(row.id) || typeof row.vin !== 'string' || row.vin.length > 20000 || typeof row.brand !== 'string' || row.brand.length > 200) throw new Error('Érvénytelen alvázszám- vagy márkaadat');
-   if(row.oil !== undefined && (typeof row.oil !== 'string' || row.oil.length > 20000)) throw new Error('Érvénytelen olajadat'); ids.add(row.id);
+   if(row.oil !== undefined && (typeof row.oil !== 'string' || row.oil.length > 20000)) throw new Error('Érvénytelen olajadat');
+   if (row.plate !== undefined && (typeof row.plate !== 'string' || row.plate.length > 100)) throw new Error('Érvénytelen rendszám');
+   ids.add(row.id);
   }
  }
- const blank = id => ({ id, vin: '', brand: '', oil: '' });
+ const blank = id => ({ id, vin: '', brand: '', oil: '', plate: '' });
  function get(note) {
-  if (note.vehicles !== undefined) { validate(note.vehicles); return note.vehicles.map(row => ({ ...row, brand: normalizeBrand(row.brand) })); }
+  if (note.vehicles !== undefined) { validate(note.vehicles); return note.vehicles.map(row => ({ ...row, brand: normalizeBrand(row.brand), plate: row.plate ?? '' })); }
   const text = note.vin || '', pieces = text.split(/\s*\/\s*|\r?\n/).filter(Boolean);
   const values = pieces.length > 1 && pieces.every(value => /^[A-HJ-NPR-Z0-9]{17}$/i.test(value)) ? pieces : [text];
-  return values.map((vin, index) => ({ id: 'legacy-vin-' + (index + 1), vin, brand: '' }));
+  return values.map((vin, index) => ({ id: 'legacy-vin-' + (index + 1), vin, brand: '', plate: '' }));
  }
  function validateAssignments(note) {
   const ids = new Set(get(note).map(row => row.id));
@@ -38,7 +40,7 @@
   validateAssignments(result); return result;
  }
  function itemsFor(note, id = note.activeVehicleId) { return note.items.filter(item => (item.vehicleId || '') === (id || '')); }
- function label(vehicle, index = 0) { return [vehicle.brand.trim(), vehicle.vin.trim()].filter(Boolean).join(' · ') || (index + 1) + '. autó – alvázszám megadása'; }
+ function label(vehicle, index = 0) { return [vehicle.brand.trim(), vehicle.vin.trim(), (vehicle.plate || '').trim()].filter(Boolean).join(' · ') || (index + 1) + '. autó – alvázszám vagy rendszám megadása'; }
  function remove(note, id) {
   const index = note.vehicles.findIndex(vehicle => vehicle.id === id);
   const moved = note.items.filter(item => item.vehicleId === id && Items.isActive(item)).length;
@@ -54,16 +56,19 @@
  function findSelection(note, query) {
   const fold = value => value.toLocaleLowerCase('hu').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const text = fold(query.trim()); if (!text) return undefined;
-  const vehicle = note.vehicles.find(row => fold(row.vin).includes(text) || fold(row.brand).includes(text));
+  const plate = plateKey(text);
+  const vehicle = note.vehicles.find(row => fold(row.vin).includes(text) || fold(row.brand).includes(text)
+    || (plate && plateKey(row.plate).includes(plate)));
   if (vehicle) return vehicle.id;
   const item = note.items.find(row => fold([row.partNumber, row.description || '', row.supplier, row.fullPrice, row.discountPercent, row.discountedPrice, row.quantity, row.ordered ? 'megrendelve rendelve' : '', row.orderedAt || ''].join(' ')).includes(text));
   return item?.vehicleId;
  }
  function sync(note) { validate(note.vehicles); note.vin = note.vehicles.map(row => row.vin.trim()).filter(Boolean).join(' / '); }
- function searchText(note) { return get(note).map(row => row.vin + ' ' + row.brand + ' ' + (row.oil || '')).join(' '); }
+ const plateKey = value => (value || '').toUpperCase().replace(/[\s-]+/g, '');
+ function searchText(note) { return get(note).map(row => [row.vin, row.brand, row.oil || '', row.plate, plateKey(row.plate)].join(' ')).join(' '); }
  function quoteInfo(note) {
-  const rows = get(note).filter(row => row.vin.trim() || row.brand.trim());
-  return { vin: rows.map(row => row.vin.trim()).filter(Boolean).join(' / '), vehicle: [...new Set(rows.map(row => row.brand.trim()).filter(Boolean))].join(' / ') };
+  const rows = get(note).filter(row => row.vin.trim() || row.brand.trim() || row.plate.trim());
+  return { vin: rows.map(row => row.vin.trim()).filter(Boolean).join(' / '), vehicle: [...new Set(rows.map(row => row.brand.trim()).filter(Boolean))].join(' / '), plate: rows.map(row => row.plate.trim()).filter(Boolean).join(' / ') };
  }
  const api = { brands, blank, validate, get, normalize, sync, searchText, normalizeBrand, quoteInfo, validateAssignments, itemsFor, label, remove, selectedNote, findSelection };
  if (typeof module !== 'undefined') module.exports = api; else root.NoteVehicles = api;
